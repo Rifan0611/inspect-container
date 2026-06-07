@@ -444,6 +444,25 @@ tr:hover{
   color:#dc2626;
 }
 
+.edit-btn{
+  border:none;
+  background:#f0fdf4;
+  color:#16a34a;
+  width:40px;
+  height:40px;
+  border-radius:12px;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  transition:all 0.2s ease;
+}
+
+.edit-btn:hover{
+  background:#dcfce7;
+  color:#15803d;
+}
+
 /* RESPONSIVE */
 
 @media(max-width:1200px){

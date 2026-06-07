@@ -20,6 +20,7 @@ import {
   Search,
   Upload,
   Trash2,
+  Pencil,
 } from "lucide-react";
 
 import {
@@ -107,7 +108,118 @@ const OfficeDashboard = ({
   const [importSuccessMessage, setImportSuccessMessage] = useState("");
   const [selectedInspection, setSelectedInspection] = useState(null);
 
+  // Edit states
+  const [editingInspection, setEditingInspection] = useState(null);
+  const [editContainer, setEditContainer] = useState("");
+  const [editShipName, setEditShipName] = useState("");
+  const [editStatus, setEditStatus] = useState("");
+  const [editIso, setEditIso] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editCondition, setEditCondition] = useState("");
+  const [editSide, setEditSide] = useState("");
+  const [editNote, setEditNote] = useState("");
+  const [editPetugas, setEditPetugas] = useState("");
+  const [editGroup, setEditGroup] = useState("");
+  const [editDate, setEditDate] = useState("");
+
+  useEffect(() => {
+    if (editingInspection) {
+      setEditContainer(editingInspection.container || "");
+      setEditShipName(editingInspection.shipName || "");
+      setEditStatus(editingInspection.status || "");
+      setEditIso(editingInspection.iso || "");
+      setEditCategory(editingInspection.category || "");
+      setEditCondition(editingInspection.condition || "GOOD");
+      setEditSide(editingInspection.side || "");
+      setEditNote(editingInspection.note || "");
+      setEditPetugas(editingInspection.petugas || "");
+      setEditGroup(editingInspection.group || "");
+      
+      // format date for datetime-local input (YYYY-MM-DDTHH:MM)
+      if (editingInspection.date) {
+        const d = new Date(editingInspection.date);
+        const offset = d.getTimezoneOffset();
+        const adjustedDate = new Date(d.getTime() - (offset * 60 * 1000));
+        setEditDate(adjustedDate.toISOString().slice(0, 16));
+      } else {
+        setEditDate("");
+      }
+    }
+  }, [editingInspection]);
+
+  const handleUpdateInspection = async (e) => {
+    e.preventDefault();
+    if (!editingInspection) return;
+
+    if (!editContainer || !editShipName || !editCondition || !editPetugas || !editDate) {
+      alert("Harap isi semua kolom wajib (Nomor Container, Kapal, Kondisi, Petugas, Tanggal).");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/inspection/${editingInspection.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          container: editContainer,
+          shipName: editShipName,
+          status: editStatus,
+          iso: editIso,
+          category: editCategory,
+          condition: editCondition,
+          side: editSide,
+          note: editNote,
+          petugas: editPetugas,
+          group: editGroup,
+          date: editDate
+        })
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        alert("Data inspeksi berhasil diperbarui.");
+        
+        // Update local historyData state
+        const updatedData = historyData.map(item => {
+          if (item.id === editingInspection.id) {
+            return {
+              ...item,
+              container: editContainer.trim().toUpperCase(),
+              shipName: editShipName.trim(),
+              status: editStatus,
+              iso: editIso,
+              category: editCategory,
+              condition: editCondition,
+              side: editSide,
+              note: editNote,
+              petugas: editPetugas,
+              group: editGroup,
+              date: editDate
+            };
+          }
+          return item;
+        });
+
+        setHistoryData(updatedData);
+        localStorage.setItem("history", JSON.stringify(updatedData));
+        window.dispatchEvent(new Event("storage"));
+        setEditingInspection(null); // Close modal
+      } else {
+        alert("Gagal memperbarui data: " + (result.error || "Unknown error"));
+      }
+    } catch (err) {
+      console.error("Update error:", err);
+      alert("Gagal terhubung ke server untuk memperbarui.");
+    }
+  };
+
   const handleDeleteInspection = async (id) => {
+    if (user?.username !== "adminRAL") {
+      alert("Hanya admin utama (adminRAL) yang dapat menghapus data.");
+      return;
+    }
     if (!window.confirm("Apakah Anda yakin ingin menghapus data inspeksi ini secara permanen?")) {
       return;
     }
@@ -748,39 +860,34 @@ await fetch(
   </button>
 
   {/* USER */}
-<button
-  className={`menu-item ${
-    activeMenu === "user"
-      ? "active"
-      : ""
-  }`}
-  onClick={() => {
-    setActiveMenu("user");
-    if (user?.role === "ADMIN") {
-      setShowAdminPanel(true);
-      setTimeout(() => {
-        document
-          .getElementById("user-section")
-          ?.scrollIntoView({
-            behavior: "smooth",
-          });
-      }, 100);
-    } else {
-      alert("Hanya Admin yang dapat mengelola pengguna.");
-    }
-  }}
->
-
-  <Users
-    className="menu-icon"
-    size={20}
-  />
-
-  {sidebarOpen && (
-    <span>User</span>
+  {user?.username === "adminRAL" && (
+    <button
+      className={`menu-item ${
+        activeMenu === "user"
+          ? "active"
+          : ""
+      }`}
+      onClick={() => {
+        setActiveMenu("user");
+        setShowAdminPanel(true);
+        setTimeout(() => {
+          document
+            .getElementById("user-section")
+            ?.scrollIntoView({
+              behavior: "smooth",
+            });
+        }, 100);
+      }}
+    >
+      <Users
+        className="menu-icon"
+        size={20}
+      />
+      {sidebarOpen && (
+        <span>User</span>
+      )}
+    </button>
   )}
-
-</button>
 
 </div>
   <button className="menu-item">
@@ -911,7 +1018,7 @@ await fetch(
 
 
 {
-user?.role === "ADMIN" && (
+user?.username === "adminRAL" && (
 
 <button
 className="notif-btn"
@@ -963,7 +1070,7 @@ setShowAdminPanel(
 
 {
 showAdminPanel &&
-user?.role === "ADMIN" && (
+user?.username === "adminRAL" && (
   <div id="user-section">
     <UserManagement />
   </div>
@@ -1803,14 +1910,27 @@ win.print();
                           
                           </button>
                           
-                          <button
-                            className="delete-btn"
-                            style={{ marginLeft: "8px" }}
-                            onClick={() => handleDeleteInspection(item.id)}
-                            title="Hapus Inspeksi"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                          {user?.username === "adminRAL" && (
+                            <button
+                              className="edit-btn"
+                              style={{ marginLeft: "8px" }}
+                              onClick={() => setEditingInspection(item)}
+                              title="Edit Inspeksi"
+                            >
+                              <Pencil size={18} />
+                            </button>
+                          )}
+                          
+                          {user?.username === "adminRAL" && (
+                            <button
+                              className="delete-btn"
+                              style={{ marginLeft: "8px" }}
+                              onClick={() => handleDeleteInspection(item.id)}
+                              title="Hapus Inspeksi"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          )}
                           
                           </td>
 
@@ -1900,6 +2020,148 @@ win.print();
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT MODAL */}
+      {editingInspection && (
+        <div className="modal-overlay" onClick={() => setEditingInspection(null)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "650px" }}>
+            <div className="modal-header">
+              <h4 className="modal-title">Edit Inspeksi: {editingInspection.container}</h4>
+              <button className="btn-close-modal" onClick={() => setEditingInspection(null)}>×</button>
+            </div>
+            <form onSubmit={handleUpdateInspection} className="modal-body">
+              <div className="edit-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                
+                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
+                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>No. Container <span style={{ color: "red" }}>*</span></label>
+                  <input
+                    type="text"
+                    value={editContainer}
+                    onChange={(e) => setEditContainer(e.target.value)}
+                    required
+                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px" }}
+                  />
+                </div>
+
+                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
+                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>Nama Kapal <span style={{ color: "red" }}>*</span></label>
+                  <input
+                    type="text"
+                    value={editShipName}
+                    onChange={(e) => setEditShipName(e.target.value)}
+                    required
+                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px" }}
+                  />
+                </div>
+
+                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
+                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>ISO</label>
+                  <input
+                    type="text"
+                    value={editIso}
+                    onChange={(e) => setEditIso(e.target.value)}
+                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px" }}
+                  />
+                </div>
+
+                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
+                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>Status (FULL/EMPTY)</label>
+                  <input
+                    type="text"
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value)}
+                    placeholder="Contoh: FULL, EMPTY, MT"
+                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px" }}
+                  />
+                </div>
+
+                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
+                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>Kondisi <span style={{ color: "red" }}>*</span></label>
+                  <select
+                    value={editCondition}
+                    onChange={(e) => setEditCondition(e.target.value)}
+                    required
+                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px", background: "white" }}
+                  >
+                    <option value="GOOD">GOOD</option>
+                    <option value="DAMAGE">DAMAGE</option>
+                  </select>
+                </div>
+
+                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
+                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>Sisi Kerusakan</label>
+                  <input
+                    type="text"
+                    value={editSide}
+                    onChange={(e) => setEditSide(e.target.value)}
+                    placeholder="Contoh: Left, Front, None..."
+                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px" }}
+                  />
+                </div>
+
+                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
+                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>Petugas Pemeriksa <span style={{ color: "red" }}>*</span></label>
+                  <input
+                    type="text"
+                    value={editPetugas}
+                    onChange={(e) => setEditPetugas(e.target.value)}
+                    required
+                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px" }}
+                  />
+                </div>
+
+                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
+                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>Grup Petugas</label>
+                  <input
+                    type="text"
+                    value={editGroup}
+                    onChange={(e) => setEditGroup(e.target.value)}
+                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px" }}
+                  />
+                </div>
+
+                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column", gridColumn: "span 2" }}>
+                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>Tanggal Inspeksi <span style={{ color: "red" }}>*</span></label>
+                  <input
+                    type="datetime-local"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    required
+                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px" }}
+                  />
+                </div>
+
+                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column", gridColumn: "span 2" }}>
+                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>Catatan Kronologi</label>
+                  <textarea
+                    value={editNote}
+                    onChange={(e) => setEditNote(e.target.value)}
+                    rows="3"
+                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px", resize: "vertical" }}
+                  />
+                </div>
+
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", borderTop: "1px solid #e5e7eb", paddingTop: "15px" }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingInspection(null)}
+                  style={{ padding: "10px 20px", borderRadius: "8px", border: "1px solid #d1d5db", background: "white", color: "#374151", cursor: "pointer", fontWeight: "600" }}
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  style={{ padding: "10px 20px", borderRadius: "8px", border: "none", background: "#16a34a", color: "white", cursor: "pointer", fontWeight: "600" }}
+                >
+                  Simpan Perubahan
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

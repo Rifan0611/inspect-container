@@ -106,4 +106,84 @@ router.delete("/:id", (req, res) => {
   });
 });
 
+// Update inspection by id
+router.put("/:id", (req, res) => {
+  const { id } = req.params;
+  const {
+    container,
+    shipName,
+    status,
+    iso,
+    category,
+    condition,
+    side,
+    note,
+    petugas,
+    group,
+    date
+  } = req.body;
+
+  if (!container || !shipName || !condition || !petugas) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  // Format date if provided
+  let formattedDate = null;
+  if (date) {
+    const dateObj = new Date(date);
+    const tzDate = new Date(dateObj.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+    formattedDate = [
+      tzDate.getFullYear(),
+      String(tzDate.getMonth() + 1).padStart(2, '0'),
+      String(tzDate.getDate()).padStart(2, '0')
+    ].join('-') + ' ' + [
+      String(tzDate.getHours()).padStart(2, '0'),
+      String(tzDate.getMinutes()).padStart(2, '0'),
+      String(tzDate.getSeconds()).padStart(2, '0')
+    ].join(':');
+  }
+
+  let query = `
+    UPDATE container_inspections SET 
+      container = ?, 
+      shipName = ?, 
+      status = ?, 
+      iso = ?, 
+      category = ?, 
+      \`condition\` = ?, 
+      side = ?, 
+      note = ?, 
+      petugas = ?, 
+      \`group\` = ?
+  `;
+  const params = [
+    container.trim().toUpperCase(),
+    shipName.trim(),
+    status,
+    iso,
+    category,
+    condition,
+    side,
+    note,
+    petugas,
+    group || "Lapangan"
+  ];
+
+  if (formattedDate) {
+    query += `, \`date\` = ?`;
+    params.push(formattedDate);
+  }
+
+  query += ` WHERE id = ?`;
+  params.push(id);
+
+  db.query(query, params, (err, result) => {
+    if (err) {
+      console.error("Error updating inspection:", err);
+      return res.status(500).json({ error: "Failed to update inspection" });
+    }
+    res.json({ message: "Inspection updated successfully" });
+  });
+});
+
 module.exports = router;

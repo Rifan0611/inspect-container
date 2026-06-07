@@ -422,6 +422,7 @@ const login = async ()=>{
     const dataUser = {
       nama:"Rian Agung",
       role:"MANAGER",
+      username:"manager",
       shift: activeShift,
       group:"Management"
     };
@@ -440,6 +441,7 @@ const login = async ()=>{
     const dataUser = {
       nama:"Budi Santoso",
       role:"SUPERVISOR",
+      username:"supervisor",
       shift: activeShift,
       group:"Shift A"
     };
@@ -458,6 +460,7 @@ const login = async ()=>{
     const dataUser = {
       nama:"Andi Wijaya",
       role:"ASSISTANT SUPERVISOR",
+      username:"assistant",
       shift: activeShift,
       group:"Shift B"
     };
@@ -476,6 +479,7 @@ const login = async ()=>{
     const dataUser = {
       nama:"Admin NPH",
       role:"ADMIN",
+      username:"adminRAL",
       shift: activeShift,
       group:"Office"
     };
@@ -494,6 +498,7 @@ const login = async ()=>{
     const dataUser = {
       nama:"Petugas Lapangan",
       role:"PETUGAS",
+      username:"petugas",
       shift: activeShift,
       group:"Lapangan"
     };
@@ -513,6 +518,7 @@ const login = async ()=>{
     const dataUser = {
       nama: matchedAccount.nama || matchedAccount.username,
       role: matchedAccount.jabatan,
+      username: matchedAccount.username,
       shift: activeShift,
       group: matchedAccount.group || "Office"
     };
