@@ -1,0 +1,70 @@
+.manager-dashboard {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.manager-dashboard h1 {
+  font-size: 24px;
+  color: #1a1a1a;
+  margin-bottom: 24px;
+}
+
+.users-section {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.users-section h2 {
+  font-size: 18px;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.users-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.user-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.user-item:last-child {
+  border-bottom: none;
+}
+
+.user-name {
+  font-weight: 500;
+  color: #1a1a1a;
+  flex: 1;
+}
+
+.user-role {
+  color: #666;
+  flex: 1;
+}
+
+.user-status {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-active {
+  background: #e6f4ea;
+  color: #1e8e3e;
+}
+
+.status-inactive {
+  background: #fce8e6;
+  color: #d93025;
+}
