@@ -782,9 +782,17 @@ const simpanData = ()=>{
     body: JSON.stringify(data)
   })
   .then(async (res) => {
-    const resData = await res.json();
+    let resData;
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      resData = await res.json();
+    } else {
+      const text = await res.text();
+      throw new Error(`Server error (${res.status}): ${text.substring(0, 100)}`);
+    }
+    
     if (!res.ok) {
-      throw new Error(resData.error || "Gagal menyimpan inspeksi ke server");
+      throw new Error(resData?.error || `Gagal menyimpan inspeksi ke server (${res.status})`);
     }
     
     const newHistory = [data, ...history];
