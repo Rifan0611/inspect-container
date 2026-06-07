@@ -2,8 +2,9 @@
 
 import * as XLSX from "xlsx";
 import { useState } from "react";
+import API_URL_BASE from "../config/api";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = `${API_URL_BASE}/api`;
 
 export default function ManifestUpload() {
 

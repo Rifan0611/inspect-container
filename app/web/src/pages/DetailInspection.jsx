@@ -1,5 +1,6 @@
 import { useEffect,useState } from 'react'
 import api from '../services/api'
+import API_URL from '../config/api'
 
 export default function DetailInspection(){
 
@@ -41,7 +42,7 @@ export default function DetailInspection(){
             <p>{item.condition_status}</p>
 
             <img
-            src={`http://localhost:8000/uploads/${item.photo}`}
+            src={`${API_URL}/uploads/${item.photo}`}
             width='100%'
             style={{borderRadius:20}}
             />

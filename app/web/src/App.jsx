@@ -1,6 +1,5 @@
-import OfficeDashboard from
-"./pages/office-dashboard/OfficeDashboard";
-
+import OfficeDashboard from "./pages/office-dashboard/OfficeDashboard";
+import API_URL from "./config/api";
 import React,{useState} from "react";
 
 import * as XLSX from "xlsx";
@@ -308,10 +307,6 @@ React.useEffect(() => {
 
 React.useEffect(() => {
   const fetchAndMigrateInspections = async () => {
-    const API_URL = window.location.hostname === "localhost"
-      ? "http://localhost:5000"
-      : `http://${window.location.hostname}:5000`;
-    
     try {
       const response = await fetch(`${API_URL}/api/inspection`);
       const dbInspections = await response.json();
@@ -369,9 +364,6 @@ const login = async ()=>{
   // Fetch latest accounts from backend database so mobile/remote logins work immediately
   let storedAccounts = [];
   try {
-    const API_URL = window.location.hostname === "localhost"
-      ? "http://localhost:5000"
-      : `http://${window.location.hostname}:5000`;
     const response = await fetch(`${API_URL}/api/accounts`);
     const dbData = await response.json();
     if (Array.isArray(dbData)) {
@@ -698,10 +690,6 @@ setCategory("");
     }
 
     const value = container.toUpperCase().trim();
-    const API_URL = window.location.hostname === "localhost"
-      ? "http://localhost:5000"
-      : `http://${window.location.hostname}:5000`;
-
     try {
       const response = await fetch(`${API_URL}/api/manifest`);
       const data = await response.json();
@@ -787,10 +775,6 @@ const simpanData = ()=>{
     petugas: user?.nama || "Petugas Lapangan",
     date: new Date()
   };
-
-  const API_URL = window.location.hostname === "localhost"
-    ? "http://localhost:5000"
-    : `http://${window.location.hostname}:5000`;
 
   fetch(`${API_URL}/api/inspection`, {
     method: "POST",
