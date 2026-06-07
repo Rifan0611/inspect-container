@@ -375,6 +375,74 @@ const deleteUser = (index) => {
   const [newJabatan, setNewJabatan] =
     React.useState("PETUGAS");
 
+  /* DYNAMIC CHART & STATS CALCULATIONS */
+  const getDynamicLineData = () => {
+    if (!historyData || historyData.length === 0) {
+      return [
+        { day: "N/A", value: 0 }
+      ];
+    }
+    const counts = {};
+    const sorted = [...historyData].sort((a, b) => new Date(a.date) - new Date(b.date));
+    sorted.forEach(item => {
+      if (!item.date) return;
+      try {
+        const d = new Date(item.date);
+        const formatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+        counts[formatted] = (counts[formatted] || 0) + 1;
+      } catch (e) {}
+    });
+    return Object.keys(counts).map(day => ({
+      day,
+      value: counts[day]
+    }));
+  };
+
+  const getDynamicPieData = () => {
+    const damagedInspections = historyData.filter(
+      item => item.condition && item.condition.toUpperCase() !== "GOOD"
+    );
+    if (damagedInspections.length === 0) {
+      return [
+        { name: "Tidak ada kerusakan", value: 1, color: "#22c55e" }
+      ];
+    }
+    const counts = {};
+    damagedInspections.forEach(item => {
+      const cond = item.condition || "Lainnya";
+      counts[cond] = (counts[cond] || 0) + 1;
+    });
+    const colors = ["#2563eb", "#ef4444", "#f59e0b", "#22c55e", "#8b5cf6", "#10b981", "#ff7a00"];
+    return Object.keys(counts).map((name, index) => ({
+      name,
+      value: counts[name],
+      color: colors[index % colors.length]
+    }));
+  };
+
+  const dynamicLineData = getDynamicLineData();
+  const dynamicPieData = getDynamicPieData();
+
+  const totalInspeksi = historyData.length;
+  const totalDamage = historyData.filter(item => item.condition && item.condition.toUpperCase() !== "GOOD").length;
+  const totalGood = historyData.filter(item => item.condition && item.condition.toUpperCase() === "GOOD").length;
+  const damagePercentage = totalInspeksi > 0 ? ((totalDamage / totalInspeksi) * 100).toFixed(1) + "%" : "0%";
+  const goodPercentage = totalInspeksi > 0 ? ((totalGood / totalInspeksi) * 100).toFixed(1) + "%" : "0%";
+  const petugasAktif = new Set(historyData.map(item => item.petugas).filter(Boolean)).size || 0;
+
+  const containerFull = manifestData.filter(item => item.status && item.status.toUpperCase().includes("FULL")).length || historyData.filter(item => item.status && item.status.toUpperCase().includes("FULL")).length || 0;
+  const containerEmpty = manifestData.filter(item => item.status && (item.status.toUpperCase().includes("EMPTY") || item.status.toUpperCase().includes("MT"))).length || historyData.filter(item => item.status && (item.status.toUpperCase().includes("EMPTY") || item.status.toUpperCase().includes("MT"))).length || 0;
+  const waitingRepair = totalDamage;
+
+  const getInspectionsToday = () => {
+    const today = new Date().toDateString();
+    return historyData.filter(item => {
+      if (!item.date) return false;
+      return new Date(item.date).toDateString() === today;
+    }).length;
+  };
+  const inspectionsToday = getInspectionsToday();
+
   /* UPLOAD EXCEL / IMPORT SUBMIT */
   const handleExcelImportSubmit = async () => {
     if (!manifestShipName) {
@@ -976,45 +1044,35 @@ user?.role === "ADMIN" && (
         ) : null}
 
         {/* STATS */}
-        {(() => {
-          const totalInspeksi = 1248 + historyData.length;
-          const totalDamage = 542 + historyData.filter(item => item.condition && item.condition.toUpperCase() !== "GOOD").length;
-          const totalGood = 706 + historyData.filter(item => item.condition && item.condition.toUpperCase() === "GOOD").length;
-          const damagePercentage = totalInspeksi > 0 ? ((totalDamage / totalInspeksi) * 100).toFixed(1) + "%" : "0%";
-          const goodPercentage = totalInspeksi > 0 ? ((totalGood / totalInspeksi) * 100).toFixed(1) + "%" : "0%";
+        <div className="stats-grid">
+          <StatCard
+            title="Total Inspeksi"
+            value={totalInspeksi.toLocaleString("id-ID")}
+            subtitle={`+${inspectionsToday} hari ini`}
+            color="blue"
+          />
 
-          return (
-            <div className="stats-grid">
-              <StatCard
-                title="Total Inspeksi"
-                value={totalInspeksi.toLocaleString("id-ID")}
-                subtitle="+12 hari ini"
-                color="blue"
-              />
+          <StatCard
+            title="Damage"
+            value={totalDamage.toLocaleString("id-ID")}
+            subtitle={damagePercentage}
+            color="orange"
+          />
 
-              <StatCard
-                title="Damage"
-                value={totalDamage.toLocaleString("id-ID")}
-                subtitle={damagePercentage}
-                color="orange"
-              />
+          <StatCard
+            title="Good"
+            value={totalGood.toLocaleString("id-ID")}
+            subtitle={goodPercentage}
+            color="green"
+          />
 
-              <StatCard
-                title="Good"
-                value={totalGood.toLocaleString("id-ID")}
-                subtitle={goodPercentage}
-                color="green"
-              />
-
-              <StatCard
-                title="Petugas Aktif"
-                value="18"
-                subtitle="Online"
-                color="purple"
-              />
-            </div>
-          );
-        })()}
+          <StatCard
+            title="Petugas Aktif"
+            value={String(petugasAktif)}
+            subtitle="Online"
+            color="purple"
+          />
+        </div>
 {/* STATUS REALTIME */}
 
 <div
@@ -1040,7 +1098,7 @@ fontWeight:"bold",
 color:"#2563eb"
 }}
 >
-845
+{containerFull}
 </h1>
 
 </div>
@@ -1058,7 +1116,7 @@ fontWeight:"bold",
 color:"#f97316"
 }}
 >
-403
+{containerEmpty}
 </h1>
 
 </div>
@@ -1076,7 +1134,7 @@ fontWeight:"bold",
 color:"#ef4444"
 }}
 >
-92
+{waitingRepair}
 </h1>
 
 </div>
@@ -1102,7 +1160,7 @@ color:"#ef4444"
                 height={280}
               >
 
-                <LineChart data={lineData}>
+                <LineChart data={dynamicLineData}>
 
                   <CartesianGrid
                     strokeDasharray="3 3"
@@ -1146,14 +1204,14 @@ color:"#ef4444"
                 <RePieChart>
 
                   <Pie
-                    data={pieData}
+                    data={dynamicPieData}
                     cx="50%"
                     cy="50%"
                     outerRadius={100}
                     dataKey="value"
                   >
 
-                    {pieData.map(
+                    {dynamicPieData.map(
                       (entry, index) => (
 
                         <Cell

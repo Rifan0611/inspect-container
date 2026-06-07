@@ -1684,7 +1684,7 @@ return(
             .click()
         }
       >
-        FOTO NO. CONTAINER
+        FOTO NOMOR CONTAINER
       </button>
 
       <input
