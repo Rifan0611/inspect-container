@@ -19,6 +19,7 @@ import {
   Bell,
   Search,
   Upload,
+  Trash2,
 } from "lucide-react";
 
 import {
@@ -105,6 +106,33 @@ const OfficeDashboard = ({
   const [fileName, setFileName] = useState("");
   const [importSuccessMessage, setImportSuccessMessage] = useState("");
   const [selectedInspection, setSelectedInspection] = useState(null);
+
+  const handleDeleteInspection = async (id) => {
+    if (!window.confirm("Apakah Anda yakin ingin menghapus data inspeksi ini secara permanen?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/inspection/${id}`, {
+        method: "DELETE"
+      });
+      const result = await response.json();
+      if (response.ok) {
+        alert("Data inspeksi berhasil dihapus.");
+        // Immediate local state refresh
+        const updatedData = historyData.filter(item => item.id !== id);
+        setHistoryData(updatedData);
+        localStorage.setItem("history", JSON.stringify(updatedData));
+        // Notify other windows/components
+        window.dispatchEvent(new Event("storage"));
+      } else {
+        alert("Gagal menghapus: " + (result.error || "Unknown error"));
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("Gagal terhubung ke server untuk menghapus.");
+    }
+  };
 
   /* MANIFEST */
   
@@ -1703,11 +1731,20 @@ win.print();
 
 >
 
-PDF
-
-</button>
-
-</td>
+                          PDF
+                          
+                          </button>
+                          
+                          <button
+                            className="delete-btn"
+                            style={{ marginLeft: "8px" }}
+                            onClick={() => handleDeleteInspection(item.id)}
+                            title="Hapus Inspeksi"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                          
+                          </td>
 
 </tr>
 

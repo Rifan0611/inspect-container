@@ -91,4 +91,16 @@ router.post("/", (req, res) => {
   );
 });
 
+// Delete inspection by id
+router.delete("/:id", (req, res) => {
+  const { id } = req.params;
+  db.query("DELETE FROM container_inspections WHERE id = ?", [id], (err, result) => {
+    if (err) {
+      console.error("Error deleting inspection:", err);
+      return res.status(500).json({ error: "Failed to delete inspection" });
+    }
+    res.json({ message: "Inspection deleted successfully" });
+  });
+});
+
 module.exports = router;
