@@ -1060,13 +1060,6 @@ user?.role === "ADMIN" && (
           />
 
           <StatCard
-            title="Good"
-            value={totalGood.toLocaleString("id-ID")}
-            subtitle={goodPercentage}
-            color="green"
-          />
-
-          <StatCard
             title="Petugas Aktif"
             value={String(petugasAktif)}
             subtitle="Online"
