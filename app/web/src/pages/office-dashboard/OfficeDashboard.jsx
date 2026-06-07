@@ -1212,6 +1212,8 @@ color:"#ef4444"
 
                   <th>Petugas</th>
 
+                  <th>Grup</th>
+
                   <th>Kondisi</th>
 
                   <th>Sisi</th>
@@ -1249,6 +1251,10 @@ historyData.map((item,index)=>(
 
 <td>
 {item.petugas || "Petugas Lapangan"}
+</td>
+
+<td>
+{item.group || "Lapangan"}
 </td>
 
 <td>
@@ -1621,6 +1627,17 @@ ${formatInspectionTimePart(item.date)}
 
 </tr>
 
+<tr>
+<td class="label">
+Grup Petugas
+</td>
+
+<td>
+${item.group || "Lapangan"}
+</td>
+
+</tr>
+
 </table>
 
 <div class="note-title">
@@ -1691,7 +1708,7 @@ Petugas Inspeksi
 
 <div class="ttd-line">
 
-(................................)
+( ${item.petugas || "Petugas Lapangan"} )
 
 </div>
 
@@ -1786,6 +1803,10 @@ win.print();
                 <div className="info-item">
                   <div className="info-label">Petugas Pemeriksa</div>
                   <div className="info-val">{selectedInspection.petugas || "Petugas Lapangan"}</div>
+                </div>
+                <div className="info-item">
+                  <div className="info-label">Grup Petugas</div>
+                  <div className="info-val">{selectedInspection.group || "Lapangan"}</div>
                 </div>
                 <div className="info-item">
                   <div className="info-label">Waktu Inspeksi</div>

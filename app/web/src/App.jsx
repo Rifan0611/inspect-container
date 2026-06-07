@@ -773,6 +773,7 @@ const simpanData = ()=>{
     photo1,
     photo2,
     petugas: user?.nama || "Petugas Lapangan",
+    group: user?.group || "",
     date: new Date()
   };
 
@@ -1182,6 +1183,17 @@ ${formatInspectionTimePart(item.date)}
 
 </tr>
 
+<tr>
+<td class="label">
+Grup Petugas
+</td>
+
+<td>
+${item.group || "Lapangan"}
+</td>
+
+</tr>
+
 </table>
 
 <div class="note-title">
@@ -1252,7 +1264,7 @@ Petugas Inspeksi
 
 <div class="ttd-line">
 
-(................................)
+( ${item.petugas || "Petugas Lapangan"} )
 
 </div>
 

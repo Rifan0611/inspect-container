@@ -28,6 +28,7 @@ router.post("/", (req, res) => {
     photo1,
     photo2,
     petugas,
+    group,
     date
   } = req.body;
 
@@ -48,8 +49,9 @@ router.post("/", (req, res) => {
       photo1,
       photo2,
       petugas,
+      \`group\`,
       \`date\`
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   // Format date to MySQL datetime in Asia/Jakarta (WIB) timezone
@@ -79,6 +81,7 @@ router.post("/", (req, res) => {
       photo1,
       photo2,
       petugas,
+      group || "Lapangan",
       formattedDate
     ],
     (err, result) => {
