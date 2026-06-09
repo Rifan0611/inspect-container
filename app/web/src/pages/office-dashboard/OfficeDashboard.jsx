@@ -91,7 +91,8 @@ const OfficeDashboard = ({
   user,
   onLogout,
   manifestData,
-  setManifestData
+  setManifestData,
+  onNavigate
 }) => {
 
   const [sidebarOpen, setSidebarOpen] =
@@ -102,6 +103,30 @@ const OfficeDashboard = ({
 
   const [search, setSearch] =
     useState("");
+
+  // Theme & Extra layout menus state
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("dashboard-theme") || "light";
+  });
+  const [showExtraStats, setShowExtraStats] = useState(() => {
+    return localStorage.getItem("show-extra-stats") !== "false";
+  });
+  const [showQuickActions, setShowQuickActions] = useState(() => {
+    return localStorage.getItem("show-quick-actions") !== "false";
+  });
+
+  const handleThemeChange = (newTheme) => {
+    setTheme(newTheme);
+    localStorage.setItem("dashboard-theme", newTheme);
+  };
+
+  useEffect(() => {
+    localStorage.setItem("show-extra-stats", showExtraStats);
+  }, [showExtraStats]);
+
+  useEffect(() => {
+    localStorage.setItem("show-quick-actions", showQuickActions);
+  }, [showQuickActions]);
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileName, setFileName] = useState("");
@@ -554,6 +579,28 @@ const deleteUser = (index) => {
     }));
   };
 
+  const getStatsPerGroup = () => {
+    const arr = Array.isArray(historyData) ? historyData : [];
+    const counts = {};
+    arr.forEach(item => {
+      if (!item) return;
+      const gp = item.group || "Lainnya";
+      counts[gp] = (counts[gp] || 0) + 1;
+    });
+    return Object.keys(counts).map(name => ({ name, count: counts[name] }));
+  };
+
+  const getStatsPerPetugas = () => {
+    const arr = Array.isArray(historyData) ? historyData : [];
+    const counts = {};
+    arr.forEach(item => {
+      if (!item) return;
+      const pet = item.petugas || "Petugas Lapangan";
+      counts[pet] = (counts[pet] || 0) + 1;
+    });
+    return Object.keys(counts).map(name => ({ name, count: counts[name] }));
+  };
+
   const dynamicLineData = getDynamicLineData();
   const dynamicPieData = getDynamicPieData();
 
@@ -705,7 +752,7 @@ await fetch(
 
 
   return (
-    <div className="dashboard-layout">
+    <div className={`dashboard-layout theme-${theme}`}>
       {/* SIDEBAR OVERLAY FOR MOBILE */}
       {sidebarOpen && (
         <div 
@@ -927,7 +974,22 @@ await fetch(
   )}
 
 </div>
-  <button className="menu-item">
+  <button
+    className={`menu-item ${
+      activeMenu === "settings" ? "active" : ""
+    }`}
+    onClick={() => {
+      setActiveMenu("settings");
+      if (window.innerWidth <= 900) setSidebarOpen(false);
+      setTimeout(() => {
+        document
+          .getElementById("settings-section")
+          ?.scrollIntoView({
+            behavior: "smooth",
+          });
+      }, 100);
+    }}
+  >
 
     <Settings
       className="menu-icon"
@@ -1218,6 +1280,80 @@ user?.username === "adminRAL" && (
             color="purple"
           />
         </div>
+
+        {/* QUICK ACTIONS PANEL (Toggled from Settings) */}
+        {showQuickActions && (
+          <div className="um-card" style={{ marginBottom: "24px", padding: "16px 20px" }}>
+            <h5 style={{ fontSize: "14px", fontWeight: "700", marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontSize: "16px" }}>⚡</span> Akses Pintar (Quick Actions)
+            </h5>
+            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                onClick={() => onNavigate("inspection")}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "#2563eb",
+                  color: "white",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                Mulai Inspeksi Baru
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveMenu("user");
+                  setShowAdminPanel(true);
+                  setTimeout(() => {
+                    document.getElementById("user-section")?.scrollIntoView({ behavior: "smooth" });
+                  }, 100);
+                }}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e1",
+                  background: "white",
+                  color: "#334155",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                Kelola Pengguna
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveMenu("manifest");
+                  setTimeout(() => {
+                    document.getElementById("upload-manifest")?.scrollIntoView({ behavior: "smooth" });
+                  }, 100);
+                }}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e1",
+                  background: "white",
+                  color: "#334155",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                Upload Manifest Kapal
+              </button>
+            </div>
+          </div>
+        )}
+
 {/* STATUS REALTIME */}
 
 <div
@@ -1380,6 +1516,45 @@ color:"#ef4444"
           </div>
 
         </div>
+
+        {/* EXTRA STATS (Toggled from Settings) */}
+        {showExtraStats && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px", marginTop: "24px" }}>
+            <div className="chart-card">
+              <h3 style={{ fontSize: "14px", fontWeight: "700", marginBottom: "12px", borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
+                Inspeksi per Group Shift
+              </h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {getStatsPerGroup().map((g, idx) => (
+                  <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", borderBottom: "1px solid #f8fafc", paddingBottom: "4px" }}>
+                    <span style={{ fontWeight: "600", color: "#475569" }}>{g.name}</span>
+                    <span style={{ color: "#2563eb", fontWeight: "700" }}>{g.count} kali</span>
+                  </div>
+                ))}
+                {getStatsPerGroup().length === 0 && (
+                  <span style={{ fontSize: "12px", color: "#64748b", fontStyle: "italic" }}>Belum ada data grup shift.</span>
+                )}
+              </div>
+            </div>
+
+            <div className="chart-card">
+              <h3 style={{ fontSize: "14px", fontWeight: "700", marginBottom: "12px", borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
+                Inspeksi per Petugas Lapangan
+              </h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {getStatsPerPetugas().map((p, idx) => (
+                  <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", borderBottom: "1px solid #f8fafc", paddingBottom: "4px" }}>
+                    <span style={{ fontWeight: "600", color: "#475569" }}>{p.name}</span>
+                    <span style={{ color: "#10b981", fontWeight: "700" }}>{p.count} kali</span>
+                  </div>
+                ))}
+                {getStatsPerPetugas().length === 0 && (
+                  <span style={{ fontSize: "12px", color: "#64748b", fontStyle: "italic" }}>Belum ada data petugas.</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* RIWAYAT INSPEKSI */}
         <div
@@ -2005,6 +2180,131 @@ win.print();
 </div>
 
 </div>
+
+        {/* PENGATURAN / SETTINGS SECTION */}
+        <div
+          id="settings-section"
+          className="um-card"
+          style={{
+            marginTop: "24px"
+          }}
+        >
+          <div className="card-header-um">
+            <Settings size={20} className="icon-blue" />
+            <h4>Pengaturan Aplikasi</h4>
+          </div>
+          
+          <div className="settings-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px", marginTop: "10px" }}>
+            
+            {/* TEMA WARNA */}
+            <div className="settings-option-group" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <h5 style={{ fontSize: "14px", fontWeight: "700", color: "#1e293b" }}>Tema Warna Dashboard</h5>
+              <p style={{ fontSize: "12px", color: "#64748b" }}>Pilih tema warna visual untuk antarmuka Admin Control Panel Anda.</p>
+              
+              <div className="theme-selectors" style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
+                <button
+                  type="button"
+                  onClick={() => handleThemeChange("light")}
+                  className={`theme-select-btn ${theme === "light" ? "active" : ""}`}
+                  style={{
+                    flex: 1,
+                    padding: "10px",
+                    borderRadius: "8px",
+                    border: theme === "light" ? "2px solid #2563eb" : "1px solid #cbd5e1",
+                    background: "white",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                    fontSize: "12px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "6px"
+                  }}
+                >
+                  <div style={{ width: "24px", height: "24px", borderRadius: "50%", background: "#f8fafc", border: "1px solid #cbd5e1" }}></div>
+                  <span style={{ color: "#334155" }}>Light Slate</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleThemeChange("dark")}
+                  className={`theme-select-btn ${theme === "dark" ? "active" : ""}`}
+                  style={{
+                    flex: 1,
+                    padding: "10px",
+                    borderRadius: "8px",
+                    border: theme === "dark" ? "2px solid #38bdf8" : "1px solid #cbd5e1",
+                    background: "#1e293b",
+                    color: "white",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                    fontSize: "12px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "6px"
+                  }}
+                >
+                  <div style={{ width: "24px", height: "24px", borderRadius: "50%", background: "#0f172a", border: "1px solid #334155" }}></div>
+                  <span style={{ color: theme === "dark" ? "white" : "#334155" }}>Dark Slate</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleThemeChange("orange")}
+                  className={`theme-select-btn ${theme === "orange" ? "active" : ""}`}
+                  style={{
+                    flex: 1,
+                    padding: "10px",
+                    borderRadius: "8px",
+                    border: theme === "orange" ? "2px solid #ea580c" : "1px solid #cbd5e1",
+                    background: "#0c0a09",
+                    color: "#f2f2f2",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                    fontSize: "12px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "6px"
+                  }}
+                >
+                  <div style={{ width: "24px", height: "24px", borderRadius: "50%", background: "#ea580c", border: "1px solid #444" }}></div>
+                  <span style={{ color: theme === "orange" ? "white" : "#334155" }}>Cyber Orange</span>
+                </button>
+              </div>
+            </div>
+
+            {/* OPSI MENU TAMBAHAN */}
+            <div className="settings-option-group" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <h5 style={{ fontSize: "14px", fontWeight: "700", color: "#1e293b" }}>Menu & Fitur Tambahan</h5>
+              <p style={{ fontSize: "12px", color: "#64748b" }}>Aktifkan atau sembunyikan modul visual tambahan pada panel kontrol admin.</p>
+              
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "6px" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", cursor: "pointer", fontWeight: "500", color: "#334155" }}>
+                  <input
+                    type="checkbox"
+                    checked={showExtraStats}
+                    onChange={(e) => setShowExtraStats(e.target.checked)}
+                    style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                  />
+                  <span style={{ color: "#334155" }}>Tampilkan Modul Statistik Grafik Tambahan</span>
+                </label>
+                
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", cursor: "pointer", fontWeight: "500", color: "#334155" }}>
+                  <input
+                    type="checkbox"
+                    checked={showQuickActions}
+                    onChange={(e) => setShowQuickActions(e.target.checked)}
+                    style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                  />
+                  <span style={{ color: "#334155" }}>Tampilkan Tombol Akses Pintar (Quick Actions)</span>
+                </label>
+              </div>
+            </div>
+
+          </div>
+        </div>
 
       </main>
 
