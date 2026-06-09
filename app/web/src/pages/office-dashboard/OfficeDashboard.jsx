@@ -182,7 +182,8 @@ const OfficeDashboard = ({
         alert("Data inspeksi berhasil diperbarui.");
         
         // Update local historyData state
-        const updatedData = historyData.map(item => {
+        const arr = Array.isArray(historyData) ? historyData : [];
+        const updatedData = arr.map(item => {
           if (item.id === editingInspection.id) {
             return {
               ...item,
@@ -232,7 +233,8 @@ const OfficeDashboard = ({
       if (response.ok) {
         alert("Data inspeksi berhasil dihapus.");
         // Immediate local state refresh
-        const updatedData = historyData.filter(item => item.id !== id);
+        const arr = Array.isArray(historyData) ? historyData : [];
+        const updatedData = arr.filter(item => item.id !== id);
         setHistoryData(updatedData);
         localStorage.setItem("history", JSON.stringify(updatedData));
         // Notify other windows/components
@@ -342,11 +344,16 @@ const OfficeDashboard = ({
   };
 
   const [historyData, setHistoryData] =
-    React.useState(
-      JSON.parse(
-        localStorage.getItem("history")
-      ) || []
-    );
+    React.useState(() => {
+      try {
+        const val = localStorage.getItem("history");
+        if (val) {
+          const parsed = JSON.parse(val);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch (e) {}
+      return [];
+    });
 
   // Auto-refresh riwayat inspeksi saat database berubah atau berkala (real-time sync)
   useEffect(() => {
@@ -360,7 +367,12 @@ const OfficeDashboard = ({
         }
       } catch (err) {
         console.error("Failed to load inspections from database:", err);
-        const latest = JSON.parse(localStorage.getItem("history")) || [];
+        const raw = localStorage.getItem("history");
+        let latest = [];
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) latest = parsed;
+        } catch (e) {}
         setHistoryData(latest);
       }
     };
@@ -400,32 +412,39 @@ const OfficeDashboard = ({
   /* ACCOUNT SYSTEM */
 
   const [accounts, setAccounts] =
-React.useState(
-JSON.parse(
-localStorage.getItem("accounts")
-) || [
-{
-username:"manager",
-password:"123",
-jabatan:"MANAGER"
-},
-{
-username:"supervisor",
-password:"123",
-jabatan:"SUPERVISOR"
-},
-{
-username:"assistant",
-password:"123",
-jabatan:"ASSISTANT SUPERVISOR"
-},
-{
-username:"petugas",
-password:"123",
-jabatan:"PETUGAS"
-}
-]
-);
+    React.useState(() => {
+      const defaultAccounts = [
+        {
+          username:"manager",
+          password:"123",
+          jabatan:"MANAGER"
+        },
+        {
+          username:"supervisor",
+          password:"123",
+          jabatan:"SUPERVISOR"
+        },
+        {
+          username:"assistant",
+          password:"123",
+          jabatan:"ASSISTANT SUPERVISOR"
+        },
+        {
+          username:"petugas",
+          password:"123",
+          jabatan:"PETUGAS"
+        }
+      ];
+      try {
+        const val = localStorage.getItem("accounts");
+        if (val) {
+          const parsed = JSON.parse(val);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch (e) {}
+      return defaultAccounts;
+    });
+
 const addUser = () => {
 
   if(
@@ -464,8 +483,9 @@ const addUser = () => {
 
 const deleteUser = (index) => {
 
+  const arr = Array.isArray(accounts) ? accounts : [];
   const updated =
-  accounts.filter(
+  arr.filter(
     (_,i)=>i!==index
   );
 
@@ -489,13 +509,14 @@ const deleteUser = (index) => {
 
   /* DYNAMIC CHART & STATS CALCULATIONS */
   const getDynamicLineData = () => {
-    if (!historyData || historyData.length === 0) {
+    const arr = Array.isArray(historyData) ? historyData : [];
+    if (arr.length === 0) {
       return [
         { day: "N/A", value: 0 }
       ];
     }
     const counts = {};
-    const sorted = [...historyData].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const sorted = [...arr].sort((a, b) => new Date(a.date) - new Date(b.date));
     sorted.forEach(item => {
       if (!item.date) return;
       try {
@@ -511,7 +532,8 @@ const deleteUser = (index) => {
   };
 
   const getDynamicPieData = () => {
-    const damagedInspections = historyData.filter(
+    const arr = Array.isArray(historyData) ? historyData : [];
+    const damagedInspections = arr.filter(
       item => item.condition && item.condition.toUpperCase() !== "GOOD"
     );
     if (damagedInspections.length === 0) {
@@ -535,20 +557,23 @@ const deleteUser = (index) => {
   const dynamicLineData = getDynamicLineData();
   const dynamicPieData = getDynamicPieData();
 
-  const totalInspeksi = historyData.length;
-  const totalDamage = historyData.filter(item => item.condition && item.condition.toUpperCase() !== "GOOD").length;
-  const totalGood = historyData.filter(item => item.condition && item.condition.toUpperCase() === "GOOD").length;
+  const arrHistory = Array.isArray(historyData) ? historyData : [];
+  const arrManifest = Array.isArray(manifestData) ? manifestData : [];
+
+  const totalInspeksi = arrHistory.length;
+  const totalDamage = arrHistory.filter(item => item.condition && item.condition.toUpperCase() !== "GOOD").length;
+  const totalGood = arrHistory.filter(item => item.condition && item.condition.toUpperCase() === "GOOD").length;
   const damagePercentage = totalInspeksi > 0 ? ((totalDamage / totalInspeksi) * 100).toFixed(1) + "%" : "0%";
   const goodPercentage = totalInspeksi > 0 ? ((totalGood / totalInspeksi) * 100).toFixed(1) + "%" : "0%";
-  const petugasAktif = new Set(historyData.map(item => item.petugas).filter(Boolean)).size || 0;
+  const petugasAktif = new Set(arrHistory.map(item => item.petugas).filter(Boolean)).size || 0;
 
-  const containerFull = manifestData.filter(item => item.status && item.status.toUpperCase().includes("FULL")).length || historyData.filter(item => item.status && item.status.toUpperCase().includes("FULL")).length || 0;
-  const containerEmpty = manifestData.filter(item => item.status && (item.status.toUpperCase().includes("EMPTY") || item.status.toUpperCase().includes("MT"))).length || historyData.filter(item => item.status && (item.status.toUpperCase().includes("EMPTY") || item.status.toUpperCase().includes("MT"))).length || 0;
+  const containerFull = arrManifest.filter(item => item.status && item.status.toUpperCase().includes("FULL")).length || arrHistory.filter(item => item.status && item.status.toUpperCase().includes("FULL")).length || 0;
+  const containerEmpty = arrManifest.filter(item => item.status && (item.status.toUpperCase().includes("EMPTY") || item.status.toUpperCase().includes("MT"))).length || arrHistory.filter(item => item.status && (item.status.toUpperCase().includes("EMPTY") || item.status.toUpperCase().includes("MT"))).length || 0;
   const waitingRepair = totalDamage;
 
   const getInspectionsToday = () => {
     const today = new Date().toDateString();
-    return historyData.filter(item => {
+    return arrHistory.filter(item => {
       if (!item.date) return false;
       return new Date(item.date).toDateString() === today;
     }).length;

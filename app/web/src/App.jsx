@@ -197,15 +197,16 @@ const [manifestShipName,setManifestShipName] =
 useState("");
 
 const [manifestData,setManifestData] =
-useState(
-
-JSON.parse(
-localStorage.getItem(
-"manifestData"
-)
-) || []
-
-);
+useState(() => {
+  try {
+    const val = localStorage.getItem("manifestData");
+    if (val) {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {}
+  return [];
+});
 
 const [container,setContainer] =
 useState("");
@@ -241,11 +242,16 @@ const [note,setNote] =
 useState("");
 
 const [history,setHistory] =
-useState(
-JSON.parse(
-localStorage.getItem("history")
-) || []
-);
+useState(() => {
+  try {
+    const val = localStorage.getItem("history");
+    if (val) {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {}
+  return [];
+});
 
 // ======================================================
 // USER MANAGEMENT
@@ -348,7 +354,12 @@ React.useEffect(() => {
       const dbInspections = await response.json();
       
       if (Array.isArray(dbInspections)) {
-        const localHistory = JSON.parse(localStorage.getItem("history")) || [];
+        const rawHistory = localStorage.getItem("history");
+        let localHistory = [];
+        try {
+          const parsed = JSON.parse(rawHistory);
+          if (Array.isArray(parsed)) localHistory = parsed;
+        } catch (e) {}
         
         // Find inspections in local storage that are NOT in the database
         const missingInDb = localHistory.filter(localIns => 
@@ -404,7 +415,12 @@ const login = async ()=>{
     const dbData = await response.json();
     if (Array.isArray(dbData)) {
       // Migrate local storage accounts that aren't in the database yet
-      const localAccounts = JSON.parse(localStorage.getItem("accounts")) || [];
+      const rawAccounts = localStorage.getItem("accounts");
+      let localAccounts = [];
+      try {
+        const parsed = JSON.parse(rawAccounts);
+        if (Array.isArray(parsed)) localAccounts = parsed;
+      } catch (e) {}
       const missing = localAccounts.filter(local => 
         !dbData.some(db => db.username.toLowerCase().trim() === local.username.toLowerCase().trim())
       );
@@ -736,56 +752,61 @@ setCategory("");
       const response = await fetch(`${API_URL}/api/manifest`);
       const data = await response.json();
       
-      setManifestData(data);
-      localStorage.setItem("manifestData", JSON.stringify(data));
+      if (Array.isArray(data)) {
+        setManifestData(data);
+        localStorage.setItem("manifestData", JSON.stringify(data));
 
-      const found = data.find((item) => {
-        const nomorContainer = String(
-          item.container ||
-          item["CONTAINER"] ||
-          item["Container"] ||
-          item["NO CONTAINER"] ||
-          item["NOMOR CONTAINER"] ||
-          ""
-        ).toUpperCase().trim();
-        return nomorContainer === value;
-      });
+        const found = data.find((item) => {
+          const nomorContainer = String(
+            item.container ||
+            item["CONTAINER"] ||
+            item["Container"] ||
+            item["NO CONTAINER"] ||
+            item["NOMOR CONTAINER"] ||
+            ""
+          ).toUpperCase().trim();
+          return nomorContainer === value;
+        });
 
-      if (found) {
-        setShipName(
-          found.shipName ||
-          found["VESSEL"] ||
-          found["KAPAL"] ||
-          found["SHIP"] ||
-          found["Carrier"] ||
-          ""
-        );
-        setStatus(
-          found.status ||
-          found["STATUS"] ||
-          found["FULL/EMPTY"] ||
-          found["FULL EMPTY"] ||
-          ""
-        );
-        setIso(
-          found.iso ||
-          found["ISO"] ||
-          found["ISO CODE"] ||
-          ""
-        );
-        setCategory(
-          found.category ||
-          found["CATEGORY"] ||
-          found["TYPE"] ||
-          ""
-        );
-        alert("Data container ditemukan!");
+        if (found) {
+          setShipName(
+            found.shipName ||
+            found["VESSEL"] ||
+            found["KAPAL"] ||
+            found["SHIP"] ||
+            found["Carrier"] ||
+            ""
+          );
+          setStatus(
+            found.status ||
+            found["STATUS"] ||
+            found["FULL/EMPTY"] ||
+            found["FULL EMPTY"] ||
+            ""
+          );
+          setIso(
+            found.iso ||
+            found["ISO"] ||
+            found["ISO CODE"] ||
+            ""
+          );
+          setCategory(
+            found.category ||
+            found["CATEGORY"] ||
+            found["TYPE"] ||
+            ""
+          );
+          alert("Data container ditemukan!");
+        } else {
+          setShipName("");
+          setStatus("");
+          setIso("");
+          setCategory("");
+          alert("Nomor container tidak ditemukan di manifest. Harap pastikan manifest sudah di-import di dashboard.");
+        }
       } else {
-        setShipName("");
-        setStatus("");
-        setIso("");
-        setCategory("");
-        alert("Nomor container tidak ditemukan di manifest. Harap pastikan manifest sudah di-import di dashboard.");
+        console.warn("Manifest data received from API is not an array:", data);
+        alert("Gagal mengambil data manifest (format data tidak sesuai).");
       }
     } catch (err) {
       console.error("ERROR SEARCHING CONTAINER", err);

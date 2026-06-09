@@ -33,6 +33,37 @@ router.post("/accounts", (req, res) => {
   });
 });
 
+// Bulk create accounts
+router.post("/accounts/batch", (req, res) => {
+  const users = req.body;
+  if (!Array.isArray(users) || users.length === 0) {
+    return res.status(400).json({ error: "Invalid payload or empty list" });
+  }
+
+  const values = [];
+  const placeholders = [];
+  for (const user of users) {
+    const { username, password, jabatan, nama, group } = user;
+    if (!username || !password || !jabatan || !nama || !group) {
+      return res.status(400).json({ error: `Missing required fields for user: ${username || 'unknown'}` });
+    }
+    placeholders.push("(?, ?, ?, ?, ?)");
+    values.push(username.trim(), password.trim(), jabatan, nama.trim(), group.trim());
+  }
+
+  const query = `INSERT INTO accounts (username, password, jabatan, nama, \`group\`) VALUES ${placeholders.join(", ")}`;
+  db.query(query, values, (err, result) => {
+    if (err) {
+      if (err.code === "ER_DUP_ENTRY") {
+        return res.status(400).json({ error: "Salah satu username sudah terdaftar!" });
+      }
+      console.error("Error bulk creating accounts:", err);
+      return res.status(500).json({ error: "Failed to create accounts in bulk" });
+    }
+    res.json({ success: true, message: `${result.affectedRows} accounts created successfully` });
+  });
+});
+
 // Delete account by username
 router.delete("/accounts/:username", (req, res) => {
   const { username } = req.params;

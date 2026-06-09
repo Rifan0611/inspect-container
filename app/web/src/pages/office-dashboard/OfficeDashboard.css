@@ -1241,4 +1241,210 @@ tr:hover{
   color: #94a3b8;
   font-size: 13px;
   font-style: italic;
+}
+
+/* User Management Tabs */
+.um-tabs {
+  display: flex;
+  border-bottom: 2px solid #f1f5f9;
+  margin-bottom: 16px;
+  gap: 8px;
+}
+.um-tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s ease;
+}
+.um-tab-btn:hover {
+  color: #2563eb;
+}
+.um-tab-btn.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+}
+
+/* Excel Upload Zone */
+.excel-upload-zone {
+  margin-top: 6px;
+  position: relative;
+}
+.excel-hidden-input {
+  display: none;
+}
+.excel-upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 16px;
+  border-radius: 12px;
+  border: 2px dashed #cbd5e1;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+.excel-upload-label:hover {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+.excel-upload-label span {
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+}
+
+/* Excel Errors */
+.excel-errors {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+}
+.excel-errors .error-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #991b1b;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.excel-errors ul {
+  padding-left: 20px;
+  margin: 0;
+  font-size: 12px;
+  color: #b91c1c;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Excel Previews */
+.excel-preview-section {
+  margin-top: 16px;
+}
+.excel-preview-section .preview-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #334155;
+  margin-bottom: 8px;
+}
+.excel-preview-list {
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 6px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.preview-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: white;
+  border: 1px solid #f1f5f9;
+}
+.preview-user-info {
+  display: flex;
+  flex-direction: column;
+}
+.preview-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+}
+.preview-sub {
+  font-size: 11px;
+  color: #64748b;
+}
+.preview-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+.preview-badge.badge-petugas {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.preview-badge.badge-supervisor {
+  background: #fef3c7;
+  color: #b45309;
+}
+.preview-badge.badge-assistant-supervisor {
+  background: #f3e8ff;
+  color: #6b21a8;
+}
+.preview-badge.badge-manager {
+  background: #dcfce7;
+  color: #15803d;
+}
+.preview-badge.badge-admin {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.preview-badge.badge-assistant-supervisor {
+  background: #f3e8ff;
+  color: #6b21a8;
+}
+.preview-more-text {
+  font-size: 11px;
+  text-align: center;
+  color: #64748b;
+  font-style: italic;
+  padding: 4px 0;
+}
+.btn-save-excel {
+  background: #10b981 !important;
+}
+.btn-save-excel:hover {
+  background: #059669 !important;
+}
+
+/* Excel template info */
+.excel-template-info {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+.excel-template-info h5 {
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 6px;
+}
+.excel-template-info ul {
+  padding-left: 16px;
+  margin: 0;
+  font-size: 11px;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
