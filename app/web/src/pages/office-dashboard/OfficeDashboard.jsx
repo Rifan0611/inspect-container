@@ -95,7 +95,7 @@ const OfficeDashboard = ({
 }) => {
 
   const [sidebarOpen, setSidebarOpen] =
-    useState(true);
+    useState(window.innerWidth > 900);
 
   const [activeMenu, setActiveMenu] =
     useState("dashboard");
@@ -681,6 +681,13 @@ await fetch(
 
   return (
     <div className="dashboard-layout">
+      {/* SIDEBAR OVERLAY FOR MOBILE */}
+      {sidebarOpen && (
+        <div 
+          className="sidebar-mobile-overlay" 
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
   {/* SIDEBAR */}
   <aside
@@ -740,6 +747,7 @@ await fetch(
     onClick={() => {
 
       setActiveMenu("dashboard");
+      if (window.innerWidth <= 900) setSidebarOpen(false);
 
       window.scrollTo({
         top: 0,
@@ -770,6 +778,7 @@ await fetch(
     onClick={() => {
 
       setActiveMenu("inspeksi");
+      if (window.innerWidth <= 900) setSidebarOpen(false);
 
       document
         .getElementById(
@@ -803,6 +812,7 @@ await fetch(
     onClick={() => {
 
       setActiveMenu("manifest");
+      if (window.innerWidth <= 900) setSidebarOpen(false);
 
       document
         .getElementById(
@@ -836,6 +846,7 @@ await fetch(
     onClick={() => {
 
       setActiveMenu("laporan");
+      if (window.innerWidth <= 900) setSidebarOpen(false);
 
       document
         .getElementById(
@@ -869,6 +880,7 @@ await fetch(
       }`}
       onClick={() => {
         setActiveMenu("user");
+        if (window.innerWidth <= 900) setSidebarOpen(false);
         setShowAdminPanel(true);
         setTimeout(() => {
           document
@@ -936,9 +948,17 @@ await fetch(
 
           <div>
 
-            <h2 className="page-title">
-              Dashboard Kantor
-            </h2>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap", marginBottom: "8px" }}>
+              <button
+                className="mobile-toggle-menu-btn"
+                onClick={() => setSidebarOpen(true)}
+              >
+                ☰
+              </button>
+              <h2 className="page-title" style={{ margin: 0 }}>
+                Dashboard Kantor
+              </h2>
+            </div>
 
             {/* ROLE */}
             <div

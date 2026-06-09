@@ -49,6 +49,42 @@ const compressImageToBase64 = (file, callback) => {
   };
 };
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("ErrorBoundary caught an error", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: "20px", background: "#fee2e2", color: "#991b1b", minHeight: "100vh", fontFamily: "monospace" }}>
+          <h2 style={{ fontSize: "24px", fontWeight: "bold", marginBottom: "10px" }}>Aplikasi Error (Crash)</h2>
+          <p style={{ fontWeight: "bold" }}>{this.state.error && this.state.error.toString()}</p>
+          <pre style={{ marginTop: "20px", background: "#fff", padding: "15px", borderRadius: "8px", overflowX: "auto", fontSize: "12px", border: "1px solid #fca5a5" }}>
+            {this.state.error && this.state.error.stack}
+          </pre>
+          <button 
+            onClick={() => window.location.reload()} 
+            style={{ marginTop: "20px", padding: "10px 20px", background: "#ef4444", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}
+          >
+            Reload Halaman
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App(){
 
   const formatInspectionDate = (dateStr) => {
@@ -2082,14 +2118,16 @@ if(page === "office-dashboard") {
 
   return (
 
- <OfficeDashboard
-  user={user}
-  manifestData={manifestData}
-  setManifestData={setManifestData}
-  importExcel={importExcel}
-  onLogout={() => setPage("login")}
-  onNavigate={(p) => setPage(p)}
-/>
+    <ErrorBoundary>
+      <OfficeDashboard
+        user={user}
+        manifestData={manifestData}
+        setManifestData={setManifestData}
+        importExcel={importExcel}
+        onLogout={() => setPage("login")}
+        onNavigate={(p) => setPage(p)}
+      />
+    </ErrorBoundary>
 
   );
 
