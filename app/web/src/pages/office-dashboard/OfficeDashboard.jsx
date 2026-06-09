@@ -1383,6 +1383,7 @@ color:"#ef4444"
 
         {/* RIWAYAT INSPEKSI */}
         <div
+          id="table-inspeksi"
           className="table-card"
           style={{
             marginTop: "24px"
@@ -1430,7 +1431,20 @@ color:"#ef4444"
 <tbody>
 
 {
-historyData.map((item,index)=>(
+(Array.isArray(historyData) ? historyData : [])
+  .filter(item => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase().trim();
+    return (
+      (item.container || "").toLowerCase().includes(q) ||
+      (item.shipName || "").toLowerCase().includes(q) ||
+      (item.petugas || "").toLowerCase().includes(q) ||
+      (item.group || "").toLowerCase().includes(q) ||
+      (item.condition || "").toLowerCase().includes(q) ||
+      (item.side || "").toLowerCase().includes(q)
+    );
+  })
+  .map((item,index)=>(
 
 <tr key={index}>
 
