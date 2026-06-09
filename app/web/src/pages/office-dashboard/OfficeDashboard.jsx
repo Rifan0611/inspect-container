@@ -601,6 +601,37 @@ const deleteUser = (index) => {
     return Object.keys(counts).map(name => ({ name, count: counts[name] }));
   };
 
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const query = search.trim().toUpperCase();
+      if (!query) return;
+
+      const arr = Array.isArray(historyData) ? historyData : [];
+      let found = arr.find(item => item && item.container && item.container.toUpperCase().trim() === query);
+      
+      if (!found) {
+        found = arr.find(item => item && item.container && item.container.toUpperCase().includes(query));
+      }
+
+      if (found) {
+        setSelectedInspection(found);
+      } else {
+        const manifestArr = Array.isArray(manifestData) ? manifestData : [];
+        const foundInManifest = manifestArr.find(item => {
+          const num = String(item.container || item.CONTAINER || "").toUpperCase().trim();
+          return num === query || num.includes(query);
+        });
+
+        if (foundInManifest) {
+          alert(`Kontainer "${query}" ditemukan di manifest kapal (${foundInManifest.shipName || 'Tanpa Kapal'}), status: ${foundInManifest.status || 'EMPTY'}, tetapi belum pernah diinspeksi oleh petugas.`);
+        } else {
+          alert(`Kontainer "${query}" tidak ditemukan di riwayat inspeksi maupun manifest.`);
+        }
+      }
+    }
+  };
+
   const dynamicLineData = getDynamicLineData();
   const dynamicPieData = getDynamicPieData();
 
@@ -1154,11 +1185,12 @@ setShowAdminPanel(
 
   <input
     type="text"
-    placeholder="Cari nomor container..."
+    placeholder="Cari nomor container & tekan Enter..."
     value={search}
     onChange={(e) =>
       setSearch(e.target.value)
     }
+    onKeyDown={handleSearchKeyDown}
     className="search-input"
   />
 
