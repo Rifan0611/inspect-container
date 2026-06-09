@@ -1279,14 +1279,14 @@ FOTO INSPEKSI
 
 <div class="photo-label">
 
-FOTO CONTAINER
+FOTO DAMAGE
 
 </div>
 
 ${
-item.photo1
+item.photo2
 ?
-`<img src="${item.photo1}" />`
+`<img src="${item.photo2}" />`
 :
 ""
 }
@@ -1297,14 +1297,14 @@ item.photo1
 
 <div class="photo-label">
 
-FOTO DAMAGE
+FOTO CONTAINER
 
 </div>
 
 ${
-item.photo2
+item.photo1
 ?
-`<img src="${item.photo2}" />`
+`<img src="${item.photo1}" />`
 :
 ""
 }
@@ -1725,99 +1725,6 @@ return(
     }}
   >
 
-    {/* FOTO NOMOR CONTAINER */}
-
-    <div>
-
-      <button
-        type="button"
-        style={{
-          ...button,
-          background:"#0057b8"
-        }}
-        onClick={()=>
-          document
-            .getElementById(
-              "photoContainer"
-            )
-            .click()
-        }
-      >
-        FOTO NOMOR CONTAINER
-      </button>
-
-      <input
-        id="photoContainer"
-        type="file"
-        accept="image/*"
-        capture="environment"
-        style={{
-          display:"none"
-        }}
-        onChange={(e)=>{
-
-          const file =
-            e.target.files[0];
-
-          if(file){
-            compressImageToBase64(file, (base64) => {
-              setPhoto1(base64);
-            });
-          }
-
-        }}
-      />
-
-      {
-        photo1 && (
-
-          <div
-            style={{
-              position:"relative"
-            }}
-          >
-
-            <img
-              src={photo1}
-              alt=""
-              style={{
-                width:"100%",
-                height:"180px",
-                objectFit:"cover",
-                borderRadius:"15px",
-                border:
-                  "3px solid #0057b8"
-              }}
-            />
-
-            <button
-              onClick={()=>
-                setPhoto1("")
-              }
-              style={{
-                position:"absolute",
-                top:"-10px",
-                right:"-10px",
-                background:"red",
-                color:"#fff",
-                border:"none",
-                borderRadius:"50%",
-                width:"35px",
-                height:"35px",
-                fontWeight:"bold",
-                cursor:"pointer"
-              }}
-            >
-              X
-            </button>
-
-          </div>
-
-        )
-      }
-
-    </div>
-
     {/* FOTO DAMAGE */}
 
     <div>
@@ -1886,6 +1793,99 @@ return(
             <button
               onClick={()=>
                 setPhoto2("")
+              }
+              style={{
+                position:"absolute",
+                top:"-10px",
+                right:"-10px",
+                background:"red",
+                color:"#fff",
+                border:"none",
+                borderRadius:"50%",
+                width:"35px",
+                height:"35px",
+                fontWeight:"bold",
+                cursor:"pointer"
+              }}
+            >
+              X
+            </button>
+
+          </div>
+
+        )
+      }
+
+    </div>
+
+    {/* FOTO NOMOR CONTAINER */}
+
+    <div>
+
+      <button
+        type="button"
+        style={{
+          ...button,
+          background:"#0057b8"
+        }}
+        onClick={()=>
+          document
+            .getElementById(
+              "photoContainer"
+            )
+            .click()
+        }
+      >
+        FOTO NOMOR CONTAINER
+      </button>
+
+      <input
+        id="photoContainer"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        style={{
+          display:"none"
+        }}
+        onChange={(e)=>{
+
+          const file =
+            e.target.files[0];
+
+          if(file){
+            compressImageToBase64(file, (base64) => {
+              setPhoto1(base64);
+            });
+          }
+
+        }}
+      />
+
+      {
+        photo1 && (
+
+          <div
+            style={{
+              position:"relative"
+            }}
+          >
+
+            <img
+              src={photo1}
+              alt=""
+              style={{
+                width:"100%",
+                height:"180px",
+                objectFit:"cover",
+                borderRadius:"15px",
+                border:
+                  "3px solid #0057b8"
+              }}
+            />
+
+            <button
+              onClick={()=>
+                setPhoto1("")
               }
               style={{
                 position:"absolute",

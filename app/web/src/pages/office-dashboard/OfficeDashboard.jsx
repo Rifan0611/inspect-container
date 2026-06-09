@@ -2101,14 +2101,14 @@ FOTO INSPEKSI
 
 <div class="photo-label">
 
-FOTO CONTAINER
+FOTO DAMAGE
 
 </div>
 
 ${
-item.photo1
+item.photo2
 ?
-`<img src="${item.photo1}" />`
+`<img src="${item.photo2}" />`
 :
 ""
 }
@@ -2119,14 +2119,14 @@ item.photo1
 
 <div class="photo-label">
 
-FOTO DAMAGE
+FOTO CONTAINER
 
 </div>
 
 ${
-item.photo2
+item.photo1
 ?
-`<img src="${item.photo2}" />`
+`<img src="${item.photo1}" />`
 :
 ""
 }
@@ -2406,17 +2406,17 @@ win.print();
                 <h5>Foto Dokumentasi</h5>
                 <div className="photos-grid-modal">
                   <div className="photo-card">
-                    <span>FOTO NOMOR CONTAINER</span>
-                    {selectedInspection.photo1 ? (
-                      <img src={selectedInspection.photo1} alt="Foto Container" />
+                    <span>FOTO DAMAGE / DETAIL</span>
+                    {selectedInspection.photo2 ? (
+                      <img src={selectedInspection.photo2} alt="Foto Kerusakan" />
                     ) : (
                       <div className="no-photo-text">Tidak ada foto</div>
                     )}
                   </div>
                   <div className="photo-card">
-                    <span>FOTO DAMAGE / DETAIL</span>
-                    {selectedInspection.photo2 ? (
-                      <img src={selectedInspection.photo2} alt="Foto Kerusakan" />
+                    <span>FOTO NOMOR CONTAINER</span>
+                    {selectedInspection.photo1 ? (
+                      <img src={selectedInspection.photo1} alt="Foto Container" />
                     ) : (
                       <div className="no-photo-text">Tidak ada foto</div>
                     )}
