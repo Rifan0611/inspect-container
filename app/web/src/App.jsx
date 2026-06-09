@@ -481,7 +481,7 @@ const login = async ()=>{
 
     setUser(dataUser);
     setRole("MANAGER");
-    setPage("office-dashboard");
+    setPage("dashboard");
     return;
   }
 
@@ -500,7 +500,7 @@ const login = async ()=>{
 
     setUser(dataUser);
     setRole("SUPERVISOR");
-    setPage("office-dashboard");
+    setPage("dashboard");
     return;
   }
 
@@ -519,7 +519,7 @@ const login = async ()=>{
 
     setUser(dataUser);
     setRole("ASSISTANT SUPERVISOR");
-    setPage("office-dashboard");
+    setPage("dashboard");
     return;
   }
 
@@ -538,7 +538,7 @@ const login = async ()=>{
 
     setUser(dataUser);
     setRole("ADMIN");
-    setPage("office-dashboard");
+    setPage("dashboard");
     return;
   }
 
@@ -578,11 +578,7 @@ const login = async ()=>{
     setUser(dataUser);
     setRole(matchedAccount.jabatan);
 
-    if (matchedAccount.jabatan === "PETUGAS") {
-      setPage("dashboard");
-    } else {
-      setPage("office-dashboard");
-    }
+    setPage("dashboard");
     return;
   }
 
@@ -1474,13 +1470,13 @@ RIWAYAT INSPEKSI
 </button>
 
 {
-  role === "MANAGER" && (
+  (role === "MANAGER" || role === "ADMIN" || role === "SUPERVISOR" || role === "ASSISTANT SUPERVISOR") && (
     <>
       <button
         style={button}
         onClick={() => setPage("manager")}
       >
-        MANAGER CONTROL ROOM
+        {role === "ADMIN" ? "ADMIN CONTROL PANEL" : `${role} CONTROL ROOM`}
       </button>
 
       <button
@@ -2003,7 +1999,7 @@ Logout
 <div style={managerContent}>
 
 <h1 style={managerTitle}>
-MANAGER CONTROL ROOM
+{role === "ADMIN" ? "ADMIN CONTROL PANEL" : `${role} CONTROL ROOM`}
 </h1>
 
 <div style={cardGrid}>

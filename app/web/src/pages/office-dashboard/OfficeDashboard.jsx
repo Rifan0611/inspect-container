@@ -1036,7 +1036,20 @@ await fetch(
 </div>
 
     {/* LOGOUT */}
-    <div className="logout-section">
+    <div className="logout-section" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+
+      <button
+        className="logout-btn back-btn"
+        onClick={() => onNavigate("dashboard")}
+      >
+        <Home
+          className="menu-icon"
+          size={20}
+        />
+        {sidebarOpen && (
+          <span>Menu Utama</span>
+        )}
+      </button>
 
       <button
         className="logout-btn"
@@ -1044,9 +1057,9 @@ await fetch(
       >
 
         <LogOut
-  className="menu-icon"
-  size={20}
-/>
+          className="menu-icon"
+          size={20}
+        />
 
         {sidebarOpen && (
           <span>Logout</span>
