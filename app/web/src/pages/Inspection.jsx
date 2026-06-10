@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Save, Camera, ArrowLeft, Loader2 } from "lucide-react";
 import API_URL from "../config/api";
 import "./Inspection.css";
+import SearchSelect from "../components/SearchSelect";
 
 const compressImage = (file) => {
   return new Promise((resolve) => {
@@ -57,7 +58,7 @@ export default function Inspection() {
   const [manifestList, setManifestList] = useState([]);
   const [inspectedContainers, setInspectedContainers] = useState([]);
   const [selectedSides, setSelectedSides] = useState([]);
-  const [selectedConditions, setSelectedConditions] = useState(["Good"]);
+  const [selectedConditions, setSelectedConditions] = useState(["GOOD"]);
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
@@ -151,19 +152,19 @@ export default function Inspection() {
   };
 
   const handleSideToggle = (val) => {
-    if (selectedConditions.includes("Good")) return;
+    if (selectedConditions.includes("Good") || selectedConditions.includes("GOOD")) return;
     setSelectedSides(prev =>
       prev.includes(val) ? prev.filter(item => item !== val) : [...prev, val]
     );
   };
 
   const handleConditionToggle = (val) => {
-    if (val === "Good") {
-      setSelectedConditions(["Good"]);
+    if (val === "Good" || val === "GOOD") {
+      setSelectedConditions(["GOOD"]);
       setSelectedSides([]);
     } else {
       setSelectedConditions(prev => {
-        const next = prev.filter(item => item !== "Good");
+        const next = prev.filter(item => item !== "Good" && item !== "GOOD");
         return next.includes(val) ? next.filter(item => item !== val) : [...next, val];
       });
     }
@@ -318,13 +319,12 @@ export default function Inspection() {
               />
             </div>
             <div className="form-group">
-              <label>Size</label>
-              <input
-                type="text"
+              <label>Category</label>
+              <SearchSelect
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                placeholder="Contoh: 20ft / 40ft..."
-                className="form-input"
+                onChange={(val) => setCategory(val)}
+                options={["DRY", "REEFER", "TANK", "FLAT", "DG"]}
+                placeholder="DRY"
                 disabled={isUploading}
               />
             </div>
@@ -347,12 +347,18 @@ export default function Inspection() {
             </div>
             <div className="form-group">
               <label>ISO Code</label>
-              <input
-                type="text"
+              <SearchSelect
                 value={iso}
-                onChange={(e) => setIso(e.target.value)}
-                placeholder="Contoh: 22G1 / 45G1..."
-                className="form-input"
+                onChange={(val) => setIso(val)}
+                options={[
+                  "-ISO Code-",
+                  "L5G1 - Dry High cube container",
+                  "23G1 - Dry container",
+                  "20R1 - Reefer container",
+                  "22PC - Flat (collapsible)",
+                  "22PF - Flat (fixed ends)"
+                ]}
+                placeholder="-ISO Code-"
                 disabled={isUploading}
               />
             </div>
@@ -446,16 +452,16 @@ export default function Inspection() {
                 className="interactive-diagram-image"
               />
               {[
-                { val: "Front", label: "Front (Depan)", x: 12, y: 30 },
-                { val: "Left Side", label: "Left Side (Kiri)", x: 28, y: 45 },
-                { val: "Bottom Side", label: "Bottom (Bawah)", x: 18, y: 75 },
-                { val: "Inside", label: "Inside (Dalam)", x: 50, y: 58 },
-                { val: "Top Side", label: "Roof (Atas)", x: 80, y: 26 },
-                { val: "Right Side", label: "Right Side (Kanan)", x: 88, y: 48 },
-                { val: "Rear", label: "Rear/Doors (Belakang)", x: 71, y: 60 }
+                { val: "Front/Depan", label: "Front (Depan)", x: 12, y: 30 },
+                { val: "Left Side/Sisi Kiri", label: "Left Side (Kiri)", x: 28, y: 45 },
+                { val: "Bottom/Bawah", label: "Bottom (Bawah)", x: 18, y: 75 },
+                { val: "Inside/Dalam", label: "Inside (Dalam)", x: 50, y: 58 },
+                { val: "Roof/Atas", label: "Roof (Atas)", x: 80, y: 26 },
+                { val: "Right Side/Sisi Kanan", label: "Right Side (Kanan)", x: 88, y: 48 },
+                { val: "Rear/Belakang", label: "Rear/Doors (Belakang)", x: 71, y: 60 }
               ].map((hotspot) => {
                 const isChecked = selectedSides.includes(hotspot.val);
-                const isDisabled = selectedConditions.includes("Good");
+                const isDisabled = selectedConditions.includes("Good") || selectedConditions.includes("GOOD");
                 return (
                   <div
                     key={hotspot.val}
@@ -479,9 +485,9 @@ export default function Inspection() {
             <div className="checklist-card">
               <h4 className="checklist-title">Ceklis Sisi Kerusakan</h4>
               <div className="checkbox-list">
-                {["Front", "Rear", "Left Side", "Right Side", "Top Side", "Bottom Side", "Inside"].map(s => {
+                {["Front/Depan", "Rear/Belakang", "Left Side/Sisi Kiri", "Right Side/Sisi Kanan", "Roof/Atas", "Bottom/Bawah", "Inside/Dalam"].map(s => {
                   const isChecked = selectedSides.includes(s);
-                  const isDisabled = selectedConditions.includes("Good");
+                  const isDisabled = selectedConditions.includes("Good") || selectedConditions.includes("GOOD");
                   return (
                     <label key={s} className={`checkbox-label ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}`}>
                       <input
@@ -490,13 +496,7 @@ export default function Inspection() {
                         disabled={isDisabled}
                         onChange={() => handleSideToggle(s)}
                       />
-                      <span>{s === "Front" ? "Depan (Front)" :
-                             s === "Rear" ? "Belakang (Rear)" :
-                             s === "Left Side" ? "Kiri (Left Side)" :
-                             s === "Right Side" ? "Kanan (Right Side)" :
-                             s === "Top Side" ? "Atas (Top Side)" :
-                             s === "Bottom Side" ? "Bawah (Bottom Side)" :
-                             "Dalam (Inside)"}</span>
+                      <span>{s}</span>
                     </label>
                   );
                 })}
@@ -508,12 +508,16 @@ export default function Inspection() {
               <h4 className="checklist-title">Ceklis Kondisi Kontainer</h4>
               <div className="checkbox-list">
                 {[
-                  { val: "Good", label: "Kondisi Baik (Good)" },
-                  { val: "Dent/Penyok", label: "Penyok (Dent)" },
-                  { val: "Hole/Lubang", label: "Lubang (Hole)" },
-                  { val: "Rust/Karat", label: "Karat (Rust)" },
-                  { val: "Broken/Pecah", label: "Pecah (Broken)" },
-                  { val: "Other/Lainnya", label: "Lainnya (Other)" }
+                  { val: "GOOD", label: "GOOD" },
+                  { val: "Bent/Bengkok", label: "Bent/Bengkok" },
+                  { val: "Broken/Pecah", label: "Broken/Pecah" },
+                  { val: "Hole/Berlubang", label: "Hole/Berlubang" },
+                  { val: "Cut/Terpotong", label: "Cut/Terpotong" },
+                  { val: "Dented/Penyok", label: "Dented/Penyok" },
+                  { val: "Missing/Hilang", label: "Missing/Hilang" },
+                  { val: "Scraped/Tergores", label: "Scraped/Tergores" },
+                  { val: "Torn/Robek", label: "Torn/Robek" },
+                  { val: "Leaking/Bocor", label: "Leaking/Bocor" }
                 ].map(c => {
                   const isChecked = selectedConditions.includes(c.val);
                   return (

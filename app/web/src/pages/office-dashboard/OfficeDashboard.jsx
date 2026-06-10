@@ -7,6 +7,7 @@ import React, { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import UserManagement from "./UserManagement";
 import API_URL from "../../config/api";
+import SearchSelect from "../../components/SearchSelect";
 import {
   Home,
   ClipboardList,
@@ -2451,11 +2452,28 @@ win.print();
 
                 <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
                   <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>ISO</label>
-                  <input
-                    type="text"
+                  <SearchSelect
                     value={editIso}
-                    onChange={(e) => setEditIso(e.target.value)}
-                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px" }}
+                    onChange={(val) => setEditIso(val)}
+                    options={[
+                      "-ISO Code-",
+                      "L5G1 - Dry High cube container",
+                      "23G1 - Dry container",
+                      "20R1 - Reefer container",
+                      "22PC - Flat (collapsible)",
+                      "22PF - Flat (fixed ends)"
+                    ]}
+                    placeholder="-ISO Code-"
+                  />
+                </div>
+
+                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
+                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>Category</label>
+                  <SearchSelect
+                    value={editCategory}
+                    onChange={(val) => setEditCategory(val)}
+                    options={["DRY", "REEFER", "TANK", "FLAT", "DG"]}
+                    placeholder="DRY"
                   />
                 </div>
 
@@ -2478,20 +2496,36 @@ win.print();
                     required
                     style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px", background: "white" }}
                   >
+                    <option value="">-Kondisi-</option>
                     <option value="GOOD">GOOD</option>
-                    <option value="DAMAGE">DAMAGE</option>
+                    <option value="Bent/Bengkok">Bent/Bengkok</option>
+                    <option value="Broken/Pecah">Broken/Pecah</option>
+                    <option value="Hole/Berlubang">Hole/Berlubang</option>
+                    <option value="Cut/Terpotong">Cut/Terpotong</option>
+                    <option value="Dented/Penyok">Dented/Penyok</option>
+                    <option value="Missing/Hilang">Missing/Hilang</option>
+                    <option value="Scraped/Tergores">Scraped/Tergores</option>
+                    <option value="Torn/Robek">Torn/Robek</option>
+                    <option value="Leaking/Bocor">Leaking/Bocor</option>
                   </select>
                 </div>
 
                 <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
                   <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>Sisi Kerusakan</label>
-                  <input
-                    type="text"
+                  <select
                     value={editSide}
                     onChange={(e) => setEditSide(e.target.value)}
-                    placeholder="Contoh: Left, Front, None..."
-                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px" }}
-                  />
+                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px", background: "white" }}
+                  >
+                    <option value="">-Sisi-</option>
+                    <option value="Front/Depan">Front/Depan</option>
+                    <option value="Bottom/Bawah">Bottom/Bawah</option>
+                    <option value="Left Side/Sisi Kiri">Left Side/Sisi Kiri</option>
+                    <option value="Right Side/Sisi Kanan">Right Side/Sisi Kanan</option>
+                    <option value="Roof/Atas">Roof/Atas</option>
+                    <option value="Rear/Belakang">Rear/Belakang</option>
+                    <option value="Inside/Dalam">Inside/Dalam</option>
+                  </select>
                 </div>
 
                 <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
