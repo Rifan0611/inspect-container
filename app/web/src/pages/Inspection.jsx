@@ -3,7 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { Save, Camera, ArrowLeft, Loader2 } from "lucide-react";
 import API_URL from "../config/api";
 import "./Inspection.css";
-import SearchSelect, { ISO_CODES, CATEGORIES } from "../components/SearchSelect";
+import SearchSelect, {
+  ISO_CODES,
+  CATEGORIES,
+} from "../components/SearchSelect";
 
 const compressImage = (file) => {
   return new Promise((resolve) => {
@@ -30,9 +33,13 @@ const compressImage = (file) => {
         canvas.height = height;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
-        canvas.toBlob((blob) => {
-          resolve(blob || file);
-        }, "image/jpeg", 0.7);
+        canvas.toBlob(
+          (blob) => {
+            resolve(blob || file);
+          },
+          "image/jpeg",
+          0.7,
+        );
       };
       img.onerror = () => {
         resolve(file);
@@ -53,14 +60,14 @@ export default function Inspection() {
   const [iso, setIso] = useState("");
   const [category, setCategory] = useState("");
   const [note, setNote] = useState("");
-  
+
   const [photos, setPhotos] = useState([]);
   const [containerNoPhoto, setContainerNoPhoto] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
   const [manifestList, setManifestList] = useState([]);
   const [inspectedContainers, setInspectedContainers] = useState([]);
   const [selectedSides, setSelectedSides] = useState([]);
-  const [selectedConditions, setSelectedConditions] = useState(["GOOD"]);
+  const [selectedConditions, setSelectedConditions] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
@@ -80,7 +87,11 @@ export default function Inspection() {
       const inspectionRes = await fetch(`${API_URL}/api/inspection`);
       const inspectionData = await inspectionRes.json();
       if (Array.isArray(inspectionData)) {
-        setInspectedContainers(inspectionData.map(item => item.container?.toString().toUpperCase().trim()));
+        setInspectedContainers(
+          inspectionData.map((item) =>
+            item.container?.toString().toUpperCase().trim(),
+          ),
+        );
       }
     } catch (err) {
       console.error("Error loading manifest / inspections data:", err);
@@ -88,7 +99,7 @@ export default function Inspection() {
   };
 
   // Filter manifest to get only uninspected and not loaded containers
-  const availableContainers = manifestList.filter(item => {
+  const availableContainers = manifestList.filter((item) => {
     const containerNum = item.container?.toString().toUpperCase().trim();
     if (!containerNum) return false;
 
@@ -97,7 +108,11 @@ export default function Inspection() {
 
     // 2. Filter out if status is already loaded or exited
     const statusStr = (item.status || "").toString().toUpperCase().trim();
-    const isLoadedOrOut = statusStr === "MUAT" || statusStr === "GATE OUT" || statusStr === "KELUAR" || statusStr === "LOAD";
+    const isLoadedOrOut =
+      statusStr === "MUAT" ||
+      statusStr === "GATE OUT" ||
+      statusStr === "KELUAR" ||
+      statusStr === "LOAD";
 
     return !isAlreadyInspected && !isLoadedOrOut;
   });
@@ -107,7 +122,7 @@ export default function Inspection() {
     setContainerNumber(value);
 
     const found = manifestList.find(
-      item => item.container?.toString().toUpperCase().trim() === value
+      (item) => item.container?.toString().toUpperCase().trim() === value,
     );
 
     if (found) {
@@ -128,7 +143,7 @@ export default function Inspection() {
     if (!file) return;
 
     setIsScanning(true);
-    
+
     // Simulate OCR scanner delay
     setTimeout(() => {
       // Find a container from availableContainers
@@ -136,21 +151,27 @@ export default function Inspection() {
       if (availableContainers.length > 0) {
         // Pick a random container from the manifest
         const randIdx = Math.floor(Math.random() * availableContainers.length);
-        scannedNum = availableContainers[randIdx].container?.toString().toUpperCase().trim() || "";
+        scannedNum =
+          availableContainers[randIdx].container
+            ?.toString()
+            .toUpperCase()
+            .trim() || "";
       } else {
         // Fallback: generate a realistic container number
         const prefixes = ["MSKU", "TCLU", "TRLU", "MEDU", "CMAU"];
-        const randPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+        const randPrefix =
+          prefixes[Math.floor(Math.random() * prefixes.length)];
         const randNum1 = Math.floor(100000 + Math.random() * 900000);
         const randNum2 = Math.floor(Math.random() * 10);
         scannedNum = `${randPrefix} ${randNum1}-${randNum2}`;
       }
 
       setContainerNumber(scannedNum);
-      
+
       // Auto-fill from manifest
       const found = manifestList.find(
-        item => item.container?.toString().toUpperCase().trim() === scannedNum
+        (item) =>
+          item.container?.toString().toUpperCase().trim() === scannedNum,
       );
       if (found) {
         setShipName(found.shipName || "");
@@ -166,10 +187,10 @@ export default function Inspection() {
 
       setContainerNoPhoto({
         file,
-        url: URL.createObjectURL(file)
+        url: URL.createObjectURL(file),
       });
       setIsScanning(false);
-      
+
       alert(`Pindai berhasil! Container terdeteksi: ${scannedNum}`);
     }, 1500);
   };
@@ -180,7 +201,8 @@ export default function Inspection() {
       return;
     }
     const found = availableContainers.find(
-      item => item.container?.toString().toUpperCase().trim() === containerNumber
+      (item) =>
+        item.container?.toString().toUpperCase().trim() === containerNumber,
     );
 
     if (found) {
@@ -188,15 +210,27 @@ export default function Inspection() {
     } else {
       // Check if it's already inspected or loaded to show friendly alert
       const inManifest = manifestList.find(
-        item => item.container?.toString().toUpperCase().trim() === containerNumber
+        (item) =>
+          item.container?.toString().toUpperCase().trim() === containerNumber,
       );
       if (inManifest) {
-        const statusStr = (inManifest.status || "").toString().toUpperCase().trim();
-        const isLoadedOrOut = statusStr === "MUAT" || statusStr === "GATE OUT" || statusStr === "KELUAR" || statusStr === "LOAD";
+        const statusStr = (inManifest.status || "")
+          .toString()
+          .toUpperCase()
+          .trim();
+        const isLoadedOrOut =
+          statusStr === "MUAT" ||
+          statusStr === "GATE OUT" ||
+          statusStr === "KELUAR" ||
+          statusStr === "LOAD";
         if (isLoadedOrOut) {
-          alert(`Container ${containerNumber} tidak dapat diinspeksi karena statusnya sudah "${inManifest.status}" (Muat/Keluar).`);
+          alert(
+            `Container ${containerNumber} tidak dapat diinspeksi karena statusnya sudah "${inManifest.status}" (Muat/Keluar).`,
+          );
         } else {
-          alert(`Container ${containerNumber} sudah pernah diinspeksi sebelumnya.`);
+          alert(
+            `Container ${containerNumber} sudah pernah diinspeksi sebelumnya.`,
+          );
         }
       } else {
         alert("Nomor container tidak ditemukan di manifest.");
@@ -205,9 +239,13 @@ export default function Inspection() {
   };
 
   const handleSideToggle = (val) => {
-    if (selectedConditions.includes("Good") || selectedConditions.includes("GOOD")) return;
-    setSelectedSides(prev =>
-      prev.includes(val) ? prev.filter(item => item !== val) : [...prev, val]
+    if (
+      selectedConditions.includes("Good") ||
+      selectedConditions.includes("GOOD")
+    )
+      return;
+    setSelectedSides((prev) =>
+      prev.includes(val) ? prev.filter((item) => item !== val) : [...prev, val],
     );
   };
 
@@ -216,9 +254,11 @@ export default function Inspection() {
       setSelectedConditions(["GOOD"]);
       setSelectedSides([]);
     } else {
-      setSelectedConditions(prev => {
-        const next = prev.filter(item => item !== "Good" && item !== "GOOD");
-        return next.includes(val) ? next.filter(item => item !== val) : [...next, val];
+      setSelectedConditions((prev) => {
+        const next = prev.filter((item) => item !== "Good" && item !== "GOOD");
+        return next.includes(val)
+          ? next.filter((item) => item !== val)
+          : [...next, val];
       });
     }
   };
@@ -250,20 +290,27 @@ export default function Inspection() {
 
           const uploadRes = await fetch(`${API_URL}/api/upload/image`, {
             method: "POST",
-            body: formData
+            body: formData,
           });
 
           let uploadData;
           const uploadContentType = uploadRes.headers.get("content-type");
-          if (uploadContentType && uploadContentType.includes("application/json")) {
+          if (
+            uploadContentType &&
+            uploadContentType.includes("application/json")
+          ) {
             uploadData = await uploadRes.json();
           } else {
             const errorText = await uploadRes.text();
-            throw new Error(`Upload fail (${uploadRes.status}): ${errorText.substring(0, 100)}`);
+            throw new Error(
+              `Upload fail (${uploadRes.status}): ${errorText.substring(0, 100)}`,
+            );
           }
 
           if (!uploadRes.ok) {
-            throw new Error(uploadData.message || "Gagal mengunggah foto nomor container");
+            throw new Error(
+              uploadData.message || "Gagal mengunggah foto nomor container",
+            );
           }
           uploadedContainerNoUrl = `${API_URL}/uploads/${uploadData.filename || uploadData.file}`;
         } else {
@@ -281,22 +328,29 @@ export default function Inspection() {
 
           const uploadRes = await fetch(`${API_URL}/api/upload/image`, {
             method: "POST",
-            body: formData
+            body: formData,
           });
 
           let uploadData;
           const uploadContentType = uploadRes.headers.get("content-type");
-          if (uploadContentType && uploadContentType.includes("application/json")) {
+          if (
+            uploadContentType &&
+            uploadContentType.includes("application/json")
+          ) {
             uploadData = await uploadRes.json();
           } else {
             const errorText = await uploadRes.text();
-            throw new Error(`Upload fail (${uploadRes.status}): ${errorText.substring(0, 100)}`);
+            throw new Error(
+              `Upload fail (${uploadRes.status}): ${errorText.substring(0, 100)}`,
+            );
           }
 
           if (!uploadRes.ok) {
             throw new Error(uploadData.message || "Gagal mengunggah foto");
           }
-          uploadedUrls.push(`${API_URL}/uploads/${uploadData.filename || uploadData.file}`);
+          uploadedUrls.push(
+            `${API_URL}/uploads/${uploadData.filename || uploadData.file}`,
+          );
         } else {
           uploadedUrls.push(photoObj.url);
         }
@@ -311,19 +365,20 @@ export default function Inspection() {
         status: status || "-",
         iso: iso || "-",
         category: category || "-",
-        condition: selectedConditions.length > 0 ? selectedConditions.join(", ") : "Good",
-        side: selectedSides.length > 0 ? selectedSides.join(", ") : "General",
+        condition:
+          selectedConditions.length > 0 ? selectedConditions.join(", ") : "-",
+        side: selectedSides.length > 0 ? selectedSides.join(", ") : "-",
         note: note,
         photo1: uploadedPhotoUrl,
         photo2: uploadedContainerNoUrl,
         petugas: activeUser?.nama || "Petugas Lapangan",
-        date: new Date().toISOString()
+        date: new Date().toISOString(),
       };
 
       const response = await fetch(`${API_URL}/api/inspection`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       });
 
       let resData;
@@ -332,7 +387,9 @@ export default function Inspection() {
         resData = await response.json();
       } else {
         const errorText = await response.text();
-        throw new Error(`Simpan fail (${response.status}): ${errorText.substring(0, 100)}`);
+        throw new Error(
+          `Simpan fail (${response.status}): ${errorText.substring(0, 100)}`,
+        );
       }
 
       if (!response.ok) {
@@ -342,7 +399,7 @@ export default function Inspection() {
       // Save to local history for sync
       const newHistory = [
         data,
-        ...(JSON.parse(localStorage.getItem("history")) || [])
+        ...(JSON.parse(localStorage.getItem("history")) || []),
       ];
       localStorage.setItem("history", JSON.stringify(newHistory));
 
@@ -364,17 +421,20 @@ export default function Inspection() {
   return (
     <div className="inspection-container-page">
       <div className="inspection-wrapper">
-        
         {/* BANNER KUNING */}
-        <div className="form-header-banner">
-          FORM PETUGAS (INSPEKSI CDR)
-        </div>
+        <div className="form-header-banner">FORM PETUGAS (INSPEKSI CDR)</div>
 
         {/* CARD UTAMA */}
         <div className="inspection-card">
-          
           {/* NOMOR CONTAINER & FOTO NOMOR CONTAINER */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "20px",
+              marginBottom: "20px",
+            }}
+          >
             <div className="form-group">
               <label>
                 Nomor Container
@@ -390,10 +450,28 @@ export default function Inspection() {
               />
             </div>
             <div className="form-group">
-              <label>Foto Nomor Container <span className="required-star">*</span></label>
+              <label>
+                Foto Nomor Container <span className="required-star">*</span>
+              </label>
               {containerNoPhoto ? (
-                <div style={{ position: "relative", height: "46px", borderRadius: "8px", overflow: "hidden", border: "1px solid #cbd5e1" }}>
-                  <img src={containerNoPhoto.url} alt="Foto Nomor Container" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <div
+                  style={{
+                    position: "relative",
+                    height: "46px",
+                    borderRadius: "8px",
+                    overflow: "hidden",
+                    border: "1px solid #cbd5e1",
+                  }}
+                >
+                  <img
+                    src={containerNoPhoto.url}
+                    alt="Foto Nomor Container"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
                   <button
                     type="button"
                     style={{
@@ -412,7 +490,7 @@ export default function Inspection() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      zIndex: 10
+                      zIndex: 10,
                     }}
                     onClick={() => {
                       setContainerNoPhoto(null);
@@ -440,19 +518,52 @@ export default function Inspection() {
                     border: "1px dashed #cbd5e1",
                     borderRadius: "8px",
                     boxSizing: "border-box",
-                    background: "#f8fafc"
+                    background: "#f8fafc",
                   }}
-                  onClick={() => !isScanning && document.getElementById("containerNoPhotoInput").click()}
+                  onClick={() =>
+                    !isScanning &&
+                    document.getElementById("containerNoPhotoInput").click()
+                  }
                 >
                   {isScanning ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <Loader2 className="animate-spin" size={16} style={{ color: "#3b82f6" }} />
-                      <span style={{ fontSize: "12px", fontWeight: "700", color: "#3b82f6" }}>Pindai...</span>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <Loader2
+                        className="animate-spin"
+                        size={16}
+                        style={{ color: "#3b82f6" }}
+                      />
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: "700",
+                          color: "#3b82f6",
+                        }}
+                      >
+                        Pindai...
+                      </span>
                     </div>
                   ) : (
                     <>
-                      <Camera size={18} className="placeholder-icon" style={{ color: "#64748b" }} />
-                      <span style={{ fontSize: "12px", fontWeight: "700", color: "#475569" }}>Ambil Foto Nomor</span>
+                      <Camera
+                        size={18}
+                        className="placeholder-icon"
+                        style={{ color: "#64748b" }}
+                      />
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: "700",
+                          color: "#475569",
+                        }}
+                      >
+                        Ambil Foto Nomor
+                      </span>
                     </>
                   )}
                 </div>
@@ -470,7 +581,14 @@ export default function Inspection() {
           </div>
 
           {/* METADATA INPUTS */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "20px",
+              marginBottom: "20px",
+            }}
+          >
             <div className="form-group">
               <label>Category</label>
               <SearchSelect
@@ -497,7 +615,14 @@ export default function Inspection() {
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "20px",
+              marginBottom: "20px",
+            }}
+          >
             <div className="form-group" style={{ gridColumn: "span 2" }}>
               <label>ISO Code</label>
               <SearchSelect
@@ -512,31 +637,45 @@ export default function Inspection() {
 
           {/* FOTO DOKUMENTASI CDR (HORIZONTAL SCROLLING - LEBIH MODERN & KOMPAK) */}
           <div className="form-group" style={{ marginBottom: "24px" }}>
-            <label>Foto Dokumentasi / Detail Kerusakan <span className="required-star">*</span> (Bisa lebih dari satu)</label>
-            <div 
-              className="photos-preview-scroll" 
-              style={{ 
-                display: "flex", 
-                flexDirection: "row", 
-                gap: "12px", 
-                marginTop: "8px", 
-                overflowX: "auto", 
+            <label>
+              Foto Dokumentasi / Detail Kerusakan{" "}
+              <span className="required-star">*</span> (Bisa lebih dari satu)
+            </label>
+            <div
+              className="photos-preview-scroll"
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                gap: "12px",
+                marginTop: "8px",
+                overflowX: "auto",
                 paddingBottom: "8px",
-                whiteSpace: "nowrap"
+                whiteSpace: "nowrap",
               }}
             >
-              
               {photos.map((photo, idx) => (
-                <div key={idx} className="photo-preview-item" style={{ 
-                  position: "relative", 
-                  width: "100px", 
-                  height: "100px", 
-                  borderRadius: "12px", 
-                  overflow: "hidden", 
-                  border: "2px solid #cbd5e1",
-                  flexShrink: 0
-                }}>
-                  <img src={photo.url} alt={`Preview ${idx + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <div
+                  key={idx}
+                  className="photo-preview-item"
+                  style={{
+                    position: "relative",
+                    width: "100px",
+                    height: "100px",
+                    borderRadius: "12px",
+                    overflow: "hidden",
+                    border: "2px solid #cbd5e1",
+                    flexShrink: 0,
+                  }}
+                >
+                  <img
+                    src={photo.url}
+                    alt={`Preview ${idx + 1}`}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
                   <button
                     type="button"
                     className="btn-delete-photo"
@@ -556,9 +695,11 @@ export default function Inspection() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      zIndex: 10
+                      zIndex: 10,
                     }}
-                    onClick={() => setPhotos(prev => prev.filter((_, i) => i !== idx))}
+                    onClick={() =>
+                      setPhotos((prev) => prev.filter((_, i) => i !== idx))
+                    }
                   >
                     ×
                   </button>
@@ -566,30 +707,42 @@ export default function Inspection() {
               ))}
 
               {/* ADD PHOTO CARD */}
-              <div 
-                className="cdr-dropzone" 
-                style={{ 
+              <div
+                className="cdr-dropzone"
+                style={{
                   width: "100px",
-                  height: "100px", 
-                  display: "flex", 
-                  flexDirection: "column", 
-                  alignItems: "center", 
-                  justifyContent: "center", 
-                  padding: "10px", 
+                  height: "100px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "10px",
                   margin: 0,
                   boxSizing: "border-box",
                   flexShrink: 0,
                   border: "2px dashed #cbd5e1",
                   borderRadius: "12px",
-                  cursor: "pointer"
+                  cursor: "pointer",
                 }}
-                onClick={() => !isUploading && document.getElementById("cdrPhotoInput").click()}
+                onClick={() =>
+                  !isUploading &&
+                  document.getElementById("cdrPhotoInput").click()
+                }
               >
                 <Camera size={20} className="placeholder-icon" />
-                <p style={{ margin: "2px 0 0 0", fontSize: "11px", fontWeight: "700" }}>Tambah</p>
-                <p style={{ margin: "0", fontSize: "9px", color: "#64748b" }}>Foto</p>
+                <p
+                  style={{
+                    margin: "2px 0 0 0",
+                    fontSize: "11px",
+                    fontWeight: "700",
+                  }}
+                >
+                  Tambah
+                </p>
+                <p style={{ margin: "0", fontSize: "9px", color: "#64748b" }}>
+                  Foto
+                </p>
               </div>
-
             </div>
 
             <input
@@ -602,10 +755,13 @@ export default function Inspection() {
               onChange={(e) => {
                 const file = e.target.files[0];
                 if (file) {
-                  setPhotos(prev => [...prev, {
-                    file,
-                    url: URL.createObjectURL(file)
-                  }]);
+                  setPhotos((prev) => [
+                    ...prev,
+                    {
+                      file,
+                      url: URL.createObjectURL(file),
+                    },
+                  ]);
                   e.target.value = "";
                 }
               }}
@@ -614,32 +770,57 @@ export default function Inspection() {
 
           {/* DIAGRAM INTERAKTIF KONTENER */}
           <div className="form-group" style={{ marginBottom: "24px" }}>
-            <label>Visual Sisi Kerusakan (Klik area pada diagram untuk memilih)</label>
+            <label>
+              Visual Sisi Kerusakan (Klik area pada diagram untuk memilih)
+            </label>
             <div className="interactive-diagram-container">
-              <img 
-                src="/container-diagram.png" 
-                alt="Container Damage Diagram" 
+              <img
+                src="/container-diagram.png"
+                alt="Container Damage Diagram"
                 className="interactive-diagram-image"
               />
               {[
                 { val: "Front/Depan", label: "Front (Depan)", x: 12, y: 30 },
-                { val: "Left Side/Sisi Kiri", label: "Left Side (Kiri)", x: 28, y: 45 },
+                {
+                  val: "Left Side/Sisi Kiri",
+                  label: "Left Side (Kiri)",
+                  x: 28,
+                  y: 45,
+                },
                 { val: "Bottom/Bawah", label: "Bottom (Bawah)", x: 18, y: 75 },
                 { val: "Inside/Dalam", label: "Inside (Dalam)", x: 50, y: 58 },
                 { val: "Roof/Atas", label: "Roof (Atas)", x: 80, y: 26 },
-                { val: "Right Side/Sisi Kanan", label: "Right Side (Kanan)", x: 88, y: 48 },
-                { val: "Rear/Belakang", label: "Rear/Doors (Belakang)", x: 71, y: 60 }
+                {
+                  val: "Right Side/Sisi Kanan",
+                  label: "Right Side (Kanan)",
+                  x: 88,
+                  y: 48,
+                },
+                {
+                  val: "Rear/Belakang",
+                  label: "Rear/Doors (Belakang)",
+                  x: 71,
+                  y: 60,
+                },
               ].map((hotspot) => {
                 const isChecked = selectedSides.includes(hotspot.val);
-                const isDisabled = selectedConditions.includes("Good") || selectedConditions.includes("GOOD");
+                const isDisabled =
+                  selectedConditions.includes("Good") ||
+                  selectedConditions.includes("GOOD");
                 return (
                   <div
                     key={hotspot.val}
                     className="diagram-hotspot"
                     style={{ left: `${hotspot.x}%`, top: `${hotspot.y}%` }}
-                    onClick={() => !isDisabled && !isUploading && handleSideToggle(hotspot.val)}
+                    onClick={() =>
+                      !isDisabled &&
+                      !isUploading &&
+                      handleSideToggle(hotspot.val)
+                    }
                   >
-                    <div className={`hotspot-badge ${isChecked ? "checked" : ""}`}>
+                    <div
+                      className={`hotspot-badge ${isChecked ? "checked" : ""}`}
+                    >
                       {isChecked ? "✓" : "!"}
                     </div>
                     <span className="hotspot-label">{hotspot.label}</span>
@@ -650,33 +831,31 @@ export default function Inspection() {
           </div>
 
           {/* CHECKLIST SISI & KONDISI */}
-          <div className="checklist-container-grid">
-            {/* SISI */}
-            <div className="checklist-card">
-              <h4 className="checklist-title">Ceklis Sisi Kerusakan</h4>
-              <div className="checkbox-list">
-                {["Front/Depan", "Rear/Belakang", "Left Side/Sisi Kiri", "Right Side/Sisi Kanan", "Roof/Atas", "Bottom/Bawah", "Inside/Dalam"].map(s => {
-                  const isChecked = selectedSides.includes(s);
-                  const isDisabled = selectedConditions.includes("Good") || selectedConditions.includes("GOOD");
-                  return (
-                    <label key={s} className={`checkbox-label ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        disabled={isDisabled}
-                        onChange={() => handleSideToggle(s)}
-                      />
-                      <span>{s}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "20px",
+              marginBottom: "24px",
+            }}
+          >
             {/* KONDISI */}
-            <div className="checklist-card">
-              <h4 className="checklist-title">Ceklis Kondisi Kontainer</h4>
-              <div className="checkbox-list">
+            <div className="form-group">
+              <select
+                value={selectedConditions[0] || ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "GOOD" || val === "Good") {
+                    setSelectedConditions(["GOOD"]);
+                    setSelectedSides([]);
+                  } else {
+                    setSelectedConditions([val]);
+                  }
+                }}
+                className="form-select"
+                disabled={isUploading}
+              >
+                <option value="">Ceklis Kondisi Kontainer</option>
                 {[
                   { val: "GOOD", label: "GOOD" },
                   { val: "Bent/Bengkok", label: "Bent/Bengkok" },
@@ -687,21 +866,42 @@ export default function Inspection() {
                   { val: "Missing/Hilang", label: "Missing/Hilang" },
                   { val: "Scraped/Tergores", label: "Scraped/Tergores" },
                   { val: "Torn/Robek", label: "Torn/Robek" },
-                  { val: "Leaking/Bocor", label: "Leaking/Bocor" }
-                ].map(c => {
-                  const isChecked = selectedConditions.includes(c.val);
-                  return (
-                    <label key={c.val} className={`checkbox-label ${isChecked ? 'checked' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => handleConditionToggle(c.val)}
-                      />
-                      <span>{c.label}</span>
-                    </label>
-                  );
-                })}
-              </div>
+                  { val: "Leaking/Bocor", label: "Leaking/Bocor" },
+                ].map((c) => (
+                  <option key={c.val} value={c.val}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* SISI */}
+            <div className="form-group">
+              <select
+                value={selectedSides[0] || ""}
+                onChange={(e) => setSelectedSides([e.target.value])}
+                className="form-select"
+                disabled={
+                  isUploading ||
+                  selectedConditions.includes("Good") ||
+                  selectedConditions.includes("GOOD")
+                }
+              >
+                <option value="">Ceklis Sisi Kerusakan</option>
+                {[
+                  "Front/Depan",
+                  "Rear/Belakang",
+                  "Left Side/Sisi Kiri",
+                  "Right Side/Sisi Kanan",
+                  "Roof/Atas",
+                  "Bottom/Bawah",
+                  "Inside/Dalam",
+                ].map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -728,7 +928,7 @@ export default function Inspection() {
               <ArrowLeft size={18} />
               <span>Kembali</span>
             </button>
-            
+
             <button
               type="button"
               className="btn-save-inspection"
@@ -748,9 +948,7 @@ export default function Inspection() {
               )}
             </button>
           </div>
-
         </div>
-
       </div>
     </div>
   );

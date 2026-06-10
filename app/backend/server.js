@@ -53,7 +53,6 @@ app.post("/generate-pdf", (req, res) => {
 
     doc.fontSize(14).text(`Nomor Container : ${data.containerNumber}`);
 
-    doc.text(`Nama Kapal : ${data.shipName}`);
     doc.text(`Tanggal : ${data.date}`);
     doc.text(`Kerusakan : ${data.damage1}`);
     doc.text(`Sisi : ${data.side1}`);
