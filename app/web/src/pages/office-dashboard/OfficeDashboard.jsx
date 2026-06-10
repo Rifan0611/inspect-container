@@ -1943,14 +1943,9 @@ overflow:hidden;
 
 <body>
 
-<div class="header">
+<div class="header" style="justify-content: center; text-align: center;">
 
-<img
-src="${window.location.origin}/logo.png"
-class="logo"
-/>
-
-<div class="company">
+<div class="company" style="text-align: center; width: 100%;">
 
 <h2>
 NPH ADIPURUSA
