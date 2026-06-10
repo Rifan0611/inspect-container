@@ -4,6 +4,45 @@ import { Save, Camera, ArrowLeft, Loader2 } from "lucide-react";
 import API_URL from "../config/api";
 import "./Inspection.css";
 
+const compressImage = (file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 800;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => {
+          resolve(blob || file);
+        }, "image/jpeg", 0.7);
+      };
+      img.onerror = () => {
+        resolve(file);
+      };
+    };
+    reader.onerror = () => {
+      resolve(file);
+    };
+  });
+};
+
 export default function Inspection() {
   const navigate = useNavigate();
 
@@ -151,18 +190,28 @@ export default function Inspection() {
       const uploadedUrls = [];
       for (const photoObj of photos) {
         if (photoObj.file) {
+          const compressedBlob = await compressImage(photoObj.file);
           const formData = new FormData();
-          formData.append("photo", photoObj.file);
+          formData.append("photo", compressedBlob, photoObj.file.name);
 
           const uploadRes = await fetch(`${API_URL}/api/upload/image`, {
             method: "POST",
             body: formData
           });
-          const uploadData = await uploadRes.json();
+
+          let uploadData;
+          const uploadContentType = uploadRes.headers.get("content-type");
+          if (uploadContentType && uploadContentType.includes("application/json")) {
+            uploadData = await uploadRes.json();
+          } else {
+            const errorText = await uploadRes.text();
+            throw new Error(`Upload fail (${uploadRes.status}): ${errorText.substring(0, 100)}`);
+          }
+
           if (!uploadRes.ok) {
             throw new Error(uploadData.message || "Gagal mengunggah foto");
           }
-          uploadedUrls.push(`${API_URL}/uploads/${uploadData.filename}`);
+          uploadedUrls.push(`${API_URL}/uploads/${uploadData.file}`);
         } else {
           uploadedUrls.push(photoObj.url);
         }
@@ -192,8 +241,16 @@ export default function Inspection() {
         body: JSON.stringify(data)
       });
 
+      let resData;
+      const resContentType = response.headers.get("content-type");
+      if (resContentType && resContentType.includes("application/json")) {
+        resData = await response.json();
+      } else {
+        const errorText = await response.text();
+        throw new Error(`Simpan fail (${response.status}): ${errorText.substring(0, 100)}`);
+      }
+
       if (!response.ok) {
-        const resData = await response.json();
         throw new Error(resData?.error || "Gagal menyimpan inspeksi ke server");
       }
 
