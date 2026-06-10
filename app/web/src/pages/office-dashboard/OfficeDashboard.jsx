@@ -7,7 +7,7 @@ import React, { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import UserManagement from "./UserManagement";
 import API_URL from "../../config/api";
-import SearchSelect from "../../components/SearchSelect";
+import SearchSelect, { ISO_CODES, CATEGORIES } from "../../components/SearchSelect";
 import {
   Home,
   ClipboardList,
@@ -2455,14 +2455,7 @@ win.print();
                   <SearchSelect
                     value={editIso}
                     onChange={(val) => setEditIso(val)}
-                    options={[
-                      "-ISO Code-",
-                      "L5G1 - Dry High cube container",
-                      "23G1 - Dry container",
-                      "20R1 - Reefer container",
-                      "22PC - Flat (collapsible)",
-                      "22PF - Flat (fixed ends)"
-                    ]}
+                    options={ISO_CODES}
                     placeholder="-ISO Code-"
                   />
                 </div>
@@ -2472,7 +2465,7 @@ win.print();
                   <SearchSelect
                     value={editCategory}
                     onChange={(val) => setEditCategory(val)}
-                    options={["DRY", "REEFER", "TANK", "FLAT", "DG"]}
+                    options={CATEGORIES}
                     placeholder="DRY"
                   />
                 </div>

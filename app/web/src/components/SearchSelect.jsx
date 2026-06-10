@@ -174,3 +174,66 @@ export default function SearchSelect({ value, onChange, options, placeholder, di
     </div>
   );
 }
+
+export const CATEGORIES = ["DRY", "REEFER", "TANK", "FLAT", "DG"];
+
+export const ISO_CODES = [
+  "-ISO Code-",
+  // Dry/General Purpose
+  "22G0 - 20' General Purpose Container (passive vents)",
+  "22G1 - 20' General Purpose Container (passive vents)",
+  "23G1 - 20' General Purpose Container (openings/vents)",
+  "25G0 - 20' High Cube General Purpose Container",
+  "25G1 - 20' High Cube General Purpose Container",
+  "42G0 - 40' General Purpose Container",
+  "42G1 - 40' General Purpose Container",
+  "45G0 - 40' High Cube Dry Container",
+  "45G1 - 40' High Cube Dry Container",
+  "L5G0 - 45' High Cube Dry Container",
+  "L5G1 - 45' High Cube Dry Container",
+  
+  // Reefer (Refrigerated)
+  "20R1 - 20' Reefer Container",
+  "22R0 - 20' Refrigerated Container (reefer)",
+  "22R1 - 20' Refrigerated Container (reefer)",
+  "42R0 - 40' Refrigerated Container (reefer)",
+  "42R1 - 40' Refrigerated Container (reefer)",
+  "45R0 - 40' High Cube Reefer Container",
+  "45R1 - 40' High Cube Reefer Container",
+  
+  // Flat Rack / Platform
+  "22P0 - 20' Flat Rack Container (platform)",
+  "22P1 - 20' Flat Rack Container (platform)",
+  "22PC - 20' Collapsible Flat Rack Container",
+  "22PF - 20' Fixed Ends Flat Rack Container",
+  "42P0 - 40' Flat Rack Container (platform)",
+  "42P1 - 40' Flat Rack Container (platform)",
+  "42PC - 40' Collapsible Flat Rack Container",
+  "42PF - 40' Fixed Ends Flat Rack Container",
+  "45P0 - 40' High Cube Flat Rack Container",
+  "45P1 - 40' High Cube Flat Rack Container",
+  "45PC - 40' High Cube Collapsible Flat Rack",
+  "45PF - 40' High Cube Fixed Ends Flat Rack",
+  
+  // Open Top
+  "22U0 - 20' Open Top Container",
+  "22U1 - 20' Open Top Container",
+  "25U0 - 20' High Cube Open Top Container",
+  "42U0 - 40' Open Top Container",
+  "42U1 - 40' Open Top Container",
+  "45U0 - 40' High Cube Open Top Container",
+  
+  // Tank
+  "22T0 - 20' Tank Container (for non-hazardous liquids)",
+  "22T1 - 20' Tank Container (for hazardous liquids)",
+  "22T2 - 20' Tank Container (for hazardous liquids)",
+  "22T3 - 20' Tank Container (for hazardous liquids)",
+  "22T4 - 20' Tank Container (for hazardous liquids)",
+  "22T5 - 20' Tank Container (for gases)",
+  "22T6 - 20' Tank Container (for gases)",
+  "22T7 - 20' Tank Container (for pressurized gases)",
+  "22T8 - 20' Tank Container (for pressurized gases)",
+  "42T0 - 40' Tank Container (for non-hazardous liquids)",
+  "42T1 - 40' Tank Container (for hazardous liquids)",
+  "42T2 - 40' Tank Container (for hazardous liquids)"
+];

@@ -3,7 +3,7 @@ import API_URL from "./config/api";
 import React,{useState} from "react";
 import "./pages/Inspection.css";
 import { Save, Camera, ArrowLeft, Loader2 } from "lucide-react";
-import SearchSelect from "./components/SearchSelect";
+import SearchSelect, { ISO_CODES, CATEGORIES } from "./components/SearchSelect";
 
 import * as XLSX from "xlsx";
 
@@ -1831,7 +1831,7 @@ return(
           <SearchSelect
             value={category}
             onChange={(val) => setCategory(val)}
-            options={["DRY", "REEFER", "TANK", "FLAT", "DG"]}
+            options={CATEGORIES}
             placeholder="DRY"
             disabled={isUploading}
           />
@@ -1858,14 +1858,7 @@ return(
           <SearchSelect
             value={iso}
             onChange={(val) => setIso(val)}
-            options={[
-              "-ISO Code-",
-              "L5G1 - Dry High cube container",
-              "23G1 - Dry container",
-              "20R1 - Reefer container",
-              "22PC - Flat (collapsible)",
-              "22PF - Flat (fixed ends)"
-            ]}
+            options={ISO_CODES}
             placeholder="-ISO Code-"
             disabled={isUploading}
           />
