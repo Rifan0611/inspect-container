@@ -21,8 +21,15 @@ multer.diskStorage({
 
   destination:
   function(req,file,cb){
-
-    cb(null,'uploads/')
+    const fs = require('fs');
+    const path = require('path');
+    const dest = process.env.VERCEL
+      ? "/tmp/uploads"
+      : path.join(__dirname, '../uploads');
+    if (!fs.existsSync(dest)) {
+      fs.mkdirSync(dest, { recursive: true });
+    }
+    cb(null, dest);
   },
 
   filename:

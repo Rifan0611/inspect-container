@@ -22,7 +22,14 @@ app.use("/api", manifestRoutes);
 app.use("/api/inspection", inspectionRoutes);
 app.use("/api", accountsRoutes);
 app.use("/api/upload", uploadRoutes);
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+const uploadsDir = process.env.VERCEL
+  ? "/tmp/uploads"
+  : path.join(__dirname, "uploads");
+
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use("/uploads", express.static(uploadsDir));
 
 app.get("/", (req, res) => {
 
