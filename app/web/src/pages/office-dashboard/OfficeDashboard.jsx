@@ -2110,23 +2110,12 @@ item.photo2
 
 </div>
 
-<div class="photo-box">
-
-<div class="photo-label">
-
-FOTO CONTAINER
-
-</div>
-
-${
-item.photo1
-?
-`<img src="${item.photo1}" />`
-:
-""
-}
-
-</div>
+${(item.photo1 || "").split(",").map(url => url.trim()).filter(Boolean).map((url, i) => `
+  <div class="photo-box" style="text-align: center;">
+    <div class="photo-label" style="font-size: 10px; font-weight: bold; margin-bottom: 6px;">FOTO CONTAINER/CDR ${i + 1}</div>
+    <img src="${url}" style="width: 100%; height: 165px; object-fit: cover; border-radius: 8px; border: 2px solid #004aad;" />
+  </div>
+`).join("")}
 
 </div>
 
@@ -2408,14 +2397,18 @@ win.print();
                       <div className="no-photo-text">Tidak ada foto</div>
                     )}
                   </div>
-                  <div className="photo-card">
-                    <span>FOTO NOMOR CONTAINER</span>
-                    {selectedInspection.photo1 ? (
-                      <img src={selectedInspection.photo1} alt="Foto Container" />
-                    ) : (
+                  {(selectedInspection.photo1 || "").split(",").map(url => url.trim()).filter(Boolean).map((url, idx) => (
+                    <div className="photo-card" key={idx}>
+                      <span>FOTO CONTAINER/CDR {idx + 1}</span>
+                      <img src={url} alt={`Foto Container ${idx + 1}`} />
+                    </div>
+                  ))}
+                  {!(selectedInspection.photo1 || "").split(",").map(url => url.trim()).filter(Boolean).length && (
+                    <div className="photo-card">
+                      <span>FOTO NOMOR CONTAINER</span>
                       <div className="no-photo-text">Tidak ada foto</div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

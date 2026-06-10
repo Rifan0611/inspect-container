@@ -261,6 +261,7 @@ const [isUploading, setIsUploading] = useState(false);
 const [manifestList, setManifestList] = useState([]);
 const [inspectedContainers, setInspectedContainers] = useState([]);
 const [cdrFile, setCdrFile] = useState(null);
+const [photosList, setPhotosList] = useState([]);
 
 // ======================================================
 // USER MANAGEMENT
@@ -934,7 +935,7 @@ const simpanData = async () => {
     alert("Harap masukkan nama kapal!");
     return;
   }
-  if (!photo1) {
+  if (photosList.length === 0) {
     alert("Harap ambil atau unggah foto formulir CDR!");
     return;
   }
@@ -942,22 +943,27 @@ const simpanData = async () => {
   setIsUploading(true);
 
   try {
-    // Upload the photo
-    let uploadedPhotoUrl = photo1;
-    if (cdrFile) {
-      const formData = new FormData();
-      formData.append("photo", cdrFile);
+    // Upload all photos in the list
+    const uploadedUrls = [];
+    for (const photoObj of photosList) {
+      if (photoObj.file) {
+        const formData = new FormData();
+        formData.append("photo", photoObj.file);
 
-      const uploadRes = await fetch(`${API_URL}/api/upload/image`, {
-        method: "POST",
-        body: formData
-      });
-      const uploadData = await uploadRes.json();
-      if (!uploadRes.ok) {
-        throw new Error(uploadData.message || "Gagal mengunggah foto");
+        const uploadRes = await fetch(`${API_URL}/api/upload/image`, {
+          method: "POST",
+          body: formData
+        });
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok) {
+          throw new Error(uploadData.message || "Gagal mengunggah foto");
+        }
+        uploadedUrls.push(`${API_URL}/uploads/${uploadData.filename}`);
+      } else {
+        uploadedUrls.push(photoObj.url);
       }
-      uploadedPhotoUrl = `${API_URL}/uploads/${uploadData.filename}`;
     }
+    const uploadedPhotoUrl = uploadedUrls.join(",");
 
     const activeUser = JSON.parse(localStorage.getItem("user")) || user;
 
@@ -1009,6 +1015,7 @@ const simpanData = async () => {
     setPhoto1("");
     setPhoto2("");
     setCdrFile(null);
+    setPhotosList([]);
 
     setPage("history");
   } catch (err) {
@@ -1388,41 +1395,20 @@ FOTO INSPEKSI
 
 </div>
 
-<div class="photo-grid">
+<div class="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+  ${(item.photo1 || "").split(",").map(url => url.trim()).filter(Boolean).map((url, i) => `
+    <div class="photo-box" style="text-align: center;">
+      <div class="photo-label" style="font-size: 10px; font-weight: bold; margin-bottom: 6px;">FOTO CONTAINER/CDR ${i + 1}</div>
+      <img src="${url}" style="width: 100%; height: 165px; object-fit: cover; border-radius: 8px; border: 2px solid #004aad;" />
+    </div>
+  `).join("")}
 
-<div class="photo-box">
-
-<div class="photo-label">
-
-FOTO DAMAGE
-
-</div>
-
-${
-item.photo2
-?
-`<img src="${item.photo2}" />`
-:
-""
-}
-
-</div>
-
-<div class="photo-box">
-
-<div class="photo-label">
-
-FOTO CONTAINER
-
-</div>
-
-${
-item.photo1
-?
-`<img src="${item.photo1}" />`
-:
-""
-}
+  ${item.photo2 ? `
+    <div class="photo-box" style="text-align: center;">
+      <div class="photo-label" style="font-size: 10px; font-weight: bold; margin-bottom: 6px;">FOTO DAMAGE</div>
+      <img src="${item.photo2}" style="width: 100%; height: 165px; object-fit: cover; border-radius: 8px; border: 2px solid #004aad;" />
+    </div>
+  ` : ""}
 
 </div>
 
@@ -1825,28 +1811,64 @@ return(
         </div>
       </div>
 
-      {/* FOTO FORMULIR CDR */}
+      {/* FOTO DOKUMENTASI CDR (BISA LEBIH DARI SATU) */}
       <div className="form-group" style={{ marginBottom: "24px" }}>
-        <label>Foto Formulir CDR <span className="required-star">*</span></label>
-        <div 
-          className="cdr-dropzone"
-          onClick={() => !isUploading && document.getElementById("cdrPhotoInput").click()}
-        >
-          {!photo1 ? (
-            <div className="dropzone-placeholder">
-              <Camera size={36} className="placeholder-icon" />
-              <p className="placeholder-main">Ambil Foto / Unggah Formulir CDR</p>
-              <p className="placeholder-sub">Klik untuk membuka kamera atau galeri</p>
+        <label>Foto Dokumentasi / Formulir CDR <span className="required-star">*</span> (Bisa lebih dari satu)</label>
+        <div className="photos-preview-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "12px", marginTop: "8px" }}>
+          
+          {photosList.map((photo, idx) => (
+            <div key={idx} className="photo-preview-item" style={{ position: "relative", height: "140px", borderRadius: "12px", overflow: "hidden", border: "2px solid #cbd5e1" }}>
+              <img src={photo.url} alt={`Preview ${idx + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <button
+                type="button"
+                className="btn-delete-photo"
+                style={{
+                  position: "absolute",
+                  top: "5px",
+                  right: "5px",
+                  background: "rgba(239, 68, 68, 0.9)",
+                  color: "white",
+                  border: "none",
+                  width: "22px",
+                  height: "22px",
+                  borderRadius: "50%",
+                  fontSize: "12px",
+                  fontWeight: "800",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 10
+                }}
+                onClick={() => setPhotosList(prev => prev.filter((_, i) => i !== idx))}
+              >
+                ×
+              </button>
             </div>
-          ) : (
-            <div className="dropzone-preview">
-              <img src={photo1} alt="CDR Form Preview" />
-              <div className="preview-overlay">
-                <span>Ganti Foto</span>
-              </div>
-            </div>
-          )}
+          ))}
+
+          {/* ADD PHOTO CARD */}
+          <div 
+            className="cdr-dropzone" 
+            style={{ 
+              height: "140px", 
+              display: "flex", 
+              flexDirection: "column", 
+              alignItems: "center", 
+              justifyContent: "center", 
+              padding: "10px", 
+              margin: 0,
+              boxSizing: "border-box" 
+            }}
+            onClick={() => !isUploading && document.getElementById("cdrPhotoInput").click()}
+          >
+            <Camera size={24} className="placeholder-icon" />
+            <p style={{ margin: "4px 0 0 0", fontSize: "12px", fontWeight: "700" }}>Tambah Foto</p>
+            <p style={{ margin: "2px 0 0 0", fontSize: "10px", color: "#64748b" }}>Kamera / Galeri</p>
+          </div>
+
         </div>
+
         <input
           id="cdrPhotoInput"
           type="file"
@@ -1857,8 +1879,11 @@ return(
           onChange={(e) => {
             const file = e.target.files[0];
             if (file) {
-              setCdrFile(file);
-              setPhoto1(URL.createObjectURL(file));
+              setPhotosList(prev => [...prev, {
+                file,
+                url: URL.createObjectURL(file)
+              }]);
+              e.target.value = "";
             }
           }}
         />
