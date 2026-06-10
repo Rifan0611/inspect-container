@@ -131,8 +131,12 @@ export default function Inspection() {
   };
 
   const saveInspection = async () => {
-    if (!containerNumber) {
-      alert("Harap pilih nomor container!");
+    if (!containerNumber.trim()) {
+      alert("Harap masukkan nomor container!");
+      return;
+    }
+    if (!shipName.trim()) {
+      alert("Harap masukkan nama kapal!");
       return;
     }
     if (photos.length === 0) {
@@ -230,41 +234,68 @@ export default function Inspection() {
               Nomor Container
               <span className="required-star">*</span>
             </label>
-            <div className="container-search-wrapper">
+            <input
+              type="text"
+              value={containerNumber}
+              onChange={(e) => setContainerNumber(e.target.value.toUpperCase())}
+              placeholder="Masukkan nomor container..."
+              className="form-input"
+              disabled={isUploading}
+            />
+          </div>
+
+          {/* METADATA INPUTS */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
+            <div className="form-group">
+              <label>Nama Kapal <span className="required-star">*</span></label>
               <input
                 type="text"
-                list="containerList"
-                value={containerNumber}
-                onInput={handleContainerChange}
-                onChange={handleContainerChange}
-                placeholder="Masukkan atau pilih nomor container..."
+                value={shipName}
+                onChange={(e) => setShipName(e.target.value)}
+                placeholder="Masukkan nama kapal..."
                 className="form-input"
                 disabled={isUploading}
               />
-              <button
-                type="button"
-                className="btn-search-container"
-                onClick={handleSearchContainer}
-                disabled={isUploading}
-              >
-                Cari
-              </button>
             </div>
-            <datalist id="containerList">
-              {availableContainers.map((item, index) => (
-                <option key={index} value={item.container} />
-              ))}
-            </datalist>
+            <div className="form-group">
+              <label>Size</label>
+              <input
+                type="text"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="Contoh: 20ft / 40ft..."
+                className="form-input"
+                disabled={isUploading}
+              />
+            </div>
+          </div>
 
-            {/* AUTOFILL METADATA BADGES */}
-            {shipName && (
-              <div className="autofill-metadata-container">
-                <div className="meta-badge"><strong>Kapal:</strong> {shipName}</div>
-                <div className="meta-badge"><strong>Status:</strong> {status}</div>
-                <div className="meta-badge"><strong>ISO:</strong> {iso}</div>
-                <div className="meta-badge"><strong>Kategori:</strong> {category}</div>
-              </div>
-            )}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
+            <div className="form-group">
+              <label>Status (Full/Empty)</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="form-select"
+                disabled={isUploading}
+                style={{ backgroundImage: "none", paddingRight: "18px" }}
+              >
+                <option value="">- Pilih Status -</option>
+                <option value="FULL">FULL</option>
+                <option value="EMPTY">EMPTY</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>ISO Code</label>
+              <input
+                type="text"
+                value={iso}
+                onChange={(e) => setIso(e.target.value)}
+                placeholder="Contoh: 22G1 / 45G1..."
+                className="form-input"
+                disabled={isUploading}
+              />
+            </div>
           </div>
 
           {/* FOTO FORMULIR CDR */}
@@ -308,13 +339,50 @@ export default function Inspection() {
             />
           </div>
 
+          {/* DIAGRAM INTERAKTIF KONTENER */}
+          <div className="form-group" style={{ marginBottom: "24px" }}>
+            <label>Visual Sisi Kerusakan (Klik area pada diagram untuk memilih)</label>
+            <div className="interactive-diagram-container">
+              <img 
+                src="/container-diagram.png" 
+                alt="Container Damage Diagram" 
+                className="interactive-diagram-image"
+              />
+              {[
+                { val: "Front", label: "Front (Depan)", x: 12, y: 30 },
+                { val: "Left Side", label: "Left Side (Kiri)", x: 28, y: 45 },
+                { val: "Bottom Side", label: "Bottom (Bawah)", x: 18, y: 75 },
+                { val: "Inside", label: "Inside (Dalam)", x: 50, y: 58 },
+                { val: "Top Side", label: "Roof (Atas)", x: 80, y: 26 },
+                { val: "Right Side", label: "Right Side (Kanan)", x: 88, y: 48 },
+                { val: "Rear", label: "Rear/Doors (Belakang)", x: 71, y: 60 }
+              ].map((hotspot) => {
+                const isChecked = selectedSides.includes(hotspot.val);
+                const isDisabled = selectedConditions.includes("Good");
+                return (
+                  <div
+                    key={hotspot.val}
+                    className="diagram-hotspot"
+                    style={{ left: `${hotspot.x}%`, top: `${hotspot.y}%` }}
+                    onClick={() => !isDisabled && !isUploading && handleSideToggle(hotspot.val)}
+                  >
+                    <div className={`hotspot-badge ${isChecked ? "checked" : ""}`}>
+                      {isChecked ? "✓" : "!"}
+                    </div>
+                    <span className="hotspot-label">{hotspot.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {/* CHECKLIST SISI & KONDISI */}
           <div className="checklist-container-grid">
             {/* SISI */}
             <div className="checklist-card">
               <h4 className="checklist-title">Ceklis Sisi Kerusakan</h4>
               <div className="checkbox-list">
-                {["Front", "Rear", "Left Side", "Right Side", "Top Side", "Bottom Side"].map(s => {
+                {["Front", "Rear", "Left Side", "Right Side", "Top Side", "Bottom Side", "Inside"].map(s => {
                   const isChecked = selectedSides.includes(s);
                   const isDisabled = selectedConditions.includes("Good");
                   return (
@@ -330,7 +398,8 @@ export default function Inspection() {
                              s === "Left Side" ? "Kiri (Left Side)" :
                              s === "Right Side" ? "Kanan (Right Side)" :
                              s === "Top Side" ? "Atas (Top Side)" :
-                             "Bawah (Bottom Side)"}</span>
+                             s === "Bottom Side" ? "Bawah (Bottom Side)" :
+                             "Dalam (Inside)"}</span>
                     </label>
                   );
                 })}
