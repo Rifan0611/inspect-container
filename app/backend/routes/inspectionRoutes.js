@@ -87,7 +87,7 @@ router.post("/", (req, res) => {
     (err, result) => {
       if (err) {
         console.error("Error creating inspection:", err);
-        return res.status(500).json({ error: "Failed to save inspection" });
+        return res.status(500).json({ error: "Failed to save inspection: " + err.message });
       }
       res.json({ message: "Inspection saved successfully", id: result.insertId });
     }
@@ -180,7 +180,7 @@ router.put("/:id", (req, res) => {
   db.query(query, params, (err, result) => {
     if (err) {
       console.error("Error updating inspection:", err);
-      return res.status(500).json({ error: "Failed to update inspection" });
+      return res.status(500).json({ error: "Failed to update inspection: " + err.message });
     }
     res.json({ message: "Inspection updated successfully" });
   });
