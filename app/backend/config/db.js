@@ -22,6 +22,25 @@ db.getConnection((err, connection) => {
         console.error('MySQL connection failed:', err)
     } else {
         console.log('MySQL Connected')
+        
+        // Auto-migration: check if 'group' column exists in container_inspections table
+        connection.query("SHOW COLUMNS FROM container_inspections LIKE 'group'", (colErr, results) => {
+            if (colErr) {
+                console.error("Error checking columns:", colErr);
+            } else if (results && results.length === 0) {
+                console.log("Column 'group' is missing in container_inspections. Altering table...");
+                connection.query("ALTER TABLE container_inspections ADD COLUMN `group` VARCHAR(100) DEFAULT 'Lapangan'", (alterErr) => {
+                    if (alterErr) {
+                        console.error("Failed to add column 'group':", alterErr);
+                    } else {
+                        console.log("Column 'group' added successfully to container_inspections.");
+                    }
+                });
+            } else {
+                console.log("Column 'group' already exists in container_inspections.");
+            }
+        });
+
         connection.release()
     }
 })
