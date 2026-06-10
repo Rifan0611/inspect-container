@@ -2391,25 +2391,19 @@ win.print();
                 <h5>Foto Dokumentasi</h5>
                 <div className="photos-grid-modal">
                   <div className="photo-card">
-                    <span>FOTO DAMAGE / DETAIL</span>
+                    <span>FOTO NOMOR CONTAINER</span>
                     {selectedInspection.photo2 ? (
-                      <img src={selectedInspection.photo2} alt="Foto Kerusakan" />
+                      <img src={selectedInspection.photo2} alt="Foto Nomor Container" />
                     ) : (
                       <div className="no-photo-text">Tidak ada foto</div>
                     )}
                   </div>
                   {(selectedInspection.photo1 || "").split(",").map(url => url.trim()).filter(Boolean).map((url, idx) => (
                     <div className="photo-card" key={idx}>
-                      <span>FOTO CONTAINER/CDR {idx + 1}</span>
-                      <img src={url} alt={`Foto Container ${idx + 1}`} />
+                      <span>FOTO DETAIL KERUSAKAN {idx + 1}</span>
+                      <img src={url} alt={`Foto Kerusakan ${idx + 1}`} />
                     </div>
                   ))}
-                  {!(selectedInspection.photo1 || "").split(",").map(url => url.trim()).filter(Boolean).length && (
-                    <div className="photo-card">
-                      <span>FOTO NOMOR CONTAINER</span>
-                      <div className="no-photo-text">Tidak ada foto</div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

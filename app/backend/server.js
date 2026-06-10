@@ -32,37 +32,26 @@ if (!fs.existsSync(uploadsDir)) {
 app.use("/uploads", express.static(uploadsDir));
 
 app.get("/", (req, res) => {
-
   res.send("SERVER BACKEND BERJALAN");
-
 });
 
 app.post("/generate-pdf", (req, res) => {
-
   try {
-
     const data = req.body;
 
-    const fileName =
-      `${data.containerNumber}.pdf`;
+    const fileName = `${data.containerNumber}.pdf`;
 
-    const filePath =
-      `./pdf/${fileName}`;
+    const filePath = `./pdf/${fileName}`;
 
-    const doc =
-      new PDFDocument();
+    const doc = new PDFDocument();
 
-    doc.pipe(
-      fs.createWriteStream(filePath)
-    );
+    doc.pipe(fs.createWriteStream(filePath));
 
-    doc.fontSize(20)
-      .text("BERITA ACARA CONTAINER INSPECTION");
+    doc.fontSize(20).text("BERITA ACARA CONTAINER INSPECTION");
 
     doc.moveDown();
 
-    doc.fontSize(14)
-      .text(`Nomor Container : ${data.containerNumber}`);
+    doc.fontSize(14).text(`Nomor Container : ${data.containerNumber}`);
 
     doc.text(`Nama Kapal : ${data.shipName}`);
     doc.text(`Tanggal : ${data.date}`);
@@ -73,32 +62,21 @@ app.post("/generate-pdf", (req, res) => {
     doc.end();
 
     res.json({
-      success: true
+      success: true,
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
-
   }
-
 });
 
-
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
   const PORT = process.env.PORT || 5000;
-  app.listen(
-    PORT,
-    "0.0.0.0",
-    () => {
-      console.log(
-        `SERVER RUNNING ${PORT}`
-      );
-    }
-  );
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`SERVER RUNNING ${PORT}`);
+  });
 }
 
 module.exports = app;

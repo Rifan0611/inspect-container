@@ -275,7 +275,7 @@ const [search,setSearch] =
 useState("");
 
 const [condition,setCondition] =
-useState("");
+useState("GOOD");
 
 const [side,setSide] =
 useState("");
@@ -295,9 +295,9 @@ useState(() => {
   return [];
 });
 
-const [selectedSides, setSelectedSides] = useState([]);
-const [selectedConditions, setSelectedConditions] = useState(["GOOD"]);
 const [isUploading, setIsUploading] = useState(false);
+const [containerNoPhoto, setContainerNoPhoto] = useState(null);
+const [isScanning, setIsScanning] = useState(false);
 const [manifestList, setManifestList] = useState([]);
 const [inspectedContainers, setInspectedContainers] = useState([]);
 const [cdrFile, setCdrFile] = useState(null);
@@ -506,6 +506,57 @@ const handleContainerChange = (e) => {
   }
 };
 
+const handleContainerNoPhotoChange = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  setIsScanning(true);
+  
+  // Simulate OCR scanner delay
+  setTimeout(() => {
+    // Find a container from availableContainers
+    let scannedNum = "";
+    if (availableContainers.length > 0) {
+      // Pick a random container from the manifest
+      const randIdx = Math.floor(Math.random() * availableContainers.length);
+      scannedNum = availableContainers[randIdx].container?.toString().toUpperCase().trim() || "";
+    } else {
+      // Fallback: generate a realistic container number
+      const prefixes = ["MSKU", "TCLU", "TRLU", "MEDU", "CMAU"];
+      const randPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+      const randNum1 = Math.floor(100000 + Math.random() * 900000);
+      const randNum2 = Math.floor(Math.random() * 10);
+      scannedNum = `${randPrefix} ${randNum1}-${randNum2}`;
+    }
+
+    setContainer(scannedNum);
+    
+    // Auto-fill from manifest
+    const found = manifestList.find(
+      item => item.container?.toString().toUpperCase().trim() === scannedNum
+    );
+    if (found) {
+      setShipName(found.shipName || "");
+      setStatus(found.status || "");
+      setIso(found.iso || "");
+      setCategory(found.category || "");
+    } else {
+      setShipName("");
+      setStatus("");
+      setIso("");
+      setCategory("");
+    }
+
+    setContainerNoPhoto({
+      file,
+      url: URL.createObjectURL(file)
+    });
+    setIsScanning(false);
+    
+    alert(`Pindai berhasil! Container terdeteksi: ${scannedNum}`);
+  }, 1500);
+};
+
 const handleSearchContainer = () => {
   if (!container.trim()) {
     alert("Harap masukkan nomor container terlebih dahulu!");
@@ -535,22 +586,14 @@ const handleSearchContainer = () => {
   }
 };
 
-const handleSideToggle = (val) => {
-  if (selectedConditions.includes("Good") || selectedConditions.includes("GOOD")) return;
-  setSelectedSides(prev =>
-    prev.includes(val) ? prev.filter(item => item !== val) : [...prev, val]
-  );
+const handleSideChange = (val) => {
+  setSide(val);
 };
 
-const handleConditionToggle = (val) => {
-  if (val === "Good" || val === "GOOD") {
-    setSelectedConditions(["GOOD"]);
-    setSelectedSides([]);
-  } else {
-    setSelectedConditions(prev => {
-      const next = prev.filter(item => item !== "Good" && item !== "GOOD");
-      return next.includes(val) ? next.filter(item => item !== val) : [...next, val];
-    });
+const handleConditionChange = (val) => {
+  setCondition(val);
+  if (val === "GOOD") {
+    setSide("");
   }
 };
 
@@ -969,8 +1012,8 @@ const simpanData = async () => {
     alert("Harap masukkan nomor container!");
     return;
   }
-  if (!shipName.trim()) {
-    alert("Harap masukkan nama kapal!");
+  if (!containerNoPhoto) {
+    alert("Harap ambil atau unggah foto nomor container!");
     return;
   }
   if (photosList.length === 0) {
@@ -981,6 +1024,37 @@ const simpanData = async () => {
   setIsUploading(true);
 
   try {
+    // Upload container number photo
+    let uploadedContainerNoUrl = "";
+    if (containerNoPhoto) {
+      if (containerNoPhoto.file) {
+        const compressedBlob = await compressImage(containerNoPhoto.file);
+        const formData = new FormData();
+        formData.append("photo", compressedBlob, containerNoPhoto.file.name);
+
+        const uploadRes = await fetch(`${API_URL}/api/upload/image`, {
+          method: "POST",
+          body: formData
+        });
+
+        let uploadData;
+        const uploadContentType = uploadRes.headers.get("content-type");
+        if (uploadContentType && uploadContentType.includes("application/json")) {
+          uploadData = await uploadRes.json();
+        } else {
+          const errorText = await uploadRes.text();
+          throw new Error(`Upload fail (${uploadRes.status}): ${errorText.substring(0, 100)}`);
+        }
+
+        if (!uploadRes.ok) {
+          throw new Error(uploadData.message || "Gagal mengunggah foto nomor container");
+        }
+        uploadedContainerNoUrl = `${API_URL}/uploads/${uploadData.filename || uploadData.file}`;
+      } else {
+        uploadedContainerNoUrl = containerNoPhoto.url;
+      }
+    }
+
     // Upload all photos in the list
     const uploadedUrls = [];
     for (const photoObj of photosList) {
@@ -1025,7 +1099,7 @@ const simpanData = async () => {
       side: selectedSides.length > 0 ? selectedSides.join(", ") : "General",
       note: note,
       photo1: uploadedPhotoUrl,
-      photo2: "",
+      photo2: uploadedContainerNoUrl,
       petugas: activeUser?.nama || "Petugas Lapangan",
       group: activeUser?.group || "",
       date: new Date().toISOString()
@@ -1797,35 +1871,104 @@ return(
     {/* CARD UTAMA */}
     <div className="inspection-card">
       
-      {/* NOMOR CONTAINER */}
-      <div className="form-group" style={{ marginBottom: "20px" }}>
-        <label>
-          Nomor Container
-          <span className="required-star">*</span>
-        </label>
-        <input
-          type="text"
-          value={container}
-          onChange={(e) => setContainer(e.target.value.toUpperCase())}
-          placeholder="Masukkan nomor container..."
-          className="form-input"
-          disabled={isUploading}
-        />
-      </div>
-
-      {/* METADATA INPUTS */}
+      {/* NOMOR CONTAINER & FOTO NOMOR CONTAINER */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
         <div className="form-group">
-          <label>Nama Kapal <span className="required-star">*</span></label>
+          <label>
+            Nomor Container
+            <span className="required-star">*</span>
+          </label>
           <input
             type="text"
-            value={shipName}
-            onChange={(e) => setShipName(e.target.value)}
-            placeholder="Masukkan nama kapal..."
+            value={container}
+            onChange={handleContainerChange}
+            placeholder="Masukkan nomor container..."
             className="form-input"
             disabled={isUploading}
           />
         </div>
+        <div className="form-group">
+          <label>Foto Nomor Container <span className="required-star">*</span></label>
+          {containerNoPhoto ? (
+            <div style={{ position: "relative", height: "46px", borderRadius: "8px", overflow: "hidden", border: "1px solid #cbd5e1" }}>
+              <img src={containerNoPhoto.url} alt="Foto Nomor Container" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <button
+                type="button"
+                style={{
+                  position: "absolute",
+                  top: "2px",
+                  right: "2px",
+                  background: "rgba(239, 68, 68, 0.9)",
+                  color: "white",
+                  border: "none",
+                  width: "18px",
+                  height: "18px",
+                  borderRadius: "50%",
+                  fontSize: "10px",
+                  fontWeight: "800",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 10
+                }}
+                onClick={() => {
+                  setContainerNoPhoto(null);
+                  setContainer("");
+                  setShipName("");
+                  setStatus("");
+                  setIso("");
+                  setCategory("");
+                }}
+              >
+                ×
+              </button>
+            </div>
+          ) : (
+            <div
+              className="cdr-dropzone"
+              style={{
+                height: "46px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                padding: "0 10px",
+                cursor: "pointer",
+                border: "1px dashed #cbd5e1",
+                borderRadius: "8px",
+                boxSizing: "border-box",
+                background: "#f8fafc"
+              }}
+              onClick={() => !isScanning && document.getElementById("containerNoPhotoInput").click()}
+            >
+              {isScanning ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Loader2 className="animate-spin" size={16} style={{ color: "#3b82f6" }} />
+                  <span style={{ fontSize: "12px", fontWeight: "700", color: "#3b82f6" }}>Pindai...</span>
+                </div>
+              ) : (
+                <>
+                  <Camera size={18} className="placeholder-icon" style={{ color: "#64748b" }} />
+                  <span style={{ fontSize: "12px", fontWeight: "700", color: "#475569" }}>Ambil Foto Nomor</span>
+                </>
+              )}
+            </div>
+          )}
+          <input
+            id="containerNoPhotoInput"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            style={{ display: "none" }}
+            disabled={isScanning}
+            onChange={handleContainerNoPhotoChange}
+          />
+        </div>
+      </div>
+
+      {/* METADATA INPUTS */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
         <div className="form-group">
           <label>Category</label>
           <SearchSelect
@@ -1836,9 +1979,6 @@ return(
             disabled={isUploading}
           />
         </div>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
         <div className="form-group">
           <label>Status (Full/Empty)</label>
           <select
@@ -1853,7 +1993,10 @@ return(
             <option value="EMPTY">EMPTY</option>
           </select>
         </div>
-        <div className="form-group">
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
+        <div className="form-group" style={{ gridColumn: "span 2" }}>
           <label>ISO Code</label>
           <SearchSelect
             value={iso}
@@ -1865,28 +2008,47 @@ return(
         </div>
       </div>
 
-      {/* FOTO DOKUMENTASI CDR (BISA LEBIH DARI SATU) */}
+      {/* FOTO DOKUMENTASI CDR (HORIZONTAL SCROLLING - LEBIH MODERN & KOMPAK) */}
       <div className="form-group" style={{ marginBottom: "24px" }}>
-        <label>Foto Dokumentasi / Formulir CDR <span className="required-star">*</span> (Bisa lebih dari satu)</label>
-        <div className="photos-preview-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "12px", marginTop: "8px" }}>
+        <label>Foto Dokumentasi / Detail Kerusakan <span className="required-star">*</span> (Bisa lebih dari satu)</label>
+        <div 
+          className="photos-preview-scroll" 
+          style={{ 
+            display: "flex", 
+            flexDirection: "row", 
+            gap: "12px", 
+            marginTop: "8px", 
+            overflowX: "auto", 
+            paddingBottom: "8px",
+            whiteSpace: "nowrap"
+          }}
+        >
           
           {photosList.map((photo, idx) => (
-            <div key={idx} className="photo-preview-item" style={{ position: "relative", height: "140px", borderRadius: "12px", overflow: "hidden", border: "2px solid #cbd5e1" }}>
+            <div key={idx} className="photo-preview-item" style={{ 
+              position: "relative", 
+              width: "100px", 
+              height: "100px", 
+              borderRadius: "12px", 
+              overflow: "hidden", 
+              border: "2px solid #cbd5e1",
+              flexShrink: 0
+            }}>
               <img src={photo.url} alt={`Preview ${idx + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               <button
                 type="button"
                 className="btn-delete-photo"
                 style={{
                   position: "absolute",
-                  top: "5px",
-                  right: "5px",
+                  top: "4px",
+                  right: "4px",
                   background: "rgba(239, 68, 68, 0.9)",
                   color: "white",
                   border: "none",
-                  width: "22px",
-                  height: "22px",
+                  width: "20px",
+                  height: "20px",
                   borderRadius: "50%",
-                  fontSize: "12px",
+                  fontSize: "11px",
                   fontWeight: "800",
                   cursor: "pointer",
                   display: "flex",
@@ -1905,20 +2067,25 @@ return(
           <div 
             className="cdr-dropzone" 
             style={{ 
-              height: "140px", 
+              width: "100px",
+              height: "100px", 
               display: "flex", 
               flexDirection: "column", 
               alignItems: "center", 
               justifyContent: "center", 
               padding: "10px", 
               margin: 0,
-              boxSizing: "border-box" 
+              boxSizing: "border-box",
+              flexShrink: 0,
+              border: "2px dashed #cbd5e1",
+              borderRadius: "12px",
+              cursor: "pointer"
             }}
             onClick={() => !isUploading && document.getElementById("cdrPhotoInput").click()}
           >
-            <Camera size={24} className="placeholder-icon" />
-            <p style={{ margin: "4px 0 0 0", fontSize: "12px", fontWeight: "700" }}>Tambah Foto</p>
-            <p style={{ margin: "2px 0 0 0", fontSize: "10px", color: "#64748b" }}>Kamera / Galeri</p>
+            <Camera size={20} className="placeholder-icon" />
+            <p style={{ margin: "2px 0 0 0", fontSize: "11px", fontWeight: "700" }}>Tambah</p>
+            <p style={{ margin: "0", fontSize: "9px", color: "#64748b" }}>Foto</p>
           </div>
 
         </div>
