@@ -140,6 +140,55 @@ style={button}
 PENGATURAN AKUN
 </button>
 
+{/* TABEL TRANSAKSI TERBARU */}
+<div style={{ marginTop: "30px", borderTop: "1px solid #eee", paddingTop: "25px", marginBottom: "20px" }}>
+  <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#004aad", marginBottom: "15px", textAlign: "left" }}>
+    Transaksi Inspeksi Terbaru
+  </h3>
+  <div style={{ overflowX: "auto" }}>
+    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", textAlign: "left" }}>
+      <thead>
+        <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
+          <th style={{ padding: "10px 8px", color: "#64748b", fontWeight: "600" }}>No</th>
+          <th style={{ padding: "10px 8px", color: "#64748b", fontWeight: "600" }}>Container</th>
+          <th style={{ padding: "10px 8px", color: "#64748b", fontWeight: "600" }}>Kapal</th>
+          <th style={{ padding: "10px 8px", color: "#64748b", fontWeight: "600" }}>Kondisi</th>
+          <th style={{ padding: "10px 8px", color: "#64748b", fontWeight: "600" }}>Sisi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {(JSON.parse(localStorage.getItem("history")) || []).slice(0, 5).map((item, index) => (
+          <tr key={index} style={{ borderBottom: "1px solid #f1f5f9" }}>
+            <td style={{ padding: "10px 8px", color: "#334155" }}>{index + 1}</td>
+            <td style={{ padding: "10px 8px", fontWeight: "700", color: "#2563eb" }}>{item.container}</td>
+            <td style={{ padding: "10px 8px", color: "#334155" }}>{item.shipName}</td>
+            <td style={{ padding: "10px 8px" }}>
+              <span style={{
+                padding: "3px 6px",
+                borderRadius: "8px",
+                fontSize: "10px",
+                fontWeight: "700",
+                background: item.condition === "Good" || item.condition === "GOOD" ? "#dcfce7" : "#ffe4e6",
+                color: item.condition === "Good" || item.condition === "GOOD" ? "#15803d" : "#b91c1c"
+              }}>
+                {item.condition}
+              </span>
+            </td>
+            <td style={{ padding: "10px 8px", color: "#475569" }}>{item.side || "General"}</td>
+          </tr>
+        ))}
+        {(JSON.parse(localStorage.getItem("history")) || []).length === 0 && (
+          <tr>
+            <td colSpan="5" style={{ padding: "20px 8px", textAlign: "center", color: "#94a3b8", fontStyle: "italic" }}>
+              Belum ada riwayat transaksi inspeksi.
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 <button
 onClick={logout}
 style={{

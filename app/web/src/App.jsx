@@ -1,6 +1,8 @@
 import OfficeDashboard from "./pages/office-dashboard/OfficeDashboard";
 import API_URL from "./config/api";
 import React,{useState} from "react";
+import "./pages/Inspection.css";
+import { Save, Camera, ArrowLeft, Loader2 } from "lucide-react";
 
 import * as XLSX from "xlsx";
 
@@ -253,6 +255,13 @@ useState(() => {
   return [];
 });
 
+const [selectedSides, setSelectedSides] = useState([]);
+const [selectedConditions, setSelectedConditions] = useState(["Good"]);
+const [isUploading, setIsUploading] = useState(false);
+const [manifestList, setManifestList] = useState([]);
+const [inspectedContainers, setInspectedContainers] = useState([]);
+const [cdrFile, setCdrFile] = useState(null);
+
 // ======================================================
 // USER MANAGEMENT
 // ======================================================
@@ -403,6 +412,108 @@ React.useEffect(() => {
   
   fetchAndMigrateInspections();
 }, []);
+
+const loadManifestAndInspections = async () => {
+  try {
+    const manifestRes = await fetch(`${API_URL}/api/manifest`);
+    const manifestData = await manifestRes.json();
+    if (Array.isArray(manifestData)) {
+      setManifestList(manifestData);
+    }
+
+    const inspectionRes = await fetch(`${API_URL}/api/inspection`);
+    const inspectionData = await inspectionRes.json();
+    if (Array.isArray(inspectionData)) {
+      setInspectedContainers(inspectionData.map(item => item.container?.toString().toUpperCase().trim()));
+    }
+  } catch (err) {
+    console.error("Error loading manifest / inspections data:", err);
+  }
+};
+
+React.useEffect(() => {
+  loadManifestAndInspections();
+}, [page]);
+
+const availableContainers = manifestList.filter(item => {
+  const containerNum = item.container?.toString().toUpperCase().trim();
+  if (!containerNum) return false;
+
+  const isAlreadyInspected = inspectedContainers.includes(containerNum);
+  const statusStr = (item.status || "").toString().toUpperCase().trim();
+  const isLoadedOrOut = statusStr === "MUAT" || statusStr === "GATE OUT" || statusStr === "KELUAR" || statusStr === "LOAD";
+
+  return !isAlreadyInspected && !isLoadedOrOut;
+});
+
+const handleContainerChange = (e) => {
+  const value = e.target.value.toUpperCase().trim();
+  setContainer(value);
+
+  const found = manifestList.find(
+    item => item.container?.toString().toUpperCase().trim() === value
+  );
+
+  if (found) {
+    setShipName(found.shipName || "");
+    setStatus(found.status || "");
+    setIso(found.iso || "");
+    setCategory(found.category || "");
+  } else {
+    setShipName("");
+    setStatus("");
+    setIso("");
+    setCategory("");
+  }
+};
+
+const handleSearchContainer = () => {
+  if (!container.trim()) {
+    alert("Harap masukkan nomor container terlebih dahulu!");
+    return;
+  }
+  const found = availableContainers.find(
+    item => item.container?.toString().toUpperCase().trim() === container
+  );
+
+  if (found) {
+    alert("Data container ditemukan!");
+  } else {
+    const inManifest = manifestList.find(
+      item => item.container?.toString().toUpperCase().trim() === container
+    );
+    if (inManifest) {
+      const statusStr = (inManifest.status || "").toString().toUpperCase().trim();
+      const isLoadedOrOut = statusStr === "MUAT" || statusStr === "GATE OUT" || statusStr === "KELUAR" || statusStr === "LOAD";
+      if (isLoadedOrOut) {
+        alert(`Container ${container} tidak dapat diinspeksi karena statusnya sudah "${inManifest.status}" (Muat/Keluar).`);
+      } else {
+        alert(`Container ${container} sudah pernah diinspeksi sebelumnya.`);
+      }
+    } else {
+      alert("Nomor container tidak ditemukan di manifest.");
+    }
+  }
+};
+
+const handleSideToggle = (val) => {
+  if (selectedConditions.includes("Good")) return;
+  setSelectedSides(prev =>
+    prev.includes(val) ? prev.filter(item => item !== val) : [...prev, val]
+  );
+};
+
+const handleConditionToggle = (val) => {
+  if (val === "Good") {
+    setSelectedConditions(["Good"]);
+    setSelectedSides([]);
+  } else {
+    setSelectedConditions(prev => {
+      const next = prev.filter(item => item !== "Good");
+      return next.includes(val) ? next.filter(item => item !== val) : [...next, val];
+    });
+  }
+};
 
 const login = async ()=>{
   const currentHour = new Date().getHours();
@@ -814,47 +925,65 @@ setCategory("");
 // SAVE DATA
 // ======================================================
 
-const simpanData = ()=>{
-  if (!container.trim() || !shipName.trim() || !condition.trim()) {
-    alert("Harap isi data nomor container, nama kapal, dan kondisi inspeksi!");
+const simpanData = async () => {
+  if (!container.trim()) {
+    alert("Harap pilih nomor container!");
+    return;
+  }
+  if (!photo1) {
+    alert("Harap ambil atau unggah foto formulir CDR!");
     return;
   }
 
-  const data = {
-    container: container.toUpperCase().trim(),
-    shipName,
-    status,
-    iso,
-    category,
-    condition,
-    side,
-    note,
-    photo1,
-    photo2,
-    petugas: user?.nama || "Petugas Lapangan",
-    group: user?.group || "",
-    date: new Date()
-  };
+  setIsUploading(true);
 
-  fetch(`${API_URL}/api/inspection`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  })
-  .then(async (res) => {
-    let resData;
-    const contentType = res.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
-      resData = await res.json();
-    } else {
-      const text = await res.text();
-      throw new Error(`Server error (${res.status}): ${text.substring(0, 100)}`);
+  try {
+    // Upload the photo
+    let uploadedPhotoUrl = photo1;
+    if (cdrFile) {
+      const formData = new FormData();
+      formData.append("photo", cdrFile);
+
+      const uploadRes = await fetch(`${API_URL}/api/upload/image`, {
+        method: "POST",
+        body: formData
+      });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok) {
+        throw new Error(uploadData.message || "Gagal mengunggah foto");
+      }
+      uploadedPhotoUrl = `${API_URL}/uploads/${uploadData.filename}`;
     }
-    
-    if (!res.ok) {
-      throw new Error(resData?.error || `Gagal menyimpan inspeksi ke server (${res.status})`);
+
+    const activeUser = JSON.parse(localStorage.getItem("user")) || user;
+
+    const data = {
+      container: container.toUpperCase().trim(),
+      shipName: shipName || "-",
+      status: status || "-",
+      iso: iso || "-",
+      category: category || "-",
+      condition: selectedConditions.length > 0 ? selectedConditions.join(", ") : "Good",
+      side: selectedSides.length > 0 ? selectedSides.join(", ") : "General",
+      note: note,
+      photo1: uploadedPhotoUrl,
+      photo2: "",
+      petugas: activeUser?.nama || "Petugas Lapangan",
+      group: activeUser?.group || "",
+      date: new Date().toISOString()
+    };
+
+    const response = await fetch(`${API_URL}/api/inspection`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      const resData = await response.json();
+      throw new Error(resData?.error || "Gagal menyimpan inspeksi ke server");
     }
-    
+
     const newHistory = [data, ...history];
     setHistory(newHistory);
     localStorage.setItem("history", JSON.stringify(newHistory));
@@ -862,41 +991,28 @@ const simpanData = ()=>{
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new Event("focus"));
 
-    alert("DATA INSPEKSI TERSIMPAN");
-    
+    alert("INSPEKSI CDR BERHASIL TERSIMPAN");
+
+    // Reset form
     setContainer("");
     setShipName("");
     setStatus("");
     setIso("");
     setCategory("");
-    setCondition("");
-    setSide("");
+    setSelectedConditions(["Good"]);
+    setSelectedSides([]);
     setNote("");
     setPhoto1("");
     setPhoto2("");
-  })
-  .catch((err) => {
+    setCdrFile(null);
+
+    setPage("history");
+  } catch (err) {
     console.error("Save error:", err);
-    alert("Error: " + err.message + ". Menyimpan secara lokal di browser sementara offline.");
-    
-    const newHistory = [data, ...history];
-    setHistory(newHistory);
-    localStorage.setItem("history", JSON.stringify(newHistory));
-
-    window.dispatchEvent(new Event("storage"));
-    window.dispatchEvent(new Event("focus"));
-    
-    setContainer("");
-    setShipName("");
-    setStatus("");
-    setIso("");
-    setCategory("");
-    setCondition("");
-    setSide("");
-    setNote("");
-    setPhoto1("");
-    setPhoto2("");
-  });
+    alert("Error: " + err.message);
+  } finally {
+    setIsUploading(false);
+  }
 };
 
 // ======================================================
@@ -1550,6 +1666,55 @@ style={input}
 
 }
 
+{/* TABEL TRANSAKSI TERBARU */}
+<div style={{ marginTop: "30px", borderTop: "1px solid #eee", paddingTop: "25px", marginBottom: "20px" }}>
+  <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#004aad", marginBottom: "15px", textAlign: "left" }}>
+    Transaksi Inspeksi Terbaru
+  </h3>
+  <div style={{ overflowX: "auto" }}>
+    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", textAlign: "left" }}>
+      <thead>
+        <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
+          <th style={{ padding: "10px 8px", color: "#64748b", fontWeight: "600" }}>No</th>
+          <th style={{ padding: "10px 8px", color: "#64748b", fontWeight: "600" }}>Container</th>
+          <th style={{ padding: "10px 8px", color: "#64748b", fontWeight: "600" }}>Kapal</th>
+          <th style={{ padding: "10px 8px", color: "#64748b", fontWeight: "600" }}>Kondisi</th>
+          <th style={{ padding: "10px 8px", color: "#64748b", fontWeight: "600" }}>Sisi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {history.slice(0, 5).map((item, index) => (
+          <tr key={index} style={{ borderBottom: "1px solid #f1f5f9" }}>
+            <td style={{ padding: "10px 8px", color: "#334155" }}>{index + 1}</td>
+            <td style={{ padding: "10px 8px", fontWeight: "700", color: "#2563eb" }}>{item.container}</td>
+            <td style={{ padding: "10px 8px", color: "#334155" }}>{item.shipName}</td>
+            <td style={{ padding: "10px 8px" }}>
+              <span style={{
+                padding: "3px 6px",
+                borderRadius: "8px",
+                fontSize: "10px",
+                fontWeight: "700",
+                background: item.condition === "Good" || item.condition === "GOOD" ? "#dcfce7" : "#ffe4e6",
+                color: item.condition === "Good" || item.condition === "GOOD" ? "#15803d" : "#b91c1c"
+              }}>
+                {item.condition}
+              </span>
+            </td>
+            <td style={{ padding: "10px 8px", color: "#475569" }}>{item.side || "General"}</td>
+          </tr>
+        ))}
+        {history.length === 0 && (
+          <tr>
+            <td colSpan="5" style={{ padding: "20px 8px", textAlign: "center", color: "#94a3b8", fontStyle: "italic" }}>
+              Belum ada riwayat transaksi inspeksi.
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 <button
 style={logoutButton}
 onClick={()=>
@@ -1573,399 +1738,205 @@ LOGOUT
 
 if(page==="inspection"){
 
-const kerusakan = [
-
-  "GOOD",
-  "Bent/Bengkok",
-  "Broken/Pecah",
-  "Hole/Berlubang",
-  "Cut/Terpotong",
-  "Dented/Penyok",
-  "Missing/Hilang",
-  "Scraped/Tergores",
-  "Torn/Robek",
-  "Leaking/Bocor"
-
-];
-
-const sisi = [
-
-  "Front/Depan",
-  "Bottom/Bawah",
-  "Left Side/Sisi Kiri",
-  "Right Side/Sisi Kanan",
-  "Roof/Atas",
-  "Rear/Belakang"
-
-];
-
 return(
 
-<div style={bg}>
-
-  <div style={card}>
-
-    <h1 style={title}>
-      CONTAINER INSPECTION
-    </h1>
-
-    <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-      <input
-        placeholder="Nomor Container"
-        value={container}
-        onChange={(e)=>
-          cariContainer(
-            e.target.value.toUpperCase()
-          )
-        }
-        style={{
-          width: "100%",
-          padding: "18px",
-          borderRadius: "18px",
-          border: "1px solid #ccc",
-          boxSizing: "border-box"
-        }}
-      />
-      <button
-        type="button"
-        onClick={cariContainerLive}
-        style={{
-          padding: "0 24px",
-          background: "#27AE60",
-          color: "white",
-          border: "none",
-          borderRadius: "18px",
-          fontSize: "16px",
-          fontWeight: "bold",
-          cursor: "pointer",
-          whiteSpace: "nowrap"
-        }}
-      >
-        Input
-      </button>
+<div className="inspection-container-page">
+  <div className="inspection-wrapper">
+    
+    {/* BANNER KUNING */}
+    <div className="form-header-banner">
+      FORM PETUGAS (INSPEKSI CDR)
     </div>
 
-    <input
-      placeholder="Nama Kapal"
-      value={shipName}
-      readOnly
-      style={input}
-    />
-
-    <input
-      placeholder="FULL / EMPTY"
-      value={status}
-      readOnly
-      style={input}
-    />
-
-    <input
-      placeholder="ISO CODE"
-      value={iso}
-      readOnly
-      style={input}
-    />
-
-    <input
-      placeholder="CATEGORY"
-      value={category}
-      readOnly
-      style={input}
-    />
-
-    <select
-      style={input}
-      value={condition}
-      onChange={(e)=>
-        setCondition(
-          e.target.value
-        )
-      }
-    >
-
-      <option>
-        -Kondisi-
-      </option>
-
-      {
-        kerusakan.map((item,index)=>(
-
-          <option key={index}>
-            {item}
-          </option>
-
-        ))
-      }
-
-    </select>
-
-    <select
-      style={input}
-      value={side}
-      onChange={(e)=>
-        setSide(
-          e.target.value
-        )
-      }
-    >
-
-      <option>
-        -Sisi-
-      </option>
-
-      {
-        sisi.map((item,index)=>(
-
-          <option key={index}>
-            {item}
-          </option>
-
-        ))
-      }
-
-    </select>
-
-    <textarea
-      placeholder="CATATAN KRONOLOGI"
-      value={note}
-      onChange={(e)=>
-        setNote(
-          e.target.value
-        )
-      }
-      style={textarea}
-    />
-{/* FOTO CONTAINER */}
-
-<div
-  style={{
-    marginBottom:"25px"
-  }}
->
-
-
-
-  {/* GRID FOTO */}
-
-  <div
-    style={{
-      display:"grid",
-      gridTemplateColumns:
-        "1fr 1fr",
-      gap:"20px"
-    }}
-  >
-
-    {/* FOTO DAMAGE */}
-
-    <div>
-
-      <button
-        type="button"
-        style={{
-          ...button,
-          background:"#ff9800"
-        }}
-        onClick={()=>
-          document
-            .getElementById(
-              "photoDamage"
-            )
-            .click()
-        }
-      >
-        FOTO DAMAGE
-      </button>
-
-      <input
-        id="photoDamage"
-        type="file"
-        accept="image/*"
-        capture="environment"
-        style={{
-          display:"none"
-        }}
-        onChange={(e)=>{
-
-          const file =
-            e.target.files[0];
-
-          if(file){
-            compressImageToBase64(file, (base64) => {
-              setPhoto2(base64);
-            });
-          }
-
-        }}
-      />
-
-      {
-        photo2 && (
-
-          <div
-            style={{
-              position:"relative"
-            }}
+    {/* CARD UTAMA */}
+    <div className="inspection-card">
+      
+      {/* NOMOR CONTAINER */}
+      <div className="form-group" style={{ marginBottom: "20px" }}>
+        <label>
+          Nomor Container
+          <span className="required-star">*</span>
+        </label>
+        <div className="container-search-wrapper">
+          <input
+            type="text"
+            list="containerList"
+            value={container}
+            onInput={handleContainerChange}
+            onChange={handleContainerChange}
+            placeholder="Masukkan atau pilih nomor container..."
+            className="form-input"
+            disabled={isUploading}
+          />
+          <button
+            type="button"
+            className="btn-search-container"
+            onClick={handleSearchContainer}
+            disabled={isUploading}
           >
+            Cari
+          </button>
+        </div>
+        <datalist id="containerList">
+          {availableContainers.map((item, index) => (
+            <option key={index} value={item.container} />
+          ))}
+        </datalist>
 
-            <img
-              src={photo2}
-              alt=""
-              style={{
-                width:"100%",
-                height:"180px",
-                objectFit:"cover",
-                borderRadius:"15px",
-                border:
-                  "3px solid #ff9800"
-              }}
-            />
-
-            <button
-              onClick={()=>
-                setPhoto2("")
-              }
-              style={{
-                position:"absolute",
-                top:"-10px",
-                right:"-10px",
-                background:"red",
-                color:"#fff",
-                border:"none",
-                borderRadius:"50%",
-                width:"35px",
-                height:"35px",
-                fontWeight:"bold",
-                cursor:"pointer"
-              }}
-            >
-              X
-            </button>
-
+        {/* AUTOFILL METADATA BADGES */}
+        {shipName && (
+          <div className="autofill-metadata-container">
+            <div className="meta-badge"><strong>Kapal:</strong> {shipName}</div>
+            <div className="meta-badge"><strong>Status:</strong> {status}</div>
+            <div className="meta-badge"><strong>ISO:</strong> {iso}</div>
+            <div className="meta-badge"><strong>Kategori:</strong> {category}</div>
           </div>
+        )}
+      </div>
 
-        )
-      }
+      {/* FOTO FORMULIR CDR */}
+      <div className="form-group" style={{ marginBottom: "24px" }}>
+        <label>Foto Formulir CDR <span className="required-star">*</span></label>
+        <div 
+          className="cdr-dropzone"
+          onClick={() => !isUploading && document.getElementById("cdrPhotoInput").click()}
+        >
+          {!photo1 ? (
+            <div className="dropzone-placeholder">
+              <Camera size={36} className="placeholder-icon" />
+              <p className="placeholder-main">Ambil Foto / Unggah Formulir CDR</p>
+              <p className="placeholder-sub">Klik untuk membuka kamera atau galeri</p>
+            </div>
+          ) : (
+            <div className="dropzone-preview">
+              <img src={photo1} alt="CDR Form Preview" />
+              <div className="preview-overlay">
+                <span>Ganti Foto</span>
+              </div>
+            </div>
+          )}
+        </div>
+        <input
+          id="cdrPhotoInput"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          style={{ display: "none" }}
+          disabled={isUploading}
+          onChange={(e) => {
+            const file = e.target.files[0];
+            if (file) {
+              setCdrFile(file);
+              setPhoto1(URL.createObjectURL(file));
+            }
+          }}
+        />
+      </div>
 
-    </div>
-
-    {/* FOTO NOMOR CONTAINER */}
-
-    <div>
-
-      <button
-        type="button"
-        style={{
-          ...button,
-          background:"#0057b8"
-        }}
-        onClick={()=>
-          document
-            .getElementById(
-              "photoContainer"
-            )
-            .click()
-        }
-      >
-        FOTO NOMOR CONTAINER
-      </button>
-
-      <input
-        id="photoContainer"
-        type="file"
-        accept="image/*"
-        capture="environment"
-        style={{
-          display:"none"
-        }}
-        onChange={(e)=>{
-
-          const file =
-            e.target.files[0];
-
-          if(file){
-            compressImageToBase64(file, (base64) => {
-              setPhoto1(base64);
-            });
-          }
-
-        }}
-      />
-
-      {
-        photo1 && (
-
-          <div
-            style={{
-              position:"relative"
-            }}
-          >
-
-            <img
-              src={photo1}
-              alt=""
-              style={{
-                width:"100%",
-                height:"180px",
-                objectFit:"cover",
-                borderRadius:"15px",
-                border:
-                  "3px solid #0057b8"
-              }}
-            />
-
-            <button
-              onClick={()=>
-                setPhoto1("")
-              }
-              style={{
-                position:"absolute",
-                top:"-10px",
-                right:"-10px",
-                background:"red",
-                color:"#fff",
-                border:"none",
-                borderRadius:"50%",
-                width:"35px",
-                height:"35px",
-                fontWeight:"bold",
-                cursor:"pointer"
-              }}
-            >
-              X
-            </button>
-
+      {/* CHECKLIST SISI & KONDISI */}
+      <div className="checklist-container-grid">
+        {/* SISI */}
+        <div className="checklist-card">
+          <h4 className="checklist-title">Ceklis Sisi Kerusakan</h4>
+          <div className="checkbox-list">
+            {["Front", "Rear", "Left Side", "Right Side", "Top Side", "Bottom Side"].map(s => {
+              const isChecked = selectedSides.includes(s);
+              const isDisabled = selectedConditions.includes("Good");
+              return (
+                <label key={s} className={`checkbox-label ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    disabled={isDisabled}
+                    onChange={() => handleSideToggle(s)}
+                  />
+                  <span>{s === "Front" ? "Depan (Front)" :
+                         s === "Rear" ? "Belakang (Rear)" :
+                         s === "Left Side" ? "Kiri (Left Side)" :
+                         s === "Right Side" ? "Kanan (Right Side)" :
+                         s === "Top Side" ? "Atas (Top Side)" :
+                         "Bawah (Bottom Side)"}</span>
+                </label>
+              );
+            })}
           </div>
+        </div>
 
-        )
-      }
+        {/* KONDISI */}
+        <div className="checklist-card">
+          <h4 className="checklist-title">Ceklis Kondisi Kontainer</h4>
+          <div className="checkbox-list">
+            {[
+              { val: "Good", label: "Kondisi Baik (Good)" },
+              { val: "Dent/Penyok", label: "Penyok (Dent)" },
+              { val: "Hole/Lubang", label: "Lubang (Hole)" },
+              { val: "Rust/Karat", label: "Karat (Rust)" },
+              { val: "Broken/Pecah", label: "Pecah (Broken)" },
+              { val: "Other/Lainnya", label: "Lainnya (Other)" }
+            ].map(c => {
+              const isChecked = selectedConditions.includes(c.val);
+              return (
+                <label key={c.val} className={`checkbox-label ${isChecked ? 'checked' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => handleConditionToggle(c.val)}
+                  />
+                  <span>{c.label}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* CATATAN */}
+      <div className="form-group" style={{ marginBottom: "24px" }}>
+        <label>Catatan Kronologi</label>
+        <textarea
+          placeholder="Tambahkan catatan kronologi jika diperlukan..."
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          className="form-textarea"
+          disabled={isUploading}
+        />
+      </div>
+
+      {/* BUTTON ACTIONS */}
+      <div className="form-footer-buttons">
+        <button
+          type="button"
+          className="btn-back"
+          onClick={() => setPage("dashboard")}
+          disabled={isUploading}
+        >
+          <ArrowLeft size={18} />
+          <span>Kembali</span>
+        </button>
+        
+        <button
+          type="button"
+          className="btn-save-inspection"
+          onClick={simpanData}
+          disabled={isUploading}
+        >
+          {isUploading ? (
+            <>
+              <Loader2 size={18} className="animate-spin" />
+              <span>Menyimpan...</span>
+            </>
+          ) : (
+            <>
+              <Save size={18} />
+              <span>Simpan Inspeksi CDR</span>
+            </>
+          )}
+        </button>
+      </div>
 
     </div>
 
   </div>
-
-</div>
-
-    {/* BUTTON */}
-
-    <button
-      style={button}
-      onClick={simpanData}
-    >
-      SIMPAN
-    </button>
-
-    <button
-      style={logoutButton}
-      onClick={()=>
-        setPage("dashboard")
-      }
-    >
-      KEMBALI
-    </button>
-
-  </div>
-
 </div>
 
 );

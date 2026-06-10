@@ -3,11 +3,13 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
+const path = require("path");
 
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const manifestRoutes = require("./routes/manifestRoutes");
 const inspectionRoutes = require("./routes/inspectionRoutes");
 const accountsRoutes = require("./routes/accountsRoutes");
+const uploadRoutes = require("./routes/uploadRoutes");
 
 const app = express();
 
@@ -19,6 +21,8 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api", manifestRoutes);
 app.use("/api/inspection", inspectionRoutes);
 app.use("/api", accountsRoutes);
+app.use("/api/upload", uploadRoutes);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.get("/", (req, res) => {
 

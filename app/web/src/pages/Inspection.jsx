@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Save, Camera, Image as ImageIcon, ArrowLeft } from "lucide-react";
+import { Save, Camera, ArrowLeft, Loader2 } from "lucide-react";
 import API_URL from "../config/api";
 import "./Inspection.css";
 
@@ -9,96 +9,63 @@ export default function Inspection() {
 
   const [containerNumber, setContainerNumber] = useState("");
   const [shipName, setShipName] = useState("");
-  const [damage, setDamage] = useState("Good");
-  const [side, setSide] = useState("");
+  const [status, setStatus] = useState("");
+  const [iso, setIso] = useState("");
+  const [category, setCategory] = useState("");
   const [note, setNote] = useState("");
+  
   const [photos, setPhotos] = useState([]);
   const [manifestList, setManifestList] = useState([]);
+  const [inspectedContainers, setInspectedContainers] = useState([]);
+  const [selectedSides, setSelectedSides] = useState([]);
+  const [selectedConditions, setSelectedConditions] = useState(["Good"]);
+  const [isUploading, setIsUploading] = useState(false);
+
   useEffect(() => {
+    loadManifestAndInspections();
+  }, []);
 
-  console.log("MANIFEST LOADED:", manifestList);
+  const loadManifestAndInspections = async () => {
+    try {
+      // Load Manifest
+      const manifestRes = await fetch(`${API_URL}/api/manifest`);
+      const manifestData = await manifestRes.json();
+      if (Array.isArray(manifestData)) {
+        setManifestList(manifestData);
+      }
 
-}, [manifestList]);
-const [status, setStatus] = useState("");
-const [iso, setIso] = useState("");
-const [category, setCategory] = useState("");
-useEffect(() => {
-  console.log("STATUS STATE:", status);
-  console.log("ISO STATE:", iso);
-  console.log("CATEGORY STATE:", category);
-}, [status, iso, category]);
+      // Load Inspected Containers to filter them out
+      const inspectionRes = await fetch(`${API_URL}/api/inspection`);
+      const inspectionData = await inspectionRes.json();
+      if (Array.isArray(inspectionData)) {
+        setInspectedContainers(inspectionData.map(item => item.container?.toString().toUpperCase().trim()));
+      }
+    } catch (err) {
+      console.error("Error loading manifest / inspections data:", err);
+    }
+  };
 
- useEffect(() => {
+  // Filter manifest to get only uninspected and not loaded containers
+  const availableContainers = manifestList.filter(item => {
+    const containerNum = item.container?.toString().toUpperCase().trim();
+    if (!containerNum) return false;
 
-  loadManifest();
+    // 1. Filter out if already inspected
+    const isAlreadyInspected = inspectedContainers.includes(containerNum);
 
-}, []);
+    // 2. Filter out if status is already loaded or exited
+    const statusStr = (item.status || "").toString().toUpperCase().trim();
+    const isLoadedOrOut = statusStr === "MUAT" || statusStr === "GATE OUT" || statusStr === "KELUAR" || statusStr === "LOAD";
 
-const loadManifest = async () => {
+    return !isAlreadyInspected && !isLoadedOrOut;
+  });
 
-  try {
+  const handleContainerChange = (e) => {
+    const value = e.target.value.toUpperCase().trim();
+    setContainerNumber(value);
 
-    const response =
-    await fetch(
-  `${API_URL}/api/manifest`
-);
-
-    const data =
-    await response.json();
-
-    console.log(
-      "DATA SERVER =",
-      data
-    );
-
-    setManifestList(data);
-
-  } catch(err){
-
-    console.error(
-      "ERROR LOAD MANIFEST",
-      err
-    );
-    console.error("ERROR LOAD MANIFEST", err);
-  }
-};
-
-const handleContainerChange = (e) => {
-  const value = e.target.value.toUpperCase().trim();
-  setContainerNumber(value);
-
-  const found = manifestList.find(
-    item => item.container?.toString().toUpperCase().trim() === value
-  );
-
-  if (found) {
-    setShipName(found.shipName || "");
-    setStatus(found.status || "");
-    setIso(found.iso || "");
-    setCategory(found.category || "");
-  } else {
-    setShipName("");
-    setStatus("");
-    setIso("");
-    setCategory("");
-  }
-};
-
-const handleSearchContainer = async () => {
-  if (!containerNumber.trim()) {
-    alert("Harap masukkan nomor container terlebih dahulu!");
-    return;
-  }
-
-  const value = containerNumber.toUpperCase().trim();
-
-  try {
-    const response = await fetch(`${API_URL}/api/manifest`);
-    const data = await response.json();
-    setManifestList(data);
-
-    const found = data.find(
-      (item) => item.container?.toString().toUpperCase().trim() === value
+    const found = manifestList.find(
+      item => item.container?.toString().toUpperCase().trim() === value
     );
 
     if (found) {
@@ -106,294 +73,345 @@ const handleSearchContainer = async () => {
       setStatus(found.status || "");
       setIso(found.iso || "");
       setCategory(found.category || "");
-      alert("Data container ditemukan!");
     } else {
       setShipName("");
       setStatus("");
       setIso("");
       setCategory("");
-      alert("Nomor container tidak ditemukan di manifest. Harap pastikan manifest sudah di-import di dashboard.");
     }
-  } catch (err) {
-    console.error("ERROR SEARCHING CONTAINER", err);
-    alert("Gagal mengambil data manifest terbaru dari server.");
-  }
-};
-
-const saveInspection = () => {
-  if (!containerNumber) {
-    alert("Harap pilih nomor container!");
-    return;
-  }
-
-  const activeUser = JSON.parse(localStorage.getItem("user"));
-
-  const data = {
-    container: containerNumber,
-    shipName: shipName,
-    status: status,
-    iso: iso,
-    category: category,
-    condition: damage,
-    side: side,
-    note: note,
-    photo1: photos[0]?.url || "",
-    photo2: photos[1]?.url || "",
-    petugas: activeUser?.nama || "Petugas Lapangan",
-    date: new Date().toISOString()
   };
 
-  const newHistory = [
-    ...(JSON.parse(localStorage.getItem("history")) || []),
-    data
-  ];
+  const handleSearchContainer = () => {
+    if (!containerNumber.trim()) {
+      alert("Harap masukkan nomor container terlebih dahulu!");
+      return;
+    }
+    const found = availableContainers.find(
+      item => item.container?.toString().toUpperCase().trim() === containerNumber
+    );
 
-  localStorage.setItem("history", JSON.stringify(newHistory));
+    if (found) {
+      alert("Data container ditemukan!");
+    } else {
+      // Check if it's already inspected or loaded to show friendly alert
+      const inManifest = manifestList.find(
+        item => item.container?.toString().toUpperCase().trim() === containerNumber
+      );
+      if (inManifest) {
+        const statusStr = (inManifest.status || "").toString().toUpperCase().trim();
+        const isLoadedOrOut = statusStr === "MUAT" || statusStr === "GATE OUT" || statusStr === "KELUAR" || statusStr === "LOAD";
+        if (isLoadedOrOut) {
+          alert(`Container ${containerNumber} tidak dapat diinspeksi karena statusnya sudah "${inManifest.status}" (Muat/Keluar).`);
+        } else {
+          alert(`Container ${containerNumber} sudah pernah diinspeksi sebelumnya.`);
+        }
+      } else {
+        alert("Nomor container tidak ditemukan di manifest.");
+      }
+    }
+  };
 
-  // Trigger event agar dashboard di tab yang sama bisa refresh otomatis
-  window.dispatchEvent(new Event("storage"));
-  window.dispatchEvent(new Event("focus"));
+  const handleSideToggle = (val) => {
+    if (selectedConditions.includes("Good")) return;
+    setSelectedSides(prev =>
+      prev.includes(val) ? prev.filter(item => item !== val) : [...prev, val]
+    );
+  };
 
-  alert("INSPEKSI BERHASIL TERSIMPAN");
-  navigate("/history");
-};
+  const handleConditionToggle = (val) => {
+    if (val === "Good") {
+      setSelectedConditions(["Good"]);
+      setSelectedSides([]);
+    } else {
+      setSelectedConditions(prev => {
+        const next = prev.filter(item => item !== "Good");
+        return next.includes(val) ? next.filter(item => item !== val) : [...next, val];
+      });
+    }
+  };
 
-return (
-  <div className="inspection-container-page">
-    <div className="inspection-wrapper">
-      
-      {/* BANNER KUNING */}
-      <div className="form-header-banner">
-        FORM PETUGAS (INSPEKSI)
-      </div>
+  const saveInspection = async () => {
+    if (!containerNumber) {
+      alert("Harap pilih nomor container!");
+      return;
+    }
+    if (photos.length === 0) {
+      alert("Harap ambil atau unggah foto formulir CDR!");
+      return;
+    }
 
-      {/* CARD UTAMA */}
-      <div className="inspection-card">
-        <div className="form-grid">
+    setIsUploading(true);
+
+    try {
+      // Upload the photo
+      let uploadedPhotoUrl = "";
+      const photoObj = photos[0];
+      if (photoObj.file) {
+        const formData = new FormData();
+        formData.append("photo", photoObj.file);
+
+        const uploadRes = await fetch(`${API_URL}/api/upload/image`, {
+          method: "POST",
+          body: formData
+        });
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok) {
+          throw new Error(uploadData.message || "Gagal mengunggah foto");
+        }
+        uploadedPhotoUrl = `${API_URL}/uploads/${uploadData.filename}`;
+      } else {
+        uploadedPhotoUrl = photoObj.url;
+      }
+
+      const activeUser = JSON.parse(localStorage.getItem("user"));
+
+      const data = {
+        container: containerNumber,
+        shipName: shipName || "-",
+        status: status || "-",
+        iso: iso || "-",
+        category: category || "-",
+        condition: selectedConditions.length > 0 ? selectedConditions.join(", ") : "Good",
+        side: selectedSides.length > 0 ? selectedSides.join(", ") : "General",
+        note: note,
+        photo1: uploadedPhotoUrl,
+        photo2: "",
+        petugas: activeUser?.nama || "Petugas Lapangan",
+        date: new Date().toISOString()
+      };
+
+      const response = await fetch(`${API_URL}/api/inspection`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const resData = await response.json();
+        throw new Error(resData?.error || "Gagal menyimpan inspeksi ke server");
+      }
+
+      // Save to local history for sync
+      const newHistory = [
+        data,
+        ...(JSON.parse(localStorage.getItem("history")) || [])
+      ];
+      localStorage.setItem("history", JSON.stringify(newHistory));
+
+      // Trigger event for dashboard refresh
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new Event("focus"));
+
+      alert("INSPEKSI BERHASIL TERSIMPAN");
+      navigate("/history");
+    } catch (err) {
+      console.error("Error saving inspection:", err);
+      alert("Error: " + err.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <div className="inspection-container-page">
+      <div className="inspection-wrapper">
+        
+        {/* BANNER KUNING */}
+        <div className="form-header-banner">
+          FORM PETUGAS (INSPEKSI CDR)
+        </div>
+
+        {/* CARD UTAMA */}
+        <div className="inspection-card">
           
-          {/* KOLOM KIRI */}
-          <div className="form-column">
-            <div className="form-group">
-              <label>
-                Nomor Container
-                <span className="required-star">*</span>
-              </label>
-              <div className="container-search-wrapper">
-                <input
-                  type="text"
-                  list="containerList"
-                  value={containerNumber}
-                  onInput={handleContainerChange}
-                  onChange={handleContainerChange}
-                  placeholder="Masukkan nomor container"
-                  className="form-input"
-                />
-                <button
-                  type="button"
-                  className="btn-search-container"
-                  onClick={handleSearchContainer}
-                >
-                  Cari
-                </button>
+          {/* NOMOR CONTAINER */}
+          <div className="form-group" style={{ marginBottom: "20px" }}>
+            <label>
+              Nomor Container
+              <span className="required-star">*</span>
+            </label>
+            <div className="container-search-wrapper">
+              <input
+                type="text"
+                list="containerList"
+                value={containerNumber}
+                onInput={handleContainerChange}
+                onChange={handleContainerChange}
+                placeholder="Masukkan atau pilih nomor container..."
+                className="form-input"
+                disabled={isUploading}
+              />
+              <button
+                type="button"
+                className="btn-search-container"
+                onClick={handleSearchContainer}
+                disabled={isUploading}
+              >
+                Cari
+              </button>
+            </div>
+            <datalist id="containerList">
+              {availableContainers.map((item, index) => (
+                <option key={index} value={item.container} />
+              ))}
+            </datalist>
+
+            {/* AUTOFILL METADATA BADGES */}
+            {shipName && (
+              <div className="autofill-metadata-container">
+                <div className="meta-badge"><strong>Kapal:</strong> {shipName}</div>
+                <div className="meta-badge"><strong>Status:</strong> {status}</div>
+                <div className="meta-badge"><strong>ISO:</strong> {iso}</div>
+                <div className="meta-badge"><strong>Kategori:</strong> {category}</div>
               </div>
-              <datalist id="containerList">
-                {manifestList.map((item, index) => (
-                  <option key={index} value={item.container} />
-                ))}
-              </datalist>
-            </div>
-
-            <div className="form-group">
-              <label>Sisi</label>
-              <select
-                value={side}
-                onChange={(e) => setSide(e.target.value)}
-                className="form-select"
-              >
-                <option value="">- Pilih Sisi -</option>
-                <option value="Front">Front</option>
-                <option value="Rear">Rear</option>
-                <option value="Left Side">Left Side</option>
-                <option value="Right Side">Right Side</option>
-                <option value="Top Side">Top Side</option>
-                <option value="Bottom Side">Bottom Side</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Kondisi</label>
-              <select
-                value={damage}
-                onChange={(e) => setDamage(e.target.value)}
-                className="form-select"
-              >
-                <option value="Good">Good</option>
-                <option value="Dent/Penyok">Dent/Penyok</option>
-                <option value="Hole/Lubang">Hole/Lubang</option>
-                <option value="Rust/Karat">Rust/Karat</option>
-                <option value="Broken/Pecah">Broken/Pecah</option>
-                <option value="Other/Lainnya">Other/Lainnya</option>
-              </select>
-            </div>
+            )}
           </div>
 
-          {/* KOLOM KANAN */}
-          <div className="form-column">
-            <div className="form-group">
-              <label>Nama Kapal</label>
-              <input
-                type="text"
-                value={shipName}
-                readOnly
-                placeholder="Nama kapal otomatis terisi..."
-                className="form-input-readonly"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>FULL / EMPTY</label>
-              <input
-                type="text"
-                value={status}
-                readOnly
-                placeholder="Status otomatis terisi..."
-                className="form-input-readonly"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>ISO CODE</label>
-              <input
-                type="text"
-                value={iso}
-                readOnly
-                placeholder="ISO code otomatis terisi..."
-                className="form-input-readonly"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>CATEGORY</label>
-              <input
-                type="text"
-                value={category}
-                readOnly
-                placeholder="Category otomatis terisi..."
-                className="form-input-readonly"
-              />
-            </div>
-          </div>
-
-        </div>
-
-        {/* CATATAN */}
-        <div className="form-group full-width">
-          <label>Catatan</label>
-          <textarea
-            placeholder="Catatan inspeksi..."
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            className="form-textarea"
-          />
-        </div>
-
-        {/* MEDIA UPLOAD SECTION */}
-        <div className="media-section">
-          <h4 className="media-title">Foto Kerusakan (Opsional)</h4>
-          <div className="media-actions">
-            <button
-              type="button"
-              onClick={() => document.getElementById("cameraInput").click()}
-              className="btn-media-blue"
+          {/* FOTO FORMULIR CDR */}
+          <div className="form-group" style={{ marginBottom: "24px" }}>
+            <label>Foto Formulir CDR <span className="required-star">*</span></label>
+            <div 
+              className="cdr-dropzone"
+              onClick={() => !isUploading && document.getElementById("cdrPhotoInput").click()}
             >
-              <Camera size={18} />
-              <span>Ambil Foto Kamera</span>
-            </button>
+              {photos.length === 0 ? (
+                <div className="dropzone-placeholder">
+                  <Camera size={36} className="placeholder-icon" />
+                  <p className="placeholder-main">Ambil Foto / Unggah Formulir CDR</p>
+                  <p className="placeholder-sub">Klik untuk membuka kamera atau galeri</p>
+                </div>
+              ) : (
+                <div className="dropzone-preview">
+                  <img src={photos[0].url} alt="CDR Form Preview" />
+                  <div className="preview-overlay">
+                    <span>Ganti Foto</span>
+                  </div>
+                </div>
+              )}
+            </div>
             <input
-              id="cameraInput"
+              id="cdrPhotoInput"
               type="file"
               accept="image/*"
               capture="environment"
-              multiple
               style={{ display: "none" }}
+              disabled={isUploading}
               onChange={(e) => {
-                const files = Array.from(e.target.files);
-                const mapped = files.map(file => ({
-                  file,
-                  url: URL.createObjectURL(file)
-                }));
-                setPhotos(prev => [...prev, ...mapped]);
-              }}
-            />
-
-            <button
-              type="button"
-              onClick={() => document.getElementById("galleryInput").click()}
-              className="btn-media-orange"
-            >
-              <ImageIcon size={18} />
-              <span>Ambil dari Galeri</span>
-            </button>
-            <input
-              id="galleryInput"
-              type="file"
-              accept="image/*"
-              multiple
-              style={{ display: "none" }}
-              onChange={(e) => {
-                const files = Array.from(e.target.files);
-                const mapped = files.map(file => ({
-                  file,
-                  url: URL.createObjectURL(file)
-                }));
-                setPhotos(prev => [...prev, ...mapped]);
+                const file = e.target.files[0];
+                if (file) {
+                  setPhotos([{
+                    file,
+                    url: URL.createObjectURL(file)
+                  }]);
+                }
               }}
             />
           </div>
 
-          {/* PREVIEW FOTO */}
-          {photos.length > 0 && (
-            <div className="photos-preview-grid">
-              {photos.map((item, index) => (
-                <div key={index} className="photo-preview-item">
-                  <img src={item.url} alt="preview" />
-                  <button
-                    type="button"
-                    className="btn-delete-photo"
-                    onClick={() => setPhotos(prev => prev.filter((_, idx) => idx !== index))}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
+          {/* CHECKLIST SISI & KONDISI */}
+          <div className="checklist-container-grid">
+            {/* SISI */}
+            <div className="checklist-card">
+              <h4 className="checklist-title">Ceklis Sisi Kerusakan</h4>
+              <div className="checkbox-list">
+                {["Front", "Rear", "Left Side", "Right Side", "Top Side", "Bottom Side"].map(s => {
+                  const isChecked = selectedSides.includes(s);
+                  const isDisabled = selectedConditions.includes("Good");
+                  return (
+                    <label key={s} className={`checkbox-label ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        disabled={isDisabled}
+                        onChange={() => handleSideToggle(s)}
+                      />
+                      <span>{s === "Front" ? "Depan (Front)" :
+                             s === "Rear" ? "Belakang (Rear)" :
+                             s === "Left Side" ? "Kiri (Left Side)" :
+                             s === "Right Side" ? "Kanan (Right Side)" :
+                             s === "Top Side" ? "Atas (Top Side)" :
+                             "Bawah (Bottom Side)"}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
-          )}
-        </div>
 
-        {/* BUTTON ACTIONS */}
-        <div className="form-footer-buttons">
-          <button
-            type="button"
-            className="btn-back"
-            onClick={() => navigate(-1)}
-          >
-            <ArrowLeft size={18} />
-            <span>Kembali</span>
-          </button>
-          
-          <button
-            type="button"
-            className="btn-save-inspection"
-            onClick={saveInspection}
-          >
-            <Save size={18} />
-            <span>Simpan Inspeksi</span>
-          </button>
+            {/* KONDISI */}
+            <div className="checklist-card">
+              <h4 className="checklist-title">Ceklis Kondisi Kontainer</h4>
+              <div className="checkbox-list">
+                {[
+                  { val: "Good", label: "Kondisi Baik (Good)" },
+                  { val: "Dent/Penyok", label: "Penyok (Dent)" },
+                  { val: "Hole/Lubang", label: "Lubang (Hole)" },
+                  { val: "Rust/Karat", label: "Karat (Rust)" },
+                  { val: "Broken/Pecah", label: "Pecah (Broken)" },
+                  { val: "Other/Lainnya", label: "Lainnya (Other)" }
+                ].map(c => {
+                  const isChecked = selectedConditions.includes(c.val);
+                  return (
+                    <label key={c.val} className={`checkbox-label ${isChecked ? 'checked' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => handleConditionToggle(c.val)}
+                      />
+                      <span>{c.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* CATATAN */}
+          <div className="form-group" style={{ marginBottom: "24px" }}>
+            <label>Catatan Kronologi</label>
+            <textarea
+              placeholder="Tambahkan catatan kronologi jika diperlukan..."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="form-textarea"
+              disabled={isUploading}
+            />
+          </div>
+
+          {/* BUTTON ACTIONS */}
+          <div className="form-footer-buttons">
+            <button
+              type="button"
+              className="btn-back"
+              onClick={() => navigate(-1)}
+              disabled={isUploading}
+            >
+              <ArrowLeft size={18} />
+              <span>Kembali</span>
+            </button>
+            
+            <button
+              type="button"
+              className="btn-save-inspection"
+              onClick={saveInspection}
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  <span>Menyimpan...</span>
+                </>
+              ) : (
+                <>
+                  <Save size={18} />
+                  <span>Simpan Inspeksi CDR</span>
+                </>
+              )}
+            </button>
+          </div>
+
         </div>
 
       </div>
-
     </div>
-  </div>
-);
+  );
 }
