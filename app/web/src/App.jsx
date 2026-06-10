@@ -1007,7 +1007,7 @@ const simpanData = async () => {
         if (!uploadRes.ok) {
           throw new Error(uploadData.message || "Gagal mengunggah foto");
         }
-        uploadedUrls.push(`${API_URL}/uploads/${uploadData.file}`);
+        uploadedUrls.push(`${API_URL}/uploads/${uploadData.filename || uploadData.file}`);
       } else {
         uploadedUrls.push(photoObj.url);
       }

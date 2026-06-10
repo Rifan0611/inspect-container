@@ -79,6 +79,9 @@ router.post(
         'Upload Success',
 
         filename:
+        req.file.filename,
+
+        file:
         req.file.filename
       })
 
