@@ -31,7 +31,12 @@ export default function MultiSelectDropdown({
     onChange(newValue, optValue); // Pass the toggled value as second argument so parent can handle special cases like "GOOD"
   };
 
-  const displayValue = value.length > 0 ? value.join(", ") : placeholder;
+  const displayValue =
+    value.length === 0
+      ? placeholder
+      : value.length <= 2
+        ? value.join(", ")
+        : `${value.length} opsi terpilih`;
 
   return (
     <div ref={dropdownRef} style={{ position: "relative", width: "100%" }}>

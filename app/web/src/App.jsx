@@ -5,6 +5,7 @@ import "./pages/Inspection.css";
 import { Save, Camera, ArrowLeft, Loader2 } from "lucide-react";
 import SearchSelect, { ISO_CODES, CATEGORIES } from "./components/SearchSelect";
 import MultiSelectDropdown from "./components/MultiSelectDropdown";
+import Tesseract from "tesseract.js";
 
 import * as XLSX from "xlsx";
 
@@ -565,20 +566,44 @@ export default function App() {
     }
   };
 
-  const handleContainerNoPhotoChange = (e) => {
+  const handleContainerNoPhotoChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     setIsScanning(true);
 
-    // Simulate simple loading UX
-    setTimeout(() => {
+    try {
+      const result = await Tesseract.recognize(file, "eng");
+      const text = result.data.text;
+
+      // Attempt to extract container number format (4 letters, 7 digits)
+      const matches = text.match(/[A-Z]{4}\s?\d{7}/i);
+      let scannedNum = "";
+      if (matches) {
+        scannedNum = matches[0].replace(/\s/g, "").toUpperCase();
+      } else {
+        // Fallback: take alphanumeric characters up to 11
+        scannedNum = text
+          .replace(/[^A-Z0-9]/gi, "")
+          .substring(0, 11)
+          .toUpperCase();
+      }
+
+      setContainer(scannedNum);
+
       setContainerNoPhoto({
         file,
         url: URL.createObjectURL(file),
       });
       setIsScanning(false);
-    }, 500);
+    } catch (err) {
+      console.error(err);
+      setContainerNoPhoto({
+        file,
+        url: URL.createObjectURL(file),
+      });
+      setIsScanning(false);
+    }
   };
 
   const handleSearchContainer = () => {
