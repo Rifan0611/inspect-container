@@ -30,7 +30,7 @@ const compressImageToBase64 = (file, callback) => {
       const canvas = document.createElement("canvas");
       let width = img.width;
       let height = img.height;
-      const maxDim = 800;
+      const maxDim = 600;
       if (width > maxDim || height > maxDim) {
         if (width > height) {
           height = Math.round((height * maxDim) / width);
@@ -44,7 +44,7 @@ const compressImageToBase64 = (file, callback) => {
       canvas.height = height;
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0, width, height);
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.5);
       callback(dataUrl);
     };
     img.onerror = () => {
@@ -64,7 +64,7 @@ const compressImage = (file) => {
         const canvas = document.createElement("canvas");
         let width = img.width;
         let height = img.height;
-        const maxDim = 800;
+        const maxDim = 600;
         if (width > maxDim || height > maxDim) {
           if (width > height) {
             height = Math.round((height * maxDim) / width);
@@ -972,17 +972,19 @@ export default function App() {
     try {
       // Convert all photos to Base64 strings directly to avoid ephemeral Vercel storage deletion
       const uploadedUrls = [];
-      for (const photoObj of photosList) {
-        if (photoObj.file) {
-          const base64Str = await new Promise((resolve) => {
-            compressImageToBase64(photoObj.file, (result) => resolve(result));
-          });
-          uploadedUrls.push(base64Str);
-        } else {
-          uploadedUrls.push(photoObj.url);
-        }
-      }
-      const uploadedPhotoUrl = uploadedUrls.join("|");
+      const base64Results = await Promise.all(
+          photosList.map(async (photoObj) => {
+            if (photoObj.file) {
+              return await new Promise((resolve) => {
+                compressImageToBase64(photoObj.file, resolve);
+              });
+            }
+            return photoObj.url;
+          })
+        );
+        uploadedUrls.push(...base64Results);
+        
+        const uploadedPhotoUrl = uploadedUrls.join("|");
 
       const activeUser = JSON.parse(localStorage.getItem("user")) || user;
 
