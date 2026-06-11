@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import "./pages/Inspection.css";
 import { Save, Camera, ArrowLeft, Loader2 } from "lucide-react";
 import SearchSelect, { ISO_CODES, CATEGORIES } from "./components/SearchSelect";
+import MultiSelectDropdown from "./components/MultiSelectDropdown";
 
 import * as XLSX from "xlsx";
 
@@ -2439,9 +2440,11 @@ window.print();
                       onClick={() => {
                         if (!isDisabled && !isUploading) {
                           if (selectedSides.includes(hotspot.val)) {
-                            setSelectedSides([]);
+                            setSelectedSides(
+                              selectedSides.filter((s) => s !== hotspot.val),
+                            );
                           } else {
-                            setSelectedSides([hotspot.val]);
+                            setSelectedSides([...selectedSides, hotspot.val]);
                           }
                         }
                       }}
@@ -2469,22 +2472,8 @@ window.print();
             >
               {/* KONDISI */}
               <div className="form-group">
-                <select
-                  value={selectedConditions[0] || ""}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === "GOOD" || val === "Good") {
-                      setSelectedConditions(["GOOD"]);
-                      setSelectedSides([]);
-                    } else {
-                      setSelectedConditions([val]);
-                    }
-                  }}
-                  className="form-select"
-                  disabled={isUploading}
-                >
-                  <option value="">Ceklis Kondisi Kontainer</option>
-                  {[
+                <MultiSelectDropdown
+                  options={[
                     { val: "GOOD", label: "GOOD" },
                     { val: "Bent/Bengkok", label: "Bent/Bengkok" },
                     { val: "Broken/Pecah", label: "Broken/Pecah" },
@@ -2495,41 +2484,55 @@ window.print();
                     { val: "Scraped/Tergores", label: "Scraped/Tergores" },
                     { val: "Torn/Robek", label: "Torn/Robek" },
                     { val: "Leaking/Bocor", label: "Leaking/Bocor" },
-                  ].map((c) => (
-                    <option key={c.val} value={c.val}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
+                  ]}
+                  value={selectedConditions}
+                  placeholder="Ceklis Kondisi Kontainer"
+                  disabled={isUploading}
+                  onChange={(newVal, toggledVal) => {
+                    if (toggledVal === "GOOD" || toggledVal === "Good") {
+                      if (newVal.includes(toggledVal)) {
+                        setSelectedConditions(["GOOD"]);
+                        setSelectedSides([]);
+                      } else {
+                        setSelectedConditions(newVal);
+                      }
+                    } else {
+                      // If selecting something else, remove "GOOD"
+                      setSelectedConditions(
+                        newVal.filter((v) => v !== "GOOD" && v !== "Good"),
+                      );
+                    }
+                  }}
+                />
               </div>
 
               {/* SISI */}
               <div className="form-group">
-                <select
-                  value={selectedSides[0] || ""}
-                  onChange={(e) => setSelectedSides([e.target.value])}
-                  className="form-select"
+                <MultiSelectDropdown
+                  options={[
+                    { val: "Front/Depan", label: "Front/Depan" },
+                    { val: "Rear/Belakang", label: "Rear/Belakang" },
+                    {
+                      val: "Left Side/Sisi Kiri",
+                      label: "Left Side/Sisi Kiri",
+                    },
+                    {
+                      val: "Right Side/Sisi Kanan",
+                      label: "Right Side/Sisi Kanan",
+                    },
+                    { val: "Roof/Atas", label: "Roof/Atas" },
+                    { val: "Bottom/Bawah", label: "Bottom/Bawah" },
+                    { val: "Inside/Dalam", label: "Inside/Dalam" },
+                  ]}
+                  value={selectedSides}
+                  placeholder="Ceklis Sisi Kerusakan"
                   disabled={
                     isUploading ||
                     selectedConditions.includes("Good") ||
                     selectedConditions.includes("GOOD")
                   }
-                >
-                  <option value="">Ceklis Sisi Kerusakan</option>
-                  {[
-                    "Front/Depan",
-                    "Rear/Belakang",
-                    "Left Side/Sisi Kiri",
-                    "Right Side/Sisi Kanan",
-                    "Roof/Atas",
-                    "Bottom/Bawah",
-                    "Inside/Dalam",
-                  ].map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(newVal) => setSelectedSides(newVal)}
+                />
               </div>
             </div>
 
