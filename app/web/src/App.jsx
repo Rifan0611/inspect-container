@@ -963,39 +963,14 @@ export default function App() {
     setIsUploading(true);
 
     try {
-      // Upload all photos in the list
+      // Convert all photos to Base64 strings directly to avoid ephemeral Vercel storage deletion
       const uploadedUrls = [];
       for (const photoObj of photosList) {
         if (photoObj.file) {
-          const compressedBlob = await compressImage(photoObj.file);
-          const formData = new FormData();
-          formData.append("photo", compressedBlob, photoObj.file.name);
-
-          const uploadRes = await fetch(`${API_URL}/api/upload/image`, {
-            method: "POST",
-            body: formData,
+          const base64Str = await new Promise((resolve) => {
+            compressImageToBase64(photoObj.file, (result) => resolve(result));
           });
-
-          let uploadData;
-          const uploadContentType = uploadRes.headers.get("content-type");
-          if (
-            uploadContentType &&
-            uploadContentType.includes("application/json")
-          ) {
-            uploadData = await uploadRes.json();
-          } else {
-            const errorText = await uploadRes.text();
-            throw new Error(
-              `Upload fail (${uploadRes.status}): ${errorText.substring(0, 100)}`,
-            );
-          }
-
-          if (!uploadRes.ok) {
-            throw new Error(uploadData.message || "Gagal mengunggah foto");
-          }
-          uploadedUrls.push(
-            `${API_URL}/uploads/${uploadData.filename || uploadData.file}`,
-          );
+          uploadedUrls.push(base64Str);
         } else {
           uploadedUrls.push(photoObj.url);
         }
