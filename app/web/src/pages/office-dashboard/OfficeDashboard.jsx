@@ -1146,7 +1146,7 @@ const OfficeDashboard = ({
           }}
         >
           <div className="table-header">
-            <h3>Riwayat Inspeksi</h3>
+            <h3>Tabel Transaksi Inspeksi</h3>
           </div>
 
           <div className="table-wrapper">
