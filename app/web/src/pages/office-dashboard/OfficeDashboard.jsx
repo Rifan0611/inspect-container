@@ -7,7 +7,10 @@ import React, { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import UserManagement from "./UserManagement";
 import API_URL from "../../config/api";
-import SearchSelect, { ISO_CODES, CATEGORIES } from "../../components/SearchSelect";
+import SearchSelect, {
+  ISO_CODES,
+  CATEGORIES,
+} from "../../components/SearchSelect";
 import {
   Home,
   ClipboardList,
@@ -93,17 +96,13 @@ const OfficeDashboard = ({
   onLogout,
   manifestData,
   setManifestData,
-  onNavigate
+  onNavigate,
 }) => {
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 900);
 
-  const [sidebarOpen, setSidebarOpen] =
-    useState(window.innerWidth > 900);
+  const [activeMenu, setActiveMenu] = useState("dashboard");
 
-  const [activeMenu, setActiveMenu] =
-    useState("dashboard");
-
-  const [search, setSearch] =
-    useState("");
+  const [search, setSearch] = useState("");
 
   // Theme & Extra layout menus state
   const [theme, setTheme] = useState(() => {
@@ -160,12 +159,12 @@ const OfficeDashboard = ({
       setEditNote(editingInspection.note || "");
       setEditPetugas(editingInspection.petugas || "");
       setEditGroup(editingInspection.group || "");
-      
+
       // format date for datetime-local input (YYYY-MM-DDTHH:MM)
       if (editingInspection.date) {
         const d = new Date(editingInspection.date);
         const offset = d.getTimezoneOffset();
-        const adjustedDate = new Date(d.getTime() - (offset * 60 * 1000));
+        const adjustedDate = new Date(d.getTime() - offset * 60 * 1000);
         setEditDate(adjustedDate.toISOString().slice(0, 16));
       } else {
         setEditDate("");
@@ -177,39 +176,44 @@ const OfficeDashboard = ({
     e.preventDefault();
     if (!editingInspection) return;
 
-    if (!editContainer || !editShipName || !editCondition || !editPetugas || !editDate) {
-      alert("Harap isi semua kolom wajib (Nomor Container, Kapal, Kondisi, Petugas, Tanggal).");
+    if (!editContainer || !editCondition || !editPetugas || !editDate) {
+      alert(
+        "Harap isi semua kolom wajib (Nomor Container, Kondisi, Petugas, Tanggal).",
+      );
       return;
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/inspection/${editingInspection.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json"
+      const response = await fetch(
+        `${API_URL}/api/inspection/${editingInspection.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            container: editContainer,
+            shipName: editShipName,
+            status: editStatus,
+            iso: editIso,
+            category: editCategory,
+            condition: editCondition,
+            side: editSide,
+            note: editNote,
+            petugas: editPetugas,
+            group: editGroup,
+            date: editDate,
+          }),
         },
-        body: JSON.stringify({
-          container: editContainer,
-          shipName: editShipName,
-          status: editStatus,
-          iso: editIso,
-          category: editCategory,
-          condition: editCondition,
-          side: editSide,
-          note: editNote,
-          petugas: editPetugas,
-          group: editGroup,
-          date: editDate
-        })
-      });
+      );
 
       const result = await response.json();
       if (response.ok) {
         alert("Data inspeksi berhasil diperbarui.");
-        
+
         // Update local historyData state
         const arr = Array.isArray(historyData) ? historyData : [];
-        const updatedData = arr.map(item => {
+        const updatedData = arr.map((item) => {
           if (item.id === editingInspection.id) {
             return {
               ...item,
@@ -223,7 +227,7 @@ const OfficeDashboard = ({
               note: editNote,
               petugas: editPetugas,
               group: editGroup,
-              date: editDate
+              date: editDate,
             };
           }
           return item;
@@ -247,20 +251,24 @@ const OfficeDashboard = ({
       alert("Hanya admin utama (adminRAL) yang dapat menghapus data.");
       return;
     }
-    if (!window.confirm("Apakah Anda yakin ingin menghapus data inspeksi ini secara permanen?")) {
+    if (
+      !window.confirm(
+        "Apakah Anda yakin ingin menghapus data inspeksi ini secara permanen?",
+      )
+    ) {
       return;
     }
 
     try {
       const response = await fetch(`${API_URL}/api/inspection/${id}`, {
-        method: "DELETE"
+        method: "DELETE",
       });
       const result = await response.json();
       if (response.ok) {
         alert("Data inspeksi berhasil dihapus.");
         // Immediate local state refresh
         const arr = Array.isArray(historyData) ? historyData : [];
-        const updatedData = arr.filter(item => item.id !== id);
+        const updatedData = arr.filter((item) => item.id !== id);
         setHistoryData(updatedData);
         localStorage.setItem("history", JSON.stringify(updatedData));
         // Notify other windows/components
@@ -275,9 +283,8 @@ const OfficeDashboard = ({
   };
 
   /* MANIFEST */
-  
-  const [manifestShipName, setManifestShipName] =
-    useState("");
+
+  const [manifestShipName] = useState("-");
 
   const formatInspectionDate = (dateStr) => {
     if (!dateStr) return "-";
@@ -289,10 +296,21 @@ const OfficeDashboard = ({
         month: "long",
         year: "numeric",
         hour: "2-digit",
-        minute: "2-digit"
+        minute: "2-digit",
       });
-      str = str.replace(/\bpukul\b/i, "").replace(/\s+/g, " ").trim();
-      const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+      str = str
+        .replace(/\bpukul\b/i, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      const days = [
+        "Minggu",
+        "Senin",
+        "Selasa",
+        "Rabu",
+        "Kamis",
+        "Jumat",
+        "Sabtu",
+      ];
       for (const day of days) {
         if (str.startsWith(day) && !str.startsWith(day + ",")) {
           str = str.replace(day, day + ",");
@@ -313,19 +331,29 @@ const OfficeDashboard = ({
         weekday: "long",
         day: "2-digit",
         month: "long",
-        year: "numeric"
+        year: "numeric",
       });
-      const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+      const days = [
+        "Minggu",
+        "Senin",
+        "Selasa",
+        "Rabu",
+        "Kamis",
+        "Jumat",
+        "Sabtu",
+      ];
       for (const day of days) {
         if (datePart.startsWith(day) && !datePart.startsWith(day + ",")) {
           datePart = datePart.replace(day, day + ",");
           break;
         }
       }
-      const timePart = d.toLocaleTimeString("id-ID", {
-        hour: "2-digit",
-        minute: "2-digit"
-      }).replace(":", ".");
+      const timePart = d
+        .toLocaleTimeString("id-ID", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+        .replace(":", ".");
       return `${datePart}<br/>${timePart} WIB`;
     } catch (e) {
       return dateStr;
@@ -340,9 +368,17 @@ const OfficeDashboard = ({
         weekday: "long",
         day: "2-digit",
         month: "long",
-        year: "numeric"
+        year: "numeric",
       });
-      const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+      const days = [
+        "Minggu",
+        "Senin",
+        "Selasa",
+        "Rabu",
+        "Kamis",
+        "Jumat",
+        "Sabtu",
+      ];
       for (const day of days) {
         if (datePart.startsWith(day) && !datePart.startsWith(day + ",")) {
           datePart = datePart.replace(day, day + ",");
@@ -359,27 +395,28 @@ const OfficeDashboard = ({
     if (!dateStr) return "-";
     try {
       const d = new Date(dateStr);
-      const timePart = d.toLocaleTimeString("id-ID", {
-        hour: "2-digit",
-        minute: "2-digit"
-      }).replace(":", ".");
+      const timePart = d
+        .toLocaleTimeString("id-ID", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+        .replace(":", ".");
       return `${timePart} WIB`;
     } catch (e) {
       return dateStr;
     }
   };
 
-  const [historyData, setHistoryData] =
-    React.useState(() => {
-      try {
-        const val = localStorage.getItem("history");
-        if (val) {
-          const parsed = JSON.parse(val);
-          if (Array.isArray(parsed)) return parsed;
-        }
-      } catch (e) {}
-      return [];
-    });
+  const [historyData, setHistoryData] = React.useState(() => {
+    try {
+      const val = localStorage.getItem("history");
+      if (val) {
+        const parsed = JSON.parse(val);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {}
+    return [];
+  });
 
   // Auto-refresh riwayat inspeksi saat database berubah atau berkala (real-time sync)
   useEffect(() => {
@@ -420,186 +457,162 @@ const OfficeDashboard = ({
     };
   }, []);
 
-  const [showAdminPanel, setShowAdminPanel] =
-    React.useState(false);
+  const [showAdminPanel, setShowAdminPanel] = React.useState(false);
 
-  const [managerName, setManagerName] =
-    React.useState("Rian Agung");
+  const [managerName, setManagerName] = React.useState("Rian Agung");
 
-  const [supervisorName, setSupervisorName] =
-    React.useState("Budi Santoso");
+  const [supervisorName, setSupervisorName] = React.useState("Budi Santoso");
 
-  const [assistantName, setAssistantName] =
-    React.useState("Andi Wijaya");
+  const [assistantName, setAssistantName] = React.useState("Andi Wijaya");
 
-  const [petugasName, setPetugasName] =
-    React.useState("Petugas Lapangan");
+  const [petugasName, setPetugasName] = React.useState("Petugas Lapangan");
 
   /* ACCOUNT SYSTEM */
 
-  const [accounts, setAccounts] =
-    React.useState(() => {
-      const defaultAccounts = [
-        {
-          username:"manager",
-          password:"123",
-          jabatan:"MANAGER"
-        },
-        {
-          username:"supervisor",
-          password:"123",
-          jabatan:"SUPERVISOR"
-        },
-        {
-          username:"assistant",
-          password:"123",
-          jabatan:"ASSISTANT SUPERVISOR"
-        },
-        {
-          username:"petugas",
-          password:"123",
-          jabatan:"PETUGAS"
-        }
-      ];
-      try {
-        const val = localStorage.getItem("accounts");
-        if (val) {
-          const parsed = JSON.parse(val);
-          if (Array.isArray(parsed)) return parsed;
-        }
-      } catch (e) {}
-      return defaultAccounts;
-    });
+  const [accounts, setAccounts] = React.useState(() => {
+    const defaultAccounts = [
+      {
+        username: "manager",
+        password: "123",
+        jabatan: "MANAGER",
+      },
+      {
+        username: "supervisor",
+        password: "123",
+        jabatan: "SUPERVISOR",
+      },
+      {
+        username: "assistant",
+        password: "123",
+        jabatan: "ASSISTANT SUPERVISOR",
+      },
+      {
+        username: "petugas",
+        password: "123",
+        jabatan: "PETUGAS",
+      },
+    ];
+    try {
+      const val = localStorage.getItem("accounts");
+      if (val) {
+        const parsed = JSON.parse(val);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {}
+    return defaultAccounts;
+  });
 
-const addUser = () => {
+  const addUser = () => {
+    if (!newUsername || !newPassword) {
+      alert("Lengkapi data");
+      return;
+    }
 
-  if(
-    !newUsername ||
-    !newPassword
-  ){
-    alert("Lengkapi data");
-    return;
-  }
+    const newUser = {
+      username: newUsername,
+      password: newPassword,
+      jabatan: newJabatan,
+      active: true,
+    };
 
-  const newUser = {
+    const updated = [...accounts, newUser];
 
-    username:newUsername,
-    password:newPassword,
-    jabatan:newJabatan,
-    active:true
+    setAccounts(updated);
 
+    localStorage.setItem("accounts", JSON.stringify(updated));
+
+    setNewUsername("");
+    setNewPassword("");
+
+    alert("User berhasil dibuat");
   };
 
-  const updated =
-  [...accounts,newUser];
+  const deleteUser = (index) => {
+    const arr = Array.isArray(accounts) ? accounts : [];
+    const updated = arr.filter((_, i) => i !== index);
 
-  setAccounts(updated);
+    setAccounts(updated);
 
-  localStorage.setItem(
-    "accounts",
-    JSON.stringify(updated)
-  );
+    localStorage.setItem("accounts", JSON.stringify(updated));
+  };
 
-  setNewUsername("");
-  setNewPassword("");
+  const [newUsername, setNewUsername] = React.useState("");
 
-  alert("User berhasil dibuat");
+  const [newPassword, setNewPassword] = React.useState("");
 
-};
-
-const deleteUser = (index) => {
-
-  const arr = Array.isArray(accounts) ? accounts : [];
-  const updated =
-  arr.filter(
-    (_,i)=>i!==index
-  );
-
-  setAccounts(updated);
-
-  localStorage.setItem(
-    "accounts",
-    JSON.stringify(updated)
-  );
-
-};
-
-  const [newUsername, setNewUsername] =
-    React.useState("");
-
-  const [newPassword, setNewPassword] =
-    React.useState("");
-
-  const [newJabatan, setNewJabatan] =
-    React.useState("PETUGAS");
+  const [newJabatan, setNewJabatan] = React.useState("PETUGAS");
 
   /* DYNAMIC CHART & STATS CALCULATIONS */
   const getDynamicLineData = () => {
     const arr = Array.isArray(historyData) ? historyData : [];
     if (arr.length === 0) {
-      return [
-        { day: "N/A", value: 0 }
-      ];
+      return [{ day: "N/A", value: 0 }];
     }
     const counts = {};
     const sorted = [...arr].sort((a, b) => new Date(a.date) - new Date(b.date));
-    sorted.forEach(item => {
+    sorted.forEach((item) => {
       if (!item.date) return;
       try {
         const d = new Date(item.date);
-        const formatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const formatted = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
         counts[formatted] = (counts[formatted] || 0) + 1;
       } catch (e) {}
     });
-    return Object.keys(counts).map(day => ({
+    return Object.keys(counts).map((day) => ({
       day,
-      value: counts[day]
+      value: counts[day],
     }));
   };
 
   const getDynamicPieData = () => {
     const arr = Array.isArray(historyData) ? historyData : [];
     const damagedInspections = arr.filter(
-      item => item.condition && item.condition.toUpperCase() !== "GOOD"
+      (item) => item.condition && item.condition.toUpperCase() !== "GOOD",
     );
     if (damagedInspections.length === 0) {
-      return [
-        { name: "Tidak ada kerusakan", value: 1, color: "#22c55e" }
-      ];
+      return [{ name: "Tidak ada kerusakan", value: 1, color: "#22c55e" }];
     }
     const counts = {};
-    damagedInspections.forEach(item => {
+    damagedInspections.forEach((item) => {
       const cond = item.condition || "Lainnya";
       counts[cond] = (counts[cond] || 0) + 1;
     });
-    const colors = ["#2563eb", "#ef4444", "#f59e0b", "#22c55e", "#8b5cf6", "#10b981", "#ff7a00"];
+    const colors = [
+      "#2563eb",
+      "#ef4444",
+      "#f59e0b",
+      "#22c55e",
+      "#8b5cf6",
+      "#10b981",
+      "#ff7a00",
+    ];
     return Object.keys(counts).map((name, index) => ({
       name,
       value: counts[name],
-      color: colors[index % colors.length]
+      color: colors[index % colors.length],
     }));
   };
 
   const getStatsPerGroup = () => {
     const arr = Array.isArray(historyData) ? historyData : [];
     const counts = {};
-    arr.forEach(item => {
+    arr.forEach((item) => {
       if (!item) return;
       const gp = item.group || "Lainnya";
       counts[gp] = (counts[gp] || 0) + 1;
     });
-    return Object.keys(counts).map(name => ({ name, count: counts[name] }));
+    return Object.keys(counts).map((name) => ({ name, count: counts[name] }));
   };
 
   const getStatsPerPetugas = () => {
     const arr = Array.isArray(historyData) ? historyData : [];
     const counts = {};
-    arr.forEach(item => {
+    arr.forEach((item) => {
       if (!item) return;
       const pet = item.petugas || "Petugas Lapangan";
       counts[pet] = (counts[pet] || 0) + 1;
     });
-    return Object.keys(counts).map(name => ({ name, count: counts[name] }));
+    return Object.keys(counts).map((name) => ({ name, count: counts[name] }));
   };
 
   const handleSearchKeyDown = (e) => {
@@ -609,25 +622,41 @@ const deleteUser = (index) => {
       if (!query) return;
 
       const arr = Array.isArray(historyData) ? historyData : [];
-      let found = arr.find(item => item && item.container && item.container.toUpperCase().trim() === query);
-      
+      let found = arr.find(
+        (item) =>
+          item &&
+          item.container &&
+          item.container.toUpperCase().trim() === query,
+      );
+
       if (!found) {
-        found = arr.find(item => item && item.container && item.container.toUpperCase().includes(query));
+        found = arr.find(
+          (item) =>
+            item &&
+            item.container &&
+            item.container.toUpperCase().includes(query),
+        );
       }
 
       if (found) {
         setSelectedInspection(found);
       } else {
         const manifestArr = Array.isArray(manifestData) ? manifestData : [];
-        const foundInManifest = manifestArr.find(item => {
-          const num = String(item.container || item.CONTAINER || "").toUpperCase().trim();
+        const foundInManifest = manifestArr.find((item) => {
+          const num = String(item.container || item.CONTAINER || "")
+            .toUpperCase()
+            .trim();
           return num === query || num.includes(query);
         });
 
         if (foundInManifest) {
-          alert(`Kontainer "${query}" ditemukan di manifest kapal (${foundInManifest.shipName || 'Tanpa Kapal'}), status: ${foundInManifest.status || 'EMPTY'}, tetapi belum pernah diinspeksi oleh petugas.`);
+          alert(
+            `Kontainer "${query}" ditemukan di manifest kapal (${foundInManifest.shipName || "Tanpa Kapal"}), status: ${foundInManifest.status || "EMPTY"}, tetapi belum pernah diinspeksi oleh petugas.`,
+          );
         } else {
-          alert(`Kontainer "${query}" tidak ditemukan di riwayat inspeksi maupun manifest.`);
+          alert(
+            `Kontainer "${query}" tidak ditemukan di riwayat inspeksi maupun manifest.`,
+          );
         }
       }
     }
@@ -640,19 +669,50 @@ const deleteUser = (index) => {
   const arrManifest = Array.isArray(manifestData) ? manifestData : [];
 
   const totalInspeksi = arrHistory.length;
-  const totalDamage = arrHistory.filter(item => item.condition && item.condition.toUpperCase() !== "GOOD").length;
-  const totalGood = arrHistory.filter(item => item.condition && item.condition.toUpperCase() === "GOOD").length;
-  const damagePercentage = totalInspeksi > 0 ? ((totalDamage / totalInspeksi) * 100).toFixed(1) + "%" : "0%";
-  const goodPercentage = totalInspeksi > 0 ? ((totalGood / totalInspeksi) * 100).toFixed(1) + "%" : "0%";
-  const petugasAktif = new Set(arrHistory.map(item => item.petugas).filter(Boolean)).size || 0;
+  const totalDamage = arrHistory.filter(
+    (item) => item.condition && item.condition.toUpperCase() !== "GOOD",
+  ).length;
+  const totalGood = arrHistory.filter(
+    (item) => item.condition && item.condition.toUpperCase() === "GOOD",
+  ).length;
+  const damagePercentage =
+    totalInspeksi > 0
+      ? ((totalDamage / totalInspeksi) * 100).toFixed(1) + "%"
+      : "0%";
+  const goodPercentage =
+    totalInspeksi > 0
+      ? ((totalGood / totalInspeksi) * 100).toFixed(1) + "%"
+      : "0%";
+  const petugasAktif =
+    new Set(arrHistory.map((item) => item.petugas).filter(Boolean)).size || 0;
 
-  const containerFull = arrManifest.filter(item => item.status && item.status.toUpperCase().includes("FULL")).length || arrHistory.filter(item => item.status && item.status.toUpperCase().includes("FULL")).length || 0;
-  const containerEmpty = arrManifest.filter(item => item.status && (item.status.toUpperCase().includes("EMPTY") || item.status.toUpperCase().includes("MT"))).length || arrHistory.filter(item => item.status && (item.status.toUpperCase().includes("EMPTY") || item.status.toUpperCase().includes("MT"))).length || 0;
+  const containerFull =
+    arrManifest.filter(
+      (item) => item.status && item.status.toUpperCase().includes("FULL"),
+    ).length ||
+    arrHistory.filter(
+      (item) => item.status && item.status.toUpperCase().includes("FULL"),
+    ).length ||
+    0;
+  const containerEmpty =
+    arrManifest.filter(
+      (item) =>
+        item.status &&
+        (item.status.toUpperCase().includes("EMPTY") ||
+          item.status.toUpperCase().includes("MT")),
+    ).length ||
+    arrHistory.filter(
+      (item) =>
+        item.status &&
+        (item.status.toUpperCase().includes("EMPTY") ||
+          item.status.toUpperCase().includes("MT")),
+    ).length ||
+    0;
   const waitingRepair = totalDamage;
 
   const getInspectionsToday = () => {
     const today = new Date().toDateString();
-    return arrHistory.filter(item => {
+    return arrHistory.filter((item) => {
       if (!item.date) return false;
       return new Date(item.date).toDateString() === today;
     }).length;
@@ -661,10 +721,6 @@ const deleteUser = (index) => {
 
   /* UPLOAD EXCEL / IMPORT SUBMIT */
   const handleExcelImportSubmit = async () => {
-    if (!manifestShipName) {
-      alert("Harap isi Nama Kapal terlebih dahulu!");
-      return;
-    }
     if (!selectedFile) {
       alert("Harap pilih file Excel terlebih dahulu!");
       return;
@@ -676,411 +732,280 @@ const deleteUser = (index) => {
         const data = new Uint8Array(evt.target.result);
         const workbook = XLSX.read(data, { type: "array" });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(
-  sheet,
-  {
-    defval: "",
-    raw: false
-  }
-);
+        const jsonData = XLSX.utils.sheet_to_json(sheet, {
+          defval: "",
+          raw: false,
+        });
 
-console.log("JSON DATA:", jsonData);
+        console.log("JSON DATA:", jsonData);
 
         const formattedData = jsonData.map((item, index) => ({
+          id: index + 1,
 
-  id: index + 1,
+          container: String(
+            item.container ||
+              item.CONTAINER ||
+              item.Container ||
+              item["Container Number"] ||
+              item["Container No"] ||
+              item["Container Id"] ||
+              "",
+          )
+            .toUpperCase()
+            .trim(),
 
-  container: String(
-    item.container ||
-    item.CONTAINER ||
-    item.Container ||
-    item["Container Number"] ||
-    item["Container No"] ||
-    item["Container Id"] ||
-    ""
-  ).toUpperCase().trim(),
+          shipName: manifestShipName,
 
-  shipName: manifestShipName,
+          status: String(
+            item.status ||
+              item.STATUS ||
+              item.Status ||
+              item["MT/FULL"] ||
+              item["FULL/EMPTY"] ||
+              item.Loaded ||
+              "",
+          )
+            .toUpperCase()
+            .trim(),
 
-  status: String(
-    item.status ||
-    item.STATUS ||
-    item.Status ||
-    item["MT/FULL"] ||
-    item["FULL/EMPTY"] ||
-    item.Loaded ||
-    ""
-  ).toUpperCase().trim(),
+          iso: String(
+            item.iso ||
+              item.ISO ||
+              item.Iso ||
+              item["ISO CODE"] ||
+              item["ISO"] ||
+              item.Size ||
+              "",
+          ).trim(),
 
-  iso: String(
-    item.iso ||
-    item.ISO ||
-    item.Iso ||
-    item["ISO CODE"] ||
-    item["ISO"] ||
-    item.Size ||
-    ""
-  ).trim(),
+          category: String(
+            item.category ||
+              item.CATEGORY ||
+              item.Category ||
+              item["CATEGORY"] ||
+              item.Type ||
+              "",
+          ).trim(),
+        }));
+        const validData = formattedData.filter((item) => item.container);
 
-  category: String(
-    item.category ||
-    item.CATEGORY ||
-    item.Category ||
-    item["CATEGORY"] ||
-    item.Type ||
-    ""
-  ).trim()
+        if (validData.length === 0) {
+          alert("Header Excel tidak sesuai format.");
 
-}));
-const validData =
-formattedData.filter(
-  item => item.container
-);
+          return;
+        }
 
-if(validData.length === 0){
+        setManifestData(validData);
 
-  alert(
-    "Header Excel tidak sesuai format."
-  );
+        localStorage.setItem("manifestData", JSON.stringify(validData));
 
-  return;
-
-}
-        
-
-setManifestData(validData);
-
-localStorage.setItem(
-  "manifestData",
-  JSON.stringify(validData)
-);
-
-await fetch(
-  `${API_URL}/api/manifest`,
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(validData)
-  }
-);
-        setImportSuccessMessage(`Berhasil import ${formattedData.length} container dari file ${fileName}`);
+        await fetch(`${API_URL}/api/manifest`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(validData),
+        });
+        setImportSuccessMessage(
+          `Berhasil import ${formattedData.length} container dari file ${fileName}`,
+        );
         alert("Manifest berhasil diimport");
-      } 
-      
-      catch (err) {
+      } catch (err) {
+        console.error(err);
 
-  console.error(err);
-
-  alert(
-    "ERROR : " + err.message
-  );
-
-}
+        alert("ERROR : " + err.message);
+      }
     };
     reader.readAsArrayBuffer(selectedFile);
   };
-
 
   return (
     <div className={`dashboard-layout theme-${theme}`}>
       {/* SIDEBAR OVERLAY FOR MOBILE */}
       {sidebarOpen && (
-        <div 
-          className="sidebar-mobile-overlay" 
+        <div
+          className="sidebar-mobile-overlay"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-  {/* SIDEBAR */}
-  <aside
-    className={`sidebar ${
-      sidebarOpen ? "open" : "closed"
-    }`}
-  >
+      {/* SIDEBAR */}
+      <aside className={`sidebar ${sidebarOpen ? "open" : "closed"}`}>
+        {/* TOGGLE BUTTON */}
+        <button
+          className="toggle-btn"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          ☰
+        </button>
 
-    {/* TOGGLE BUTTON */}
-    <button
-      className="toggle-btn"
-      onClick={() =>
-        setSidebarOpen(!sidebarOpen)
-      }
-    >
-      ☰
-    </button>
+        {/* LOGO */}
+        <div className="logo-section">
+          <div className="logo-box">N</div>
 
-    {/* LOGO */}
-    <div className="logo-section">
+          {sidebarOpen && (
+            <div>
+              <h1 className="logo-title">NPH</h1>
 
-      <div className="logo-box">
-        N
-      </div>
-
-      {sidebarOpen && (
-
-        <div>
-
-          <h1 className="logo-title">
-            NPH
-          </h1>
-
-          <p className="logo-subtitle">
-            ADIPURUSA
-          </p>
-
+              <p className="logo-subtitle">ADIPURUSA</p>
+            </div>
+          )}
         </div>
 
-      )}
+        {/* MENU */}
+        <div className="menu-list">
+          {/* MENU */}
+          <div className="menu-list">
+            {/* DASHBOARD */}
+            <button
+              className={`menu-item ${
+                activeMenu === "dashboard" ? "active" : ""
+              }`}
+              onClick={() => {
+                setActiveMenu("dashboard");
+                if (window.innerWidth <= 900) setSidebarOpen(false);
 
-    </div>
+                window.scrollTo({
+                  top: 0,
+                  behavior: "smooth",
+                });
+              }}
+            >
+              <Home className="menu-icon" size={20} />
 
-    {/* MENU */}
-<div className="menu-list">
+              {sidebarOpen && <span>Dashboard</span>}
+            </button>
 
- {/* MENU */}
-<div className="menu-list">
+            {/* DATA INSPEKSI */}
+            <button
+              className={`menu-item ${
+                activeMenu === "inspeksi" ? "active" : ""
+              }`}
+              onClick={() => {
+                setActiveMenu("inspeksi");
+                if (window.innerWidth <= 900) setSidebarOpen(false);
 
-  {/* DASHBOARD */}
-  <button
-    className={`menu-item ${
-      activeMenu === "dashboard"
-        ? "active"
-        : ""
-    }`}
-    onClick={() => {
+                document.getElementById("table-inspeksi")?.scrollIntoView({
+                  behavior: "smooth",
+                });
+              }}
+            >
+              <ClipboardList className="menu-icon" size={20} />
 
-      setActiveMenu("dashboard");
-      if (window.innerWidth <= 900) setSidebarOpen(false);
+              {sidebarOpen && <span>Data Inspeksi</span>}
+            </button>
 
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
+            {/* MANIFEST */}
+            <button
+              className={`menu-item ${
+                activeMenu === "manifest" ? "active" : ""
+              }`}
+              onClick={() => {
+                setActiveMenu("manifest");
+                if (window.innerWidth <= 900) setSidebarOpen(false);
 
-    }}
-  >
+                document.getElementById("upload-manifest")?.scrollIntoView({
+                  behavior: "smooth",
+                });
+              }}
+            >
+              <FileText className="menu-icon" size={20} />
 
-    <Home
-      className="menu-icon"
-      size={20}
-    />
+              {sidebarOpen && <span>Manifest Kapal</span>}
+            </button>
 
-    {sidebarOpen && (
-      <span>Dashboard</span>
-    )}
+            {/* LAPORAN */}
+            <button
+              className={`menu-item ${
+                activeMenu === "laporan" ? "active" : ""
+              }`}
+              onClick={() => {
+                setActiveMenu("laporan");
+                if (window.innerWidth <= 900) setSidebarOpen(false);
 
-  </button>
+                document.getElementById("laporan-section")?.scrollIntoView({
+                  behavior: "smooth",
+                });
+              }}
+            >
+              <PieChartIcon className="menu-icon" size={20} />
 
-  {/* DATA INSPEKSI */}
-  <button
-    className={`menu-item ${
-      activeMenu === "inspeksi"
-        ? "active"
-        : ""
-    }`}
-    onClick={() => {
+              {sidebarOpen && <span>Laporan</span>}
+            </button>
 
-      setActiveMenu("inspeksi");
-      if (window.innerWidth <= 900) setSidebarOpen(false);
+            {/* USER */}
+            {user?.username === "adminRAL" && (
+              <button
+                className={`menu-item ${activeMenu === "user" ? "active" : ""}`}
+                onClick={() => {
+                  setActiveMenu("user");
+                  if (window.innerWidth <= 900) setSidebarOpen(false);
+                  setShowAdminPanel(true);
+                  setTimeout(() => {
+                    document.getElementById("user-section")?.scrollIntoView({
+                      behavior: "smooth",
+                    });
+                  }, 100);
+                }}
+              >
+                <Users className="menu-icon" size={20} />
+                {sidebarOpen && <span>User</span>}
+              </button>
+            )}
+          </div>
+          <button
+            className={`menu-item ${activeMenu === "settings" ? "active" : ""}`}
+            onClick={() => {
+              setActiveMenu("settings");
+              if (window.innerWidth <= 900) setSidebarOpen(false);
+              setTimeout(() => {
+                document.getElementById("settings-section")?.scrollIntoView({
+                  behavior: "smooth",
+                });
+              }, 100);
+            }}
+          >
+            <Settings className="menu-icon" size={20} />
 
-      document
-        .getElementById(
-          "table-inspeksi"
-        )
-        ?.scrollIntoView({
-          behavior: "smooth",
-        });
+            {sidebarOpen && <span>Pengaturan</span>}
+          </button>
+        </div>
 
-    }}
-  >
+        {/* LOGOUT */}
+        <div
+          className="logout-section"
+          style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+        >
+          <button
+            className="logout-btn back-btn"
+            onClick={() => onNavigate("dashboard")}
+          >
+            <Home className="menu-icon" size={20} />
+            {sidebarOpen && <span>Menu Utama</span>}
+          </button>
 
-    <ClipboardList
-      className="menu-icon"
-      size={20}
-    />
+          <button className="logout-btn" onClick={onLogout}>
+            <LogOut className="menu-icon" size={20} />
 
-    {sidebarOpen && (
-      <span>Data Inspeksi</span>
-    )}
-
-  </button>
-
-  {/* MANIFEST */}
-  <button
-    className={`menu-item ${
-      activeMenu === "manifest"
-        ? "active"
-        : ""
-    }`}
-    onClick={() => {
-
-      setActiveMenu("manifest");
-      if (window.innerWidth <= 900) setSidebarOpen(false);
-
-      document
-        .getElementById(
-          "upload-manifest"
-        )
-        ?.scrollIntoView({
-          behavior: "smooth",
-        });
-
-    }}
-  >
-
-    <FileText
-      className="menu-icon"
-      size={20}
-    />
-
-    {sidebarOpen && (
-      <span>Manifest Kapal</span>
-    )}
-
-  </button>
-
-  {/* LAPORAN */}
-  <button
-    className={`menu-item ${
-      activeMenu === "laporan"
-        ? "active"
-        : ""
-    }`}
-    onClick={() => {
-
-      setActiveMenu("laporan");
-      if (window.innerWidth <= 900) setSidebarOpen(false);
-
-      document
-        .getElementById(
-          "laporan-section"
-        )
-        ?.scrollIntoView({
-          behavior: "smooth",
-        });
-
-    }}
-  >
-
-    <PieChartIcon
-      className="menu-icon"
-      size={20}
-    />
-
-    {sidebarOpen && (
-      <span>Laporan</span>
-    )}
-
-  </button>
-
-  {/* USER */}
-  {user?.username === "adminRAL" && (
-    <button
-      className={`menu-item ${
-        activeMenu === "user"
-          ? "active"
-          : ""
-      }`}
-      onClick={() => {
-        setActiveMenu("user");
-        if (window.innerWidth <= 900) setSidebarOpen(false);
-        setShowAdminPanel(true);
-        setTimeout(() => {
-          document
-            .getElementById("user-section")
-            ?.scrollIntoView({
-              behavior: "smooth",
-            });
-        }, 100);
-      }}
-    >
-      <Users
-        className="menu-icon"
-        size={20}
-      />
-      {sidebarOpen && (
-        <span>User</span>
-      )}
-    </button>
-  )}
-
-</div>
-  <button
-    className={`menu-item ${
-      activeMenu === "settings" ? "active" : ""
-    }`}
-    onClick={() => {
-      setActiveMenu("settings");
-      if (window.innerWidth <= 900) setSidebarOpen(false);
-      setTimeout(() => {
-        document
-          .getElementById("settings-section")
-          ?.scrollIntoView({
-            behavior: "smooth",
-          });
-      }, 100);
-    }}
-  >
-
-    <Settings
-      className="menu-icon"
-      size={20}
-    />
-
-    {sidebarOpen && (
-      <span>Pengaturan</span>
-    )}
-
-  </button>
-
-</div>
-
-    {/* LOGOUT */}
-    <div className="logout-section" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-
-      <button
-        className="logout-btn back-btn"
-        onClick={() => onNavigate("dashboard")}
-      >
-        <Home
-          className="menu-icon"
-          size={20}
-        />
-        {sidebarOpen && (
-          <span>Menu Utama</span>
-        )}
-      </button>
-
-      <button
-        className="logout-btn"
-        onClick={onLogout}
-      >
-
-        <LogOut
-          className="menu-icon"
-          size={20}
-        />
-
-        {sidebarOpen && (
-          <span>Logout</span>
-        )}
-
-      </button>
-
-    </div>
-
-  </aside>
+            {sidebarOpen && <span>Logout</span>}
+          </button>
+        </div>
+      </aside>
 
       {/* MAIN */}
       <main className="main-content">
-
         {/* HEADER */}
         <div className="top-header">
-
           <div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap", marginBottom: "8px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                flexWrap: "wrap",
+                marginBottom: "8px",
+              }}
+            >
               <button
                 className="mobile-toggle-menu-btn"
                 onClick={() => setSidebarOpen(true)}
@@ -1101,7 +1026,6 @@ await fetch(
                 flexWrap: "wrap",
               }}
             >
-
               <div
                 style={{
                   background: "#2563eb",
@@ -1142,7 +1066,6 @@ await fetch(
                   Group: {user?.group}
                 </div>
               )}
-
             </div>
 
             {/* USER */}
@@ -1153,112 +1076,73 @@ await fetch(
                 fontSize: 22,
               }}
             >
-              Selamat Datang,
-              {" "}
-              {user?.nama}
+              Selamat Datang, {user?.nama}
             </h3>
 
             <p className="page-subtitle">
               Sistem Monitoring Inspeksi Kontainer
             </p>
-
           </div>
 
-    {/* ACTION */}
-<div className="header-actions">
+          {/* ACTION */}
+          <div className="header-actions">
+            {user?.username === "adminRAL" && (
+              <button
+                className="notif-btn"
+                onClick={() => setShowAdminPanel(!showAdminPanel)}
+              >
+                <Settings size={20} />
+              </button>
+            )}
 
+            {/* SEARCH */}
 
+            <div className="search-box">
+              <Search size={20} className="search-icon" />
 
-{
-user?.username === "adminRAL" && (
+              <input
+                type="text"
+                placeholder="Cari nomor container & tekan Enter..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                className="search-input"
+              />
+            </div>
 
-<button
-className="notif-btn"
-onClick={() =>
-setShowAdminPanel(
-!showAdminPanel
-)
-}
->
+            {/* NOTIF */}
+            <button className="notif-btn">
+              <Bell size={20} />
+            </button>
+          </div>
+        </div>
 
-<Settings size={20} />
-
-</button>
-
-)
-}
-
-  {/* SEARCH */}
-  
-<div className="search-box">
-
-  <Search
-    size={20}
-    className="search-icon"
-  />
-
-  <input
-    type="text"
-    placeholder="Cari nomor container & tekan Enter..."
-    value={search}
-    onChange={(e) =>
-      setSearch(e.target.value)
-    }
-    onKeyDown={handleSearchKeyDown}
-    className="search-input"
-  />
-
-</div>
-
-  {/* NOTIF */}
-  <button className="notif-btn">
-
-    <Bell size={20} />
-
-  </button>
-
-</div>    
-
-</div>
-
-{
-showAdminPanel &&
-user?.username === "adminRAL" && (
-  <div id="user-section">
-    <UserManagement />
-  </div>
-)
-}
+        {showAdminPanel && user?.username === "adminRAL" && (
+          <div id="user-section">
+            <UserManagement />
+          </div>
+        )}
 
         {/* UPLOAD MANIFEST */}
-        {(user?.role === "ADMIN" ||
-          user?.role === "MANAGER" ||
-          user?.role === "SUPERVISOR" ||
-          user?.role === "ASSISTANT SUPERVISOR" ||
-          user?.role === "ADMIN REPORT") ? (
-          
+        {user?.role === "ADMIN" ||
+        user?.role === "MANAGER" ||
+        user?.role === "SUPERVISOR" ||
+        user?.role === "ASSISTANT SUPERVISOR" ||
+        user?.role === "ADMIN REPORT" ? (
           <div className="upload-card-new" id="upload-manifest">
             <h3 className="card-title">Upload Manifest Kapal</h3>
-            
-            <div className="upload-form-row">
-              {/* INPUT NAMA KAPAL */}
-              <div className="form-group-manifest">
-                <label>Nama Kapal <span className="required-star">*</span></label>
-                <input
-                  type="text"
-                  placeholder="Contoh: MERATUS JAYAKARTA"
-                  value={manifestShipName}
-                  onChange={(e) => setManifestShipName(e.target.value)}
-                  className="input-vessel"
-                />
-              </div>
 
+            <div className="upload-form-row">
               {/* UPLOAD FILE EXCEL */}
               <div className="form-group-manifest">
-                <label>Upload File Excel <span className="required-star">*</span></label>
-                <div 
+                <label>
+                  Upload File Excel <span className="required-star">*</span>
+                </label>
+                <div
                   className="file-upload-container"
-                  onClick={() => document.getElementById("file-manifest-input").click()}
+                  onClick={() =>
+                    document.getElementById("file-manifest-input").click()
+                  }
                 >
                   <span className="file-icon">📄</span>
                   <span className="file-name-text">
@@ -1279,12 +1163,14 @@ user?.username === "adminRAL" && (
                     style={{ display: "none" }}
                   />
                 </div>
-                <span className="file-info-text">File Excel: .xlsx, .xls (maks. 5MB)</span>
+                <span className="file-info-text">
+                  File Excel: .xlsx, .xls (maks. 5MB)
+                </span>
               </div>
 
               {/* BUTTON UPLOAD */}
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="btn-upload-import"
                 onClick={handleExcelImportSubmit}
               >
@@ -1329,9 +1215,22 @@ user?.username === "adminRAL" && (
 
         {/* QUICK ACTIONS PANEL (Toggled from Settings) */}
         {showQuickActions && (
-          <div className="um-card" style={{ marginBottom: "24px", padding: "16px 20px" }}>
-            <h5 style={{ fontSize: "14px", fontWeight: "700", marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ fontSize: "16px" }}>⚡</span> Akses Pintar (Quick Actions)
+          <div
+            className="um-card"
+            style={{ marginBottom: "24px", padding: "16px 20px" }}
+          >
+            <h5
+              style={{
+                fontSize: "14px",
+                fontWeight: "700",
+                marginBottom: "12px",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <span style={{ fontSize: "16px" }}>⚡</span> Akses Pintar (Quick
+              Actions)
             </h5>
             <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
               <button
@@ -1346,7 +1245,7 @@ user?.username === "adminRAL" && (
                   fontSize: "12px",
                   fontWeight: "600",
                   cursor: "pointer",
-                  transition: "all 0.2s"
+                  transition: "all 0.2s",
                 }}
               >
                 Mulai Inspeksi Baru
@@ -1357,7 +1256,9 @@ user?.username === "adminRAL" && (
                   setActiveMenu("user");
                   setShowAdminPanel(true);
                   setTimeout(() => {
-                    document.getElementById("user-section")?.scrollIntoView({ behavior: "smooth" });
+                    document
+                      .getElementById("user-section")
+                      ?.scrollIntoView({ behavior: "smooth" });
                   }, 100);
                 }}
                 style={{
@@ -1369,7 +1270,7 @@ user?.username === "adminRAL" && (
                   fontSize: "12px",
                   fontWeight: "600",
                   cursor: "pointer",
-                  transition: "all 0.2s"
+                  transition: "all 0.2s",
                 }}
               >
                 Kelola Pengguna
@@ -1379,7 +1280,9 @@ user?.username === "adminRAL" && (
                 onClick={() => {
                   setActiveMenu("manifest");
                   setTimeout(() => {
-                    document.getElementById("upload-manifest")?.scrollIntoView({ behavior: "smooth" });
+                    document
+                      .getElementById("upload-manifest")
+                      ?.scrollIntoView({ behavior: "smooth" });
                   }, 100);
                 }}
                 style={{
@@ -1391,7 +1294,7 @@ user?.username === "adminRAL" && (
                   fontSize: "12px",
                   fontWeight: "600",
                   cursor: "pointer",
-                  transition: "all 0.2s"
+                  transition: "all 0.2s",
                 }}
               >
                 Upload Manifest Kapal
@@ -1400,98 +1303,68 @@ user?.username === "adminRAL" && (
           </div>
         )}
 
-{/* STATUS REALTIME */}
+        {/* STATUS REALTIME */}
 
-<div
-style={{
-display:"grid",
-gridTemplateColumns:
-"repeat(auto-fit,minmax(250px,1fr))",
-gap:"20px",
-marginBottom:"24px"
-}}
->
-
-<div className="chart-card">
-
-<h3>
-Container Full
-</h3>
-
-<h1
-style={{
-fontSize:"48px",
-fontWeight:"bold",
-color:"#2563eb"
-}}
->
-{containerFull}
-</h1>
-
-</div>
-
-<div className="chart-card">
-
-<h3>
-Container Empty
-</h3>
-
-<h1
-style={{
-fontSize:"48px",
-fontWeight:"bold",
-color:"#f97316"
-}}
->
-{containerEmpty}
-</h1>
-
-</div>
-
-<div className="chart-card">
-
-<h3>
-Waiting Repair
-</h3>
-
-<h1
-style={{
-fontSize:"48px",
-fontWeight:"bold",
-color:"#ef4444"
-}}
->
-{waitingRepair}
-</h1>
-
-</div>
-
-</div>
-        {/* CHART */}
         <div
-          className="chart-grid"
-          id="laporan-section"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))",
+            gap: "20px",
+            marginBottom: "24px",
+          }}
         >
+          <div className="chart-card">
+            <h3>Container Full</h3>
 
+            <h1
+              style={{
+                fontSize: "48px",
+                fontWeight: "bold",
+                color: "#2563eb",
+              }}
+            >
+              {containerFull}
+            </h1>
+          </div>
+
+          <div className="chart-card">
+            <h3>Container Empty</h3>
+
+            <h1
+              style={{
+                fontSize: "48px",
+                fontWeight: "bold",
+                color: "#f97316",
+              }}
+            >
+              {containerEmpty}
+            </h1>
+          </div>
+
+          <div className="chart-card">
+            <h3>Waiting Repair</h3>
+
+            <h1
+              style={{
+                fontSize: "48px",
+                fontWeight: "bold",
+                color: "#ef4444",
+              }}
+            >
+              {waitingRepair}
+            </h1>
+          </div>
+        </div>
+        {/* CHART */}
+        <div className="chart-grid" id="laporan-section">
           {/* LINE */}
           <div className="chart-card">
-
-            <h3>
-              Grafik Inspeksi
-            </h3>
+            <h3>Grafik Inspeksi</h3>
 
             <div className="real-chart">
-
-              <ResponsiveContainer
-                width="100%"
-                height={280}
-              >
-
+              <ResponsiveContainer width="100%" height={280}>
                 <LineChart data={dynamicLineData}>
-
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                  />
+                  <CartesianGrid strokeDasharray="3 3" />
 
                   <XAxis dataKey="day" />
 
@@ -1505,31 +1378,18 @@ color:"#ef4444"
                     stroke="#2563eb"
                     strokeWidth={4}
                   />
-
                 </LineChart>
-
               </ResponsiveContainer>
-
             </div>
-
           </div>
 
           {/* PIE */}
           <div className="chart-card">
-
-            <h3>
-              Damage Container
-            </h3>
+            <h3>Damage Container</h3>
 
             <div className="real-chart">
-
-              <ResponsiveContainer
-                width="100%"
-                height={280}
-              >
-
+              <ResponsiveContainer width="100%" height={280}>
                 <RePieChart>
-
                   <Pie
                     data={dynamicPieData}
                     cx="50%"
@@ -1537,65 +1397,128 @@ color:"#ef4444"
                     outerRadius={100}
                     dataKey="value"
                   >
-
-                    {dynamicPieData.map(
-                      (entry, index) => (
-
-                        <Cell
-                          key={index}
-                          fill={entry.color}
-                        />
-
-                      )
-                    )}
-
+                    {dynamicPieData.map((entry, index) => (
+                      <Cell key={index} fill={entry.color} />
+                    ))}
                   </Pie>
 
                   <Tooltip />
-
                 </RePieChart>
-
               </ResponsiveContainer>
-
             </div>
-
           </div>
-
         </div>
 
         {/* EXTRA STATS (Toggled from Settings) */}
         {showExtraStats && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px", marginTop: "24px" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: "20px",
+              marginTop: "24px",
+            }}
+          >
             <div className="chart-card">
-              <h3 style={{ fontSize: "14px", fontWeight: "700", marginBottom: "12px", borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
+              <h3
+                style={{
+                  fontSize: "14px",
+                  fontWeight: "700",
+                  marginBottom: "12px",
+                  borderBottom: "1px solid #f1f5f9",
+                  paddingBottom: "8px",
+                }}
+              >
                 Inspeksi per Group Shift
               </h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                }}
+              >
                 {getStatsPerGroup().map((g, idx) => (
-                  <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", borderBottom: "1px solid #f8fafc", paddingBottom: "4px" }}>
-                    <span style={{ fontWeight: "600", color: "#475569" }}>{g.name}</span>
-                    <span style={{ color: "#2563eb", fontWeight: "700" }}>{g.count} kali</span>
+                  <div
+                    key={idx}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      fontSize: "13px",
+                      borderBottom: "1px solid #f8fafc",
+                      paddingBottom: "4px",
+                    }}
+                  >
+                    <span style={{ fontWeight: "600", color: "#475569" }}>
+                      {g.name}
+                    </span>
+                    <span style={{ color: "#2563eb", fontWeight: "700" }}>
+                      {g.count} kali
+                    </span>
                   </div>
                 ))}
                 {getStatsPerGroup().length === 0 && (
-                  <span style={{ fontSize: "12px", color: "#64748b", fontStyle: "italic" }}>Belum ada data grup shift.</span>
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      color: "#64748b",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    Belum ada data grup shift.
+                  </span>
                 )}
               </div>
             </div>
 
             <div className="chart-card">
-              <h3 style={{ fontSize: "14px", fontWeight: "700", marginBottom: "12px", borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
+              <h3
+                style={{
+                  fontSize: "14px",
+                  fontWeight: "700",
+                  marginBottom: "12px",
+                  borderBottom: "1px solid #f1f5f9",
+                  paddingBottom: "8px",
+                }}
+              >
                 Inspeksi per Petugas Lapangan
               </h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                }}
+              >
                 {getStatsPerPetugas().map((p, idx) => (
-                  <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", borderBottom: "1px solid #f8fafc", paddingBottom: "4px" }}>
-                    <span style={{ fontWeight: "600", color: "#475569" }}>{p.name}</span>
-                    <span style={{ color: "#10b981", fontWeight: "700" }}>{p.count} kali</span>
+                  <div
+                    key={idx}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      fontSize: "13px",
+                      borderBottom: "1px solid #f8fafc",
+                      paddingBottom: "4px",
+                    }}
+                  >
+                    <span style={{ fontWeight: "600", color: "#475569" }}>
+                      {p.name}
+                    </span>
+                    <span style={{ color: "#10b981", fontWeight: "700" }}>
+                      {p.count} kali
+                    </span>
                   </div>
                 ))}
                 {getStatsPerPetugas().length === 0 && (
-                  <span style={{ fontSize: "12px", color: "#64748b", fontStyle: "italic" }}>Belum ada data petugas.</span>
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      color: "#64748b",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    Belum ada data petugas.
+                  </span>
                 )}
               </div>
             </div>
@@ -1607,33 +1530,22 @@ color:"#ef4444"
           id="table-inspeksi"
           className="table-card"
           style={{
-            marginTop: "24px"
+            marginTop: "24px",
           }}
         >
-
           <div className="table-header">
-
-            <h3>
-              Riwayat Inspeksi
-            </h3>
-
+            <h3>Riwayat Inspeksi</h3>
           </div>
 
           <div className="table-wrapper">
-
             <table>
-
               <thead>
-
                 <tr>
-
                   <th>No</th>
 
                   <th>Tanggal</th>
 
                   <th>Container</th>
-
-                  <th>Kapal</th>
 
                   <th>Petugas</th>
 
@@ -1644,98 +1556,66 @@ color:"#ef4444"
                   <th>Sisi</th>
 
                   <th>Aksi</th>
-
                 </tr>
-
               </thead>
 
-<tbody>
+              <tbody>
+                {(Array.isArray(historyData) ? historyData : [])
+                  .filter((item) => {
+                    if (!search.trim()) return true;
+                    const q = search.toLowerCase().trim();
+                    return (
+                      (item.container || "").toLowerCase().includes(q) ||
+                      (item.shipName || "").toLowerCase().includes(q) ||
+                      (item.petugas || "").toLowerCase().includes(q) ||
+                      (item.group || "").toLowerCase().includes(q) ||
+                      (item.condition || "").toLowerCase().includes(q) ||
+                      (item.side || "").toLowerCase().includes(q)
+                    );
+                  })
+                  .map((item, index) => (
+                    <tr key={index}>
+                      <td>{index + 1}</td>
 
-{
-(Array.isArray(historyData) ? historyData : [])
-  .filter(item => {
-    if (!search.trim()) return true;
-    const q = search.toLowerCase().trim();
-    return (
-      (item.container || "").toLowerCase().includes(q) ||
-      (item.shipName || "").toLowerCase().includes(q) ||
-      (item.petugas || "").toLowerCase().includes(q) ||
-      (item.group || "").toLowerCase().includes(q) ||
-      (item.condition || "").toLowerCase().includes(q) ||
-      (item.side || "").toLowerCase().includes(q)
-    );
-  })
-  .map((item,index)=>(
+                      <td>{formatInspectionDate(item.date)}</td>
 
-<tr key={index}>
+                      <td>{item.container}</td>
 
-<td>
-{index + 1}
-</td>
+                      <td>{item.petugas || "Petugas Lapangan"}</td>
 
-<td>
+                      <td>{item.group || "Lapangan"}</td>
 
-{formatInspectionDate(item.date)}
+                      <td>
+                        <span
+                          className={`status-badge ${
+                            item.condition === "GOOD" ? "good" : "damage"
+                          }`}
+                        >
+                          {item.condition}
+                        </span>
+                      </td>
 
-</td>
+                      <td>{item.side}</td>
 
-<td>
-{item.container}
-</td>
+                      <td>
+                        <button
+                          className="detail-btn"
+                          style={{ marginRight: "8px" }}
+                          onClick={() => setSelectedInspection(item)}
+                          title="Lihat Detail Inspeksi"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        <button
+                          className="detail-btn"
+                          onClick={() => {
+                            const win = window.open(
+                              "",
+                              "",
+                              "width=1200,height=900",
+                            );
 
-<td>
-{item.shipName}
-</td>
-
-<td>
-{item.petugas || "Petugas Lapangan"}
-</td>
-
-<td>
-{item.group || "Lapangan"}
-</td>
-
-<td>
-
-<span
-className={`status-badge ${
-item.condition === "GOOD"
-? "good"
-: "damage"
-}`}
->
-
-{item.condition}
-
-</span>
-
-</td>
-
-<td>
-{item.side}
-</td>
-
-<td>
-                          <button
-                            className="detail-btn"
-                            style={{ marginRight: "8px" }}
-                            onClick={() => setSelectedInspection(item)}
-                            title="Lihat Detail Inspeksi"
-                          >
-                            <Eye size={18} />
-                          </button>
-                          <button
-                            className="detail-btn"
-                            onClick={()=>{
-
-const win =
-window.open(
-"",
-"",
-"width=1200,height=900"
-);
-
-win.document.write(`
+                            win.document.write(`
 
 <html>
 
@@ -1978,15 +1858,7 @@ ${item.container || "-"}
 </td>
 </tr>
 
-<tr>
-<td class="label">
-Nama Kapal
-</td>
 
-<td>
-${item.shipName || "-"}
-</td>
-</tr>
 
 <tr>
 <td class="label">
@@ -2101,22 +1973,23 @@ FOTO DAMAGE
 
 </div>
 
-${
-item.photo2
-?
-`<img src="${item.photo2}" />`
-:
-""
-}
+${item.photo2 ? `<img src="${item.photo2}" />` : ""}
 
 </div>
 
-${(item.photo1 || "").split(",").map(url => url.trim()).filter(Boolean).map((url, i) => `
+${(item.photo1 || "")
+  .split(",")
+  .map((url) => url.trim())
+  .filter(Boolean)
+  .map(
+    (url, i) => `
   <div class="photo-box" style="text-align: center;">
     <div class="photo-label" style="font-size: 10px; font-weight: bold; margin-bottom: 6px;">FOTO CONTAINER/CDR ${i + 1}</div>
     <img src="${url}" style="width: 100%; height: 165px; object-fit: cover; border-radius: 8px; border: 2px solid #004aad;" />
   </div>
-`).join("")}
+`,
+  )
+  .join("")}
 
 </div>
 
@@ -2152,86 +2025,99 @@ Supervisor
 
 </div>
 
+<script>
+window.onload = function() {
+  setTimeout(function() {
+    window.print();
+  }, 500);
+}
+</script>
 </body>
 
 </html>
 
 `);
 
-win.document.close();
-
-setTimeout(()=>{
-
-win.print();
-
-},500);
-
-}}
-
->
-
+                            win.document.close();
+                          }}
+                        >
                           PDF
-                          
+                        </button>
+
+                        {user?.username === "adminRAL" && (
+                          <button
+                            className="edit-btn"
+                            style={{ marginLeft: "8px" }}
+                            onClick={() => setEditingInspection(item)}
+                            title="Edit Inspeksi"
+                          >
+                            <Pencil size={18} />
                           </button>
-                          
-                          {user?.username === "adminRAL" && (
-                            <button
-                              className="edit-btn"
-                              style={{ marginLeft: "8px" }}
-                              onClick={() => setEditingInspection(item)}
-                              title="Edit Inspeksi"
-                            >
-                              <Pencil size={18} />
-                            </button>
-                          )}
-                          
-                          {user?.username === "adminRAL" && (
-                            <button
-                              className="delete-btn"
-                              style={{ marginLeft: "8px" }}
-                              onClick={() => handleDeleteInspection(item.id)}
-                              title="Hapus Inspeksi"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          )}
-                          
-                          </td>
+                        )}
 
-</tr>
-
-))
-}
-
-</tbody>
-
-</table>
-
-</div>
-
-</div>
+                        {user?.username === "adminRAL" && (
+                          <button
+                            className="delete-btn"
+                            style={{ marginLeft: "8px" }}
+                            onClick={() => handleDeleteInspection(item.id)}
+                            title="Hapus Inspeksi"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
         {/* PENGATURAN / SETTINGS SECTION */}
         <div
           id="settings-section"
           className="um-card"
           style={{
-            marginTop: "24px"
+            marginTop: "24px",
           }}
         >
           <div className="card-header-um">
             <Settings size={20} className="icon-blue" />
             <h4>Pengaturan Aplikasi</h4>
           </div>
-          
-          <div className="settings-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px", marginTop: "10px" }}>
-            
+
+          <div
+            className="settings-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: "20px",
+              marginTop: "10px",
+            }}
+          >
             {/* TEMA WARNA */}
-            <div className="settings-option-group" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <h5 style={{ fontSize: "14px", fontWeight: "700", color: "#1e293b" }}>Tema Warna Dashboard</h5>
-              <p style={{ fontSize: "12px", color: "#64748b" }}>Pilih tema warna visual untuk antarmuka Admin Control Panel Anda.</p>
-              
-              <div className="theme-selectors" style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
+            <div
+              className="settings-option-group"
+              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+            >
+              <h5
+                style={{
+                  fontSize: "14px",
+                  fontWeight: "700",
+                  color: "#1e293b",
+                }}
+              >
+                Tema Warna Dashboard
+              </h5>
+              <p style={{ fontSize: "12px", color: "#64748b" }}>
+                Pilih tema warna visual untuk antarmuka Admin Control Panel
+                Anda.
+              </p>
+
+              <div
+                className="theme-selectors"
+                style={{ display: "flex", gap: "10px", marginTop: "6px" }}
+              >
                 <button
                   type="button"
                   onClick={() => handleThemeChange("light")}
@@ -2240,7 +2126,10 @@ win.print();
                     flex: 1,
                     padding: "10px",
                     borderRadius: "8px",
-                    border: theme === "light" ? "2px solid #2563eb" : "1px solid #cbd5e1",
+                    border:
+                      theme === "light"
+                        ? "2px solid #2563eb"
+                        : "1px solid #cbd5e1",
                     background: "white",
                     cursor: "pointer",
                     fontWeight: "600",
@@ -2248,10 +2137,18 @@ win.print();
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    gap: "6px"
+                    gap: "6px",
                   }}
                 >
-                  <div style={{ width: "24px", height: "24px", borderRadius: "50%", background: "#f8fafc", border: "1px solid #cbd5e1" }}></div>
+                  <div
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                      borderRadius: "50%",
+                      background: "#f8fafc",
+                      border: "1px solid #cbd5e1",
+                    }}
+                  ></div>
                   <span style={{ color: "#334155" }}>Light Slate</span>
                 </button>
 
@@ -2263,7 +2160,10 @@ win.print();
                     flex: 1,
                     padding: "10px",
                     borderRadius: "8px",
-                    border: theme === "dark" ? "2px solid #38bdf8" : "1px solid #cbd5e1",
+                    border:
+                      theme === "dark"
+                        ? "2px solid #38bdf8"
+                        : "1px solid #cbd5e1",
                     background: "#1e293b",
                     color: "white",
                     cursor: "pointer",
@@ -2272,11 +2172,23 @@ win.print();
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    gap: "6px"
+                    gap: "6px",
                   }}
                 >
-                  <div style={{ width: "24px", height: "24px", borderRadius: "50%", background: "#0f172a", border: "1px solid #334155" }}></div>
-                  <span style={{ color: theme === "dark" ? "white" : "#334155" }}>Dark Slate</span>
+                  <div
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                      borderRadius: "50%",
+                      background: "#0f172a",
+                      border: "1px solid #334155",
+                    }}
+                  ></div>
+                  <span
+                    style={{ color: theme === "dark" ? "white" : "#334155" }}
+                  >
+                    Dark Slate
+                  </span>
                 </button>
 
                 <button
@@ -2287,7 +2199,10 @@ win.print();
                     flex: 1,
                     padding: "10px",
                     borderRadius: "8px",
-                    border: theme === "orange" ? "2px solid #ea580c" : "1px solid #cbd5e1",
+                    border:
+                      theme === "orange"
+                        ? "2px solid #ea580c"
+                        : "1px solid #cbd5e1",
                     background: "#0c0a09",
                     color: "#f2f2f2",
                     cursor: "pointer",
@@ -2296,77 +2211,146 @@ win.print();
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    gap: "6px"
+                    gap: "6px",
                   }}
                 >
-                  <div style={{ width: "24px", height: "24px", borderRadius: "50%", background: "#ea580c", border: "1px solid #444" }}></div>
-                  <span style={{ color: theme === "orange" ? "white" : "#334155" }}>Cyber Orange</span>
+                  <div
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                      borderRadius: "50%",
+                      background: "#ea580c",
+                      border: "1px solid #444",
+                    }}
+                  ></div>
+                  <span
+                    style={{ color: theme === "orange" ? "white" : "#334155" }}
+                  >
+                    Cyber Orange
+                  </span>
                 </button>
               </div>
             </div>
 
             {/* OPSI MENU TAMBAHAN */}
-            <div className="settings-option-group" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <h5 style={{ fontSize: "14px", fontWeight: "700", color: "#1e293b" }}>Menu & Fitur Tambahan</h5>
-              <p style={{ fontSize: "12px", color: "#64748b" }}>Aktifkan atau sembunyikan modul visual tambahan pada panel kontrol admin.</p>
-              
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "6px" }}>
-                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", cursor: "pointer", fontWeight: "500", color: "#334155" }}>
+            <div
+              className="settings-option-group"
+              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+            >
+              <h5
+                style={{
+                  fontSize: "14px",
+                  fontWeight: "700",
+                  color: "#1e293b",
+                }}
+              >
+                Menu & Fitur Tambahan
+              </h5>
+              <p style={{ fontSize: "12px", color: "#64748b" }}>
+                Aktifkan atau sembunyikan modul visual tambahan pada panel
+                kontrol admin.
+              </p>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                  marginTop: "6px",
+                }}
+              >
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontSize: "13px",
+                    cursor: "pointer",
+                    fontWeight: "500",
+                    color: "#334155",
+                  }}
+                >
                   <input
                     type="checkbox"
                     checked={showExtraStats}
                     onChange={(e) => setShowExtraStats(e.target.checked)}
                     style={{ width: "16px", height: "16px", cursor: "pointer" }}
                   />
-                  <span style={{ color: "#334155" }}>Tampilkan Modul Statistik Grafik Tambahan</span>
+                  <span style={{ color: "#334155" }}>
+                    Tampilkan Modul Statistik Grafik Tambahan
+                  </span>
                 </label>
-                
-                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", cursor: "pointer", fontWeight: "500", color: "#334155" }}>
+
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontSize: "13px",
+                    cursor: "pointer",
+                    fontWeight: "500",
+                    color: "#334155",
+                  }}
+                >
                   <input
                     type="checkbox"
                     checked={showQuickActions}
                     onChange={(e) => setShowQuickActions(e.target.checked)}
                     style={{ width: "16px", height: "16px", cursor: "pointer" }}
                   />
-                  <span style={{ color: "#334155" }}>Tampilkan Tombol Akses Pintar (Quick Actions)</span>
+                  <span style={{ color: "#334155" }}>
+                    Tampilkan Tombol Akses Pintar (Quick Actions)
+                  </span>
                 </label>
               </div>
             </div>
-
           </div>
         </div>
-
       </main>
 
       {/* DETAIL MODAL */}
       {selectedInspection && (
-        <div className="modal-overlay" onClick={() => setSelectedInspection(null)}>
+        <div
+          className="modal-overlay"
+          onClick={() => setSelectedInspection(null)}
+        >
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h4 className="modal-title">Detail Inspeksi: {selectedInspection.container}</h4>
-              <button className="btn-close-modal" onClick={() => setSelectedInspection(null)}>×</button>
+              <h4 className="modal-title">
+                Detail Inspeksi: {selectedInspection.container}
+              </h4>
+              <button
+                className="btn-close-modal"
+                onClick={() => setSelectedInspection(null)}
+              >
+                ×
+              </button>
             </div>
             <div className="modal-body">
               <div className="info-grid">
                 <div className="info-item">
-                  <div className="info-label">Nama Kapal</div>
-                  <div className="info-val">{selectedInspection.shipName || "-"}</div>
-                </div>
-                <div className="info-item">
                   <div className="info-label">Kondisi</div>
-                  <div className="info-val">{selectedInspection.condition || "-"}</div>
+                  <div className="info-val">
+                    {selectedInspection.condition || "-"}
+                  </div>
                 </div>
                 <div className="info-item">
                   <div className="info-label">Sisi Kerusakan</div>
-                  <div className="info-val">{selectedInspection.side || "-"}</div>
+                  <div className="info-val">
+                    {selectedInspection.side || "-"}
+                  </div>
                 </div>
                 <div className="info-item">
                   <div className="info-label">Petugas Pemeriksa</div>
-                  <div className="info-val">{selectedInspection.petugas || "Petugas Lapangan"}</div>
+                  <div className="info-val">
+                    {selectedInspection.petugas || "Petugas Lapangan"}
+                  </div>
                 </div>
                 <div className="info-item">
                   <div className="info-label">Grup Petugas</div>
-                  <div className="info-val">{selectedInspection.group || "Lapangan"}</div>
+                  <div className="info-val">
+                    {selectedInspection.group || "Lapangan"}
+                  </div>
                 </div>
                 <div className="info-item">
                   <div className="info-label">Waktu Inspeksi</div>
@@ -2376,7 +2360,10 @@ win.print();
                 </div>
                 <div className="info-item">
                   <div className="info-label">ISO / Status</div>
-                  <div className="info-val">{selectedInspection.iso || "-"} / {selectedInspection.status || "-"}</div>
+                  <div className="info-val">
+                    {selectedInspection.iso || "-"} /{" "}
+                    {selectedInspection.status || "-"}
+                  </div>
                 </div>
               </div>
 
@@ -2393,17 +2380,24 @@ win.print();
                   <div className="photo-card">
                     <span>FOTO NOMOR CONTAINER</span>
                     {selectedInspection.photo2 ? (
-                      <img src={selectedInspection.photo2} alt="Foto Nomor Container" />
+                      <img
+                        src={selectedInspection.photo2}
+                        alt="Foto Nomor Container"
+                      />
                     ) : (
                       <div className="no-photo-text">Tidak ada foto</div>
                     )}
                   </div>
-                  {(selectedInspection.photo1 || "").split(",").map(url => url.trim()).filter(Boolean).map((url, idx) => (
-                    <div className="photo-card" key={idx}>
-                      <span>FOTO DETAIL KERUSAKAN {idx + 1}</span>
-                      <img src={url} alt={`Foto Kerusakan ${idx + 1}`} />
-                    </div>
-                  ))}
+                  {(selectedInspection.photo1 || "")
+                    .split(",")
+                    .map((url) => url.trim())
+                    .filter(Boolean)
+                    .map((url, idx) => (
+                      <div className="photo-card" key={idx}>
+                        <span>FOTO DETAIL KERUSAKAN {idx + 1}</span>
+                        <img src={url} alt={`Foto Kerusakan ${idx + 1}`} />
+                      </div>
+                    ))}
                 </div>
               </div>
             </div>
@@ -2413,39 +2407,78 @@ win.print();
 
       {/* EDIT MODAL */}
       {editingInspection && (
-        <div className="modal-overlay" onClick={() => setEditingInspection(null)}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "650px" }}>
+        <div
+          className="modal-overlay"
+          onClick={() => setEditingInspection(null)}
+        >
+          <div
+            className="modal-container"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: "650px" }}
+          >
             <div className="modal-header">
-              <h4 className="modal-title">Edit Inspeksi: {editingInspection.container}</h4>
-              <button className="btn-close-modal" onClick={() => setEditingInspection(null)}>×</button>
+              <h4 className="modal-title">
+                Edit Inspeksi: {editingInspection.container}
+              </h4>
+              <button
+                className="btn-close-modal"
+                onClick={() => setEditingInspection(null)}
+              >
+                ×
+              </button>
             </div>
             <form onSubmit={handleUpdateInspection} className="modal-body">
-              <div className="edit-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-                
-                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
-                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>No. Container <span style={{ color: "red" }}>*</span></label>
+              <div
+                className="edit-form-grid"
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "16px",
+                  marginBottom: "16px",
+                }}
+              >
+                <div
+                  className="form-group-edit"
+                  style={{ display: "flex", flexDirection: "column" }}
+                >
+                  <label
+                    style={{
+                      fontWeight: "600",
+                      marginBottom: "6px",
+                      fontSize: "14px",
+                      color: "#374151",
+                    }}
+                  >
+                    No. Container <span style={{ color: "red" }}>*</span>
+                  </label>
                   <input
                     type="text"
                     value={editContainer}
                     onChange={(e) => setEditContainer(e.target.value)}
                     required
-                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px" }}
+                    style={{
+                      padding: "10px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                      fontSize: "14px",
+                    }}
                   />
                 </div>
 
-                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
-                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>Nama Kapal <span style={{ color: "red" }}>*</span></label>
-                  <input
-                    type="text"
-                    value={editShipName}
-                    onChange={(e) => setEditShipName(e.target.value)}
-                    required
-                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px" }}
-                  />
-                </div>
-
-                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
-                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>ISO</label>
+                <div
+                  className="form-group-edit"
+                  style={{ display: "flex", flexDirection: "column" }}
+                >
+                  <label
+                    style={{
+                      fontWeight: "600",
+                      marginBottom: "6px",
+                      fontSize: "14px",
+                      color: "#374151",
+                    }}
+                  >
+                    ISO
+                  </label>
                   <SearchSelect
                     value={editIso}
                     onChange={(val) => setEditIso(val)}
@@ -2454,8 +2487,20 @@ win.print();
                   />
                 </div>
 
-                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
-                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>Category</label>
+                <div
+                  className="form-group-edit"
+                  style={{ display: "flex", flexDirection: "column" }}
+                >
+                  <label
+                    style={{
+                      fontWeight: "600",
+                      marginBottom: "6px",
+                      fontSize: "14px",
+                      color: "#374151",
+                    }}
+                  >
+                    Category
+                  </label>
                   <SearchSelect
                     value={editCategory}
                     onChange={(val) => setEditCategory(val)}
@@ -2464,24 +2509,59 @@ win.print();
                   />
                 </div>
 
-                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
-                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>Status (FULL/EMPTY)</label>
+                <div
+                  className="form-group-edit"
+                  style={{ display: "flex", flexDirection: "column" }}
+                >
+                  <label
+                    style={{
+                      fontWeight: "600",
+                      marginBottom: "6px",
+                      fontSize: "14px",
+                      color: "#374151",
+                    }}
+                  >
+                    Status (FULL/EMPTY)
+                  </label>
                   <input
                     type="text"
                     value={editStatus}
                     onChange={(e) => setEditStatus(e.target.value)}
                     placeholder="Contoh: FULL, EMPTY, MT"
-                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px" }}
+                    style={{
+                      padding: "10px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                      fontSize: "14px",
+                    }}
                   />
                 </div>
 
-                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
-                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>Kondisi <span style={{ color: "red" }}>*</span></label>
+                <div
+                  className="form-group-edit"
+                  style={{ display: "flex", flexDirection: "column" }}
+                >
+                  <label
+                    style={{
+                      fontWeight: "600",
+                      marginBottom: "6px",
+                      fontSize: "14px",
+                      color: "#374151",
+                    }}
+                  >
+                    Kondisi <span style={{ color: "red" }}>*</span>
+                  </label>
                   <select
                     value={editCondition}
                     onChange={(e) => setEditCondition(e.target.value)}
                     required
-                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px", background: "white" }}
+                    style={{
+                      padding: "10px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                      fontSize: "14px",
+                      background: "white",
+                    }}
                   >
                     <option value="">-Kondisi-</option>
                     <option value="GOOD">GOOD</option>
@@ -2497,79 +2577,201 @@ win.print();
                   </select>
                 </div>
 
-                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
-                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>Sisi Kerusakan</label>
+                <div
+                  className="form-group-edit"
+                  style={{ display: "flex", flexDirection: "column" }}
+                >
+                  <label
+                    style={{
+                      fontWeight: "600",
+                      marginBottom: "6px",
+                      fontSize: "14px",
+                      color: "#374151",
+                    }}
+                  >
+                    Sisi Kerusakan
+                  </label>
                   <select
                     value={editSide}
                     onChange={(e) => setEditSide(e.target.value)}
-                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px", background: "white" }}
+                    style={{
+                      padding: "10px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                      fontSize: "14px",
+                      background: "white",
+                    }}
                   >
                     <option value="">-Sisi-</option>
                     <option value="Front/Depan">Front/Depan</option>
                     <option value="Bottom/Bawah">Bottom/Bawah</option>
-                    <option value="Left Side/Sisi Kiri">Left Side/Sisi Kiri</option>
-                    <option value="Right Side/Sisi Kanan">Right Side/Sisi Kanan</option>
+                    <option value="Left Side/Sisi Kiri">
+                      Left Side/Sisi Kiri
+                    </option>
+                    <option value="Right Side/Sisi Kanan">
+                      Right Side/Sisi Kanan
+                    </option>
                     <option value="Roof/Atas">Roof/Atas</option>
                     <option value="Rear/Belakang">Rear/Belakang</option>
                     <option value="Inside/Dalam">Inside/Dalam</option>
                   </select>
                 </div>
 
-                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
-                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>Petugas Pemeriksa <span style={{ color: "red" }}>*</span></label>
+                <div
+                  className="form-group-edit"
+                  style={{ display: "flex", flexDirection: "column" }}
+                >
+                  <label
+                    style={{
+                      fontWeight: "600",
+                      marginBottom: "6px",
+                      fontSize: "14px",
+                      color: "#374151",
+                    }}
+                  >
+                    Petugas Pemeriksa <span style={{ color: "red" }}>*</span>
+                  </label>
                   <input
                     type="text"
                     value={editPetugas}
                     onChange={(e) => setEditPetugas(e.target.value)}
                     required
-                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px" }}
+                    style={{
+                      padding: "10px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                      fontSize: "14px",
+                    }}
                   />
                 </div>
 
-                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column" }}>
-                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>Grup Petugas</label>
+                <div
+                  className="form-group-edit"
+                  style={{ display: "flex", flexDirection: "column" }}
+                >
+                  <label
+                    style={{
+                      fontWeight: "600",
+                      marginBottom: "6px",
+                      fontSize: "14px",
+                      color: "#374151",
+                    }}
+                  >
+                    Grup Petugas
+                  </label>
                   <input
                     type="text"
                     value={editGroup}
                     onChange={(e) => setEditGroup(e.target.value)}
-                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px" }}
+                    style={{
+                      padding: "10px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                      fontSize: "14px",
+                    }}
                   />
                 </div>
 
-                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column", gridColumn: "span 2" }}>
-                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>Tanggal Inspeksi <span style={{ color: "red" }}>*</span></label>
+                <div
+                  className="form-group-edit"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gridColumn: "span 2",
+                  }}
+                >
+                  <label
+                    style={{
+                      fontWeight: "600",
+                      marginBottom: "6px",
+                      fontSize: "14px",
+                      color: "#374151",
+                    }}
+                  >
+                    Tanggal Inspeksi <span style={{ color: "red" }}>*</span>
+                  </label>
                   <input
                     type="datetime-local"
                     value={editDate}
                     onChange={(e) => setEditDate(e.target.value)}
                     required
-                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px" }}
+                    style={{
+                      padding: "10px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                      fontSize: "14px",
+                    }}
                   />
                 </div>
 
-                <div className="form-group-edit" style={{ display: "flex", flexDirection: "column", gridColumn: "span 2" }}>
-                  <label style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "#374151" }}>Catatan Kronologi</label>
+                <div
+                  className="form-group-edit"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gridColumn: "span 2",
+                  }}
+                >
+                  <label
+                    style={{
+                      fontWeight: "600",
+                      marginBottom: "6px",
+                      fontSize: "14px",
+                      color: "#374151",
+                    }}
+                  >
+                    Catatan Kronologi
+                  </label>
                   <textarea
                     value={editNote}
                     onChange={(e) => setEditNote(e.target.value)}
                     rows="3"
-                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px", resize: "vertical" }}
+                    style={{
+                      padding: "10px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                      fontSize: "14px",
+                      resize: "vertical",
+                    }}
                   />
                 </div>
-
               </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", borderTop: "1px solid #e5e7eb", paddingTop: "15px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "10px",
+                  borderTop: "1px solid #e5e7eb",
+                  paddingTop: "15px",
+                }}
+              >
                 <button
                   type="button"
                   onClick={() => setEditingInspection(null)}
-                  style={{ padding: "10px 20px", borderRadius: "8px", border: "1px solid #d1d5db", background: "white", color: "#374151", cursor: "pointer", fontWeight: "600" }}
+                  style={{
+                    padding: "10px 20px",
+                    borderRadius: "8px",
+                    border: "1px solid #d1d5db",
+                    background: "white",
+                    color: "#374151",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                  }}
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  style={{ padding: "10px 20px", borderRadius: "8px", border: "none", background: "#16a34a", color: "white", cursor: "pointer", fontWeight: "600" }}
+                  style={{
+                    padding: "10px 20px",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: "#16a34a",
+                    color: "white",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                  }}
                 >
                   Simpan Perubahan
                 </button>
@@ -2582,34 +2784,24 @@ win.print();
   );
 };
 
-
-
-
 /* =========================================
    CARD
 ========================================= */
 
-function StatCard({
-  title,
-  value,
-  subtitle,
-  color,
-}) {
-
+function StatCard({ title, value, subtitle, color }) {
   const icons = {
-    blue:"📦",
-    orange:"⚠️",
-    green:"✅",
-    purple:"👨‍💼"
+    blue: "📦",
+    orange: "⚠️",
+    green: "✅",
+    purple: "👨‍💼",
   };
 
   return (
     <div className={`stat-card ${color}`}>
-
       <div
         style={{
-          fontSize:"28px",
-          marginBottom:"10px"
+          fontSize: "28px",
+          marginBottom: "10px",
         }}
       >
         {icons[color]}
@@ -2619,12 +2811,7 @@ function StatCard({
 
       <h2>{value}</h2>
 
-      {subtitle && (
-        <span className="stat-card-subtitle">
-          {subtitle}
-        </span>
-      )}
-
+      {subtitle && <span className="stat-card-subtitle">{subtitle}</span>}
     </div>
   );
 }
@@ -2637,67 +2824,48 @@ function TableRow({
   no,
   tanggal,
   container,
-  kapal,
+
   petugas,
   kondisi,
   sisi,
 }) {
   return (
     <tr>
-
       <td>{no}</td>
 
       <td>{tanggal}</td>
 
       <td>{container}</td>
 
-      <td>{kapal}</td>
-
       <td>{petugas}</td>
 
       <td>
-
         <span
-          className={`status-badge ${
-            kondisi === "Good"
-              ? "good"
-              : "damage"
-          }`}
+          className={`status-badge ${kondisi === "Good" ? "good" : "damage"}`}
         >
           {kondisi}
         </span>
-
       </td>
 
       <td>{sisi}</td>
 
       <td>
-
         <button className="detail-btn">
-
           <Eye size={18} />
-
         </button>
-
       </td>
-
     </tr>
   );
 }
 const thStyle = {
-
-border:"1px solid #cbd5e1",
-padding:"12px",
-background:"#f1f5f9"
-
+  border: "1px solid #cbd5e1",
+  padding: "12px",
+  background: "#f1f5f9",
 };
 
 const tdStyle = {
-
-border:"1px solid #cbd5e1",
-padding:"12px"
-
-
+  border: "1px solid #cbd5e1",
+  padding: "12px",
 };
 
 export default OfficeDashboard;

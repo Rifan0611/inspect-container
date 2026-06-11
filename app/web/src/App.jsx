@@ -303,7 +303,7 @@ export default function App() {
 
   const [role, setRole] = useState("");
 
-  const [manifestShipName, setManifestShipName] = useState("");
+  const [manifestShipName] = useState("-");
 
   const [manifestData, setManifestData] = useState(() => {
     try {
@@ -1328,16 +1328,6 @@ ${item.container || "-"}
 
 <tr>
 <td class="label">
-Nama Kapal
-</td>
-
-<td>
-${item.shipName || "-"}
-</td>
-</tr>
-
-<tr>
-<td class="label">
 Status
 </td>
 
@@ -1504,9 +1494,9 @@ Supervisor
 <script>
 
 window.onload = function(){
-
-window.print();
-
+  setTimeout(function() {
+    window.print();
+  }, 500);
 }
 
 </script>
@@ -1751,13 +1741,6 @@ window.print();
 
           {role !== "PETUGAS" && (
             <div>
-              <input
-                placeholder="Nama Kapal"
-                value={manifestShipName}
-                onChange={(e) => setManifestShipName(e.target.value)}
-                style={input}
-              />
-
               <input
                 type="file"
                 accept=".xlsx,.xls"
