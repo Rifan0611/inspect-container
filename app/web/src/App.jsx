@@ -169,6 +169,13 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+const parsePhotos = (photoStr) => {
+  if (!photoStr) return [];
+  if (photoStr.includes("|")) return photoStr.split("|");
+  if (photoStr.startsWith("data:image")) return [photoStr];
+  return photoStr.split(",");
+};
+
 export default function App() {
   const formatInspectionDate = (dateStr) => {
     if (!dateStr) return "-";
@@ -975,7 +982,7 @@ export default function App() {
           uploadedUrls.push(photoObj.url);
         }
       }
-      const uploadedPhotoUrl = uploadedUrls.join(",");
+      const uploadedPhotoUrl = uploadedUrls.join("|");
 
       const activeUser = JSON.parse(localStorage.getItem("user")) || user;
 
@@ -1019,9 +1026,10 @@ export default function App() {
         throw new Error(resData?.error || "Gagal menyimpan inspeksi ke server");
       }
 
-      const newHistory = [data, ...history];
+      const historyDataToSave = { ...data, photo1: "", photo2: "" };
+      const newHistory = [historyDataToSave, ...history];
       setHistory(newHistory);
-      localStorage.setItem("history", JSON.stringify(newHistory));
+      localStorage.setItem("history", JSON.stringify(newHistory.slice(0, 5)));
 
       window.dispatchEvent(new Event("storage"));
       window.dispatchEvent(new Event("focus"));
@@ -1404,12 +1412,11 @@ FOTO INSPEKSI
 
 </div>
 
-<div class="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
-  ${(item.photo1 || "")
-    .split(",")
-    .map((url) => url.trim())
-    .filter(Boolean)
-    .map(
+  <div class="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+    ${parsePhotos(item.photo1)
+      .map((url) => url.trim())
+      .filter(Boolean)
+      .map(
       (url, i) => `
     <div class="photo-box" style="text-align: center;">
       <div class="photo-label" style="font-size: 10px; font-weight: bold; margin-bottom: 6px;">FOTO CONTAINER/CDR ${i + 1}</div>

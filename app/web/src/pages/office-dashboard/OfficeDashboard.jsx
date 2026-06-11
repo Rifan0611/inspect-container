@@ -42,6 +42,13 @@ import {
 
 import "./OfficeDashboard.css";
 
+const parsePhotos = (photoStr) => {
+  if (!photoStr) return [];
+  if (photoStr.includes("|")) return photoStr.split("|");
+  if (photoStr.startsWith("data:image")) return [photoStr];
+  return photoStr.split(",");
+};
+
 /* =========================================
    DATA CHART
 ========================================= */
@@ -103,6 +110,11 @@ const OfficeDashboard = ({
   const [activeMenu, setActiveMenu] = useState("dashboard");
 
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   // Theme & Extra layout menus state
   const [theme, setTheme] = useState(() => {
@@ -1560,8 +1572,10 @@ const OfficeDashboard = ({
               </thead>
 
               <tbody>
-                {(Array.isArray(historyData) ? historyData : [])
-                  .filter((item) => {
+                {(() => {
+                  const filtered = (
+                    Array.isArray(historyData) ? historyData : []
+                  ).filter((item) => {
                     if (!search.trim()) return true;
                     const q = search.toLowerCase().trim();
                     return (
@@ -1572,50 +1586,57 @@ const OfficeDashboard = ({
                       (item.condition || "").toLowerCase().includes(q) ||
                       (item.side || "").toLowerCase().includes(q)
                     );
-                  })
-                  .map((item, index) => (
-                    <tr key={index}>
-                      <td>{index + 1}</td>
+                  });
+                  const paginated = filtered.slice(
+                    (currentPage - 1) * 10,
+                    currentPage * 10,
+                  );
 
-                      <td>{formatInspectionDate(item.date)}</td>
+                  return paginated.map((item, index) => {
+                    const absoluteIndex = (currentPage - 1) * 10 + index + 1;
+                    return (
+                      <tr key={index}>
+                        <td>{absoluteIndex}</td>
 
-                      <td>{item.container}</td>
+                        <td>{formatInspectionDate(item.date)}</td>
 
-                      <td>{item.petugas || "Petugas Lapangan"}</td>
+                        <td>{item.container}</td>
 
-                      <td>{item.group || "Lapangan"}</td>
+                        <td>{item.petugas || "Petugas Lapangan"}</td>
 
-                      <td>
-                        <span
-                          className={`status-badge ${
-                            item.condition === "GOOD" ? "good" : "damage"
-                          }`}
-                        >
-                          {item.condition}
-                        </span>
-                      </td>
+                        <td>{item.group || "Lapangan"}</td>
 
-                      <td>{item.side}</td>
+                        <td>
+                          <span
+                            className={`status-badge ${
+                              item.condition === "GOOD" ? "good" : "damage"
+                            }`}
+                          >
+                            {item.condition}
+                          </span>
+                        </td>
 
-                      <td>
-                        <button
-                          className="detail-btn"
-                          style={{ marginRight: "8px" }}
-                          onClick={() => setSelectedInspection(item)}
-                          title="Lihat Detail Inspeksi"
-                        >
-                          <Eye size={18} />
-                        </button>
-                        <button
-                          className="detail-btn"
-                          onClick={() => {
-                            const win = window.open(
-                              "",
-                              "",
-                              "width=1200,height=900",
-                            );
+                        <td>{item.side}</td>
 
-                            win.document.write(`
+                        <td>
+                          <button
+                            className="detail-btn"
+                            style={{ marginRight: "8px" }}
+                            onClick={() => setSelectedInspection(item)}
+                            title="Lihat Detail Inspeksi"
+                          >
+                            <Eye size={18} />
+                          </button>
+                          <button
+                            className="detail-btn"
+                            onClick={() => {
+                              const win = window.open(
+                                "",
+                                "",
+                                "width=1200,height=900",
+                              );
+
+                              win.document.write(`
 
 <html>
 
@@ -1963,7 +1984,7 @@ FOTO INSPEKSI
 
 </div>
 
-<div class="photo-grid">
+<div class="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
 
 <div class="photo-box">
 
@@ -1977,8 +1998,7 @@ ${item.photo2 ? `<img src="${item.photo2}" />` : ""}
 
 </div>
 
-${(item.photo1 || "")
-  .split(",")
+${parsePhotos(item.photo1)
   .map((url) => url.trim())
   .filter(Boolean)
   .map(
@@ -2038,39 +2058,108 @@ window.onload = function() {
 
 `);
 
-                            win.document.close();
-                          }}
-                        >
-                          PDF
-                        </button>
-
-                        {user?.username === "adminRAL" && (
-                          <button
-                            className="edit-btn"
-                            style={{ marginLeft: "8px" }}
-                            onClick={() => setEditingInspection(item)}
-                            title="Edit Inspeksi"
+                              win.document.close();
+                            }}
                           >
-                            <Pencil size={18} />
+                            PDF
                           </button>
-                        )}
 
-                        {user?.username === "adminRAL" && (
-                          <button
-                            className="delete-btn"
-                            style={{ marginLeft: "8px" }}
-                            onClick={() => handleDeleteInspection(item.id)}
-                            title="Hapus Inspeksi"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                          {user?.username === "adminRAL" && (
+                            <button
+                              className="edit-btn"
+                              style={{ marginLeft: "8px" }}
+                              onClick={() => setEditingInspection(item)}
+                              title="Edit Inspeksi"
+                            >
+                              <Pencil size={18} />
+                            </button>
+                          )}
+
+                          {user?.username === "adminRAL" && (
+                            <button
+                              className="delete-btn"
+                              style={{ marginLeft: "8px" }}
+                              onClick={() => handleDeleteInspection(item.id)}
+                              title="Hapus Inspeksi"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  });
+                })()}
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          {(() => {
+            const filtered = (
+              Array.isArray(historyData) ? historyData : []
+            ).filter((item) => {
+              if (!search.trim()) return true;
+              const q = search.toLowerCase().trim();
+              return (
+                (item.container || "").toLowerCase().includes(q) ||
+                (item.shipName || "").toLowerCase().includes(q) ||
+                (item.petugas || "").toLowerCase().includes(q) ||
+                (item.group || "").toLowerCase().includes(q) ||
+                (item.condition || "").toLowerCase().includes(q) ||
+                (item.side || "").toLowerCase().includes(q)
+              );
+            });
+            const totalPages = Math.ceil(filtered.length / 10);
+            if (totalPages > 1) {
+              return (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: "10px",
+                    marginTop: "15px",
+                    paddingBottom: "15px",
+                  }}
+                >
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    style={{
+                      padding: "8px 12px",
+                      border: "1px solid #ccc",
+                      borderRadius: "5px",
+                      background: currentPage === 1 ? "#f5f5f5" : "#fff",
+                      cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    &lt; Sebelumnya
+                  </button>
+                  <span style={{ padding: "8px 12px", fontWeight: "bold" }}>
+                    Halaman {currentPage} dari {totalPages}
+                  </span>
+                  <button
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                    style={{
+                      padding: "8px 12px",
+                      border: "1px solid #ccc",
+                      borderRadius: "5px",
+                      background:
+                        currentPage === totalPages ? "#f5f5f5" : "#fff",
+                      cursor:
+                        currentPage === totalPages ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    Selanjutnya &gt;
+                  </button>
+                </div>
+              );
+            }
+            return null;
+          })()}
         </div>
 
         {/* PENGATURAN / SETTINGS SECTION */}
@@ -2388,16 +2477,24 @@ window.onload = function() {
                       <div className="no-photo-text">Tidak ada foto</div>
                     )}
                   </div>
-                  {(selectedInspection.photo1 || "")
-                    .split(",")
-                    .map((url) => url.trim())
-                    .filter(Boolean)
-                    .map((url, idx) => (
-                      <div className="photo-card" key={idx}>
-                        <span>FOTO DETAIL KERUSAKAN {idx + 1}</span>
-                        <img src={url} alt={`Foto Kerusakan ${idx + 1}`} />
-                      </div>
-                    ))}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fit, minmax(180px, 1fr))",
+                      gap: "15px",
+                    }}
+                  >
+                    {parsePhotos(selectedInspection.photo1)
+                      .map((url) => url.trim())
+                      .filter(Boolean)
+                      .map((url, idx) => (
+                        <div className="photo-card" key={idx}>
+                          <span>FOTO DETAIL KERUSAKAN {idx + 1}</span>
+                          <img src={url} alt={`Foto Kerusakan ${idx + 1}`} />
+                        </div>
+                      ))}
+                  </div>
                 </div>
               </div>
             </div>
