@@ -2,7 +2,7 @@ import OfficeDashboard from "./pages/office-dashboard/OfficeDashboard";
 import API_URL from "./config/api";
 import React, { useState } from "react";
 import "./pages/Inspection.css";
-import { Save, Camera, ArrowLeft, Loader2 } from "lucide-react";
+import { Save, Camera, ArrowLeft, Loader2, Image, FileText } from "lucide-react";
 import SearchSelect, { ISO_CODES, CATEGORIES } from "./components/SearchSelect";
 import MultiSelectDropdown from "./components/MultiSelectDropdown";
 
@@ -1406,40 +1406,7 @@ ${item.note || "-"}
 
 </div>
 
-<div class="photo-title">
 
-FOTO INSPEKSI
-
-</div>
-
-  <div class="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
-    ${parsePhotos(item.photo1)
-      .map((url) => url.trim())
-      .filter(Boolean)
-      .map(
-      (url, i) => `
-    <div class="photo-box" style="text-align: center;">
-      <div class="photo-label" style="font-size: 10px; font-weight: bold; margin-bottom: 6px;">FOTO CONTAINER/CDR ${i + 1}</div>
-      <img src="${url}" style="width: 100%; height: 165px; object-fit: cover; border-radius: 8px; border: 2px solid #004aad;" />
-    </div>
-  `,
-    )
-    .join("")}
-
-  ${
-    item.photo2
-      ? `
-    <div class="photo-box" style="text-align: center;">
-      <div class="photo-label" style="font-size: 10px; font-weight: bold; margin-bottom: 6px;">FOTO DAMAGE</div>
-      <img src="${item.photo2}" style="width: 100%; height: 165px; object-fit: cover; border-radius: 8px; border: 2px solid #004aad;" />
-    </div>
-  `
-      : ""
-  }
-
-</div>
-
-</div>
 
 <div class="footer">
 
@@ -1492,6 +1459,70 @@ window.onload = function(){
     win.document.close();
   };
 
+  const cetakFoto = (item) => {
+    const win = window.open("", "", "width=1200,height=900");
+
+    win.document.write(`
+<html>
+<head>
+<title>BERITA ACARA - FOTO</title>
+<style>
+* { box-sizing:border-box; }
+@page { size:A4; margin:10mm; }
+body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; margin:0; background:#fff; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.header { display:flex; justify-content:space-between; align-items:flex-end; border-bottom:3px solid #004aad; padding-bottom:8px; margin-bottom:12px; }
+.logo { width:130px; display:block; margin-bottom:-4px; }
+.company { text-align:right; }
+.company h2 { margin:0; font-size:15px; font-weight:bold; color:#004aad; }
+.company p { margin:1px 0; font-size:9px; }
+.photo-title { font-weight:bold; margin-bottom:10px; font-size:10px; }
+.photo-grid { display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px; }
+.photo-box { text-align:center; }
+.photo-label { font-size:10px; font-weight:bold; margin-bottom:6px; }
+.photo-box img { width:100%; height:165px; object-fit:cover; border-radius:8px; border:2px solid #004aad; }
+@media print { html,body { width:210mm; height:297mm; overflow:hidden; } }
+</style>
+</head>
+<body>
+<div class="header" style="justify-content: center; text-align: center;">
+<div class="company" style="text-align: center; width: 100%;">
+<h2>NPH ADIPURUSA</h2>
+<p>Container Inspection System</p>
+</div>
+</div>
+<div class="photo-title">FOTO INSPEKSI - ${item.container || "-"}</div>
+<div class="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+<div class="photo-box">
+<div class="photo-label">FOTO DAMAGE</div>
+${item.photo2 ? `<img src="${item.photo2}" />` : ""}
+</div>
+${parsePhotos(item.photo1)
+  .map((url) => url.trim())
+  .filter(Boolean)
+  .map(
+    (url, i) => `
+  <div class="photo-box" style="text-align: center;">
+    <div class="photo-label" style="font-size: 10px; font-weight: bold; margin-bottom: 6px;">FOTO CONTAINER/CDR ${i + 1}</div>
+    <img src="${url}" style="width: 100%; height: 165px; object-fit: cover; border-radius: 8px; border: 2px solid #004aad;" />
+  </div>
+`,
+  )
+  .join("")}
+</div>
+<script>
+window.onload = function() {
+  setTimeout(function() {
+    window.print();
+  }, 500);
+}
+</script>
+</body>
+</html>
+`);
+    win.document.close();
+  };
+
+
   // ======================================================
   // LOGIN PAGE
   // ======================================================
@@ -1500,82 +1531,7 @@ window.onload = function(){
     return (
       <div style={bg}>
         <div style={card}>
-          <svg
-            width="80"
-            height="80"
-            viewBox="0 0 64 64"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            style={{ margin: "0 auto 24px auto", display: "block" }}
-          >
-            <path
-              d="M32 6 L54 17 L32 28 L10 17 Z"
-              fill="url(#topGrad)"
-              stroke="#004aad"
-              strokeWidth="1"
-            />
-            <path d="M10 17 L32 28 L32 54 L10 43 Z" fill="url(#leftGrad)" />
-            <path d="M32 28 L54 17 L54 43 L32 54 Z" fill="url(#rightGrad)" />
-            <path
-              d="M15 20.5 L15 45.5 M20 23 L20 48 M25 25.5 L25 50.5 M30 28 L30 53"
-              stroke="rgba(255,255,255,0.15)"
-              strokeWidth="1.5"
-            />
-            <path
-              d="M37 52.5 L37 27.5 M42 50 L42 25 M47 47.5 L47 22.5 M52 45 L52 20"
-              stroke="rgba(255,255,255,0.25)"
-              strokeWidth="1.5"
-            />
-            <path
-              d="M10 17 L32 28 L54 17 M32 28 L32 54"
-              stroke="#ffffff"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity="0.8"
-            />
-            <path
-              d="M10 17 L10 43 L32 54 L54 43 L54 17 M32 6 L54 17 L32 28 L10 17 Z"
-              stroke="#00357a"
-              strokeWidth="1.5"
-              strokeLinejoin="round"
-            />
-            <defs>
-              <linearGradient
-                id="topGrad"
-                x1="10"
-                y1="17"
-                x2="54"
-                y2="17"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop offset="0%" stopColor="#2563eb" />
-                <stop offset="100%" stopColor="#004aad" />
-              </linearGradient>
-              <linearGradient
-                id="leftGrad"
-                x1="10"
-                y1="17"
-                x2="32"
-                y2="54"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop offset="0%" stopColor="#0b2c63" />
-                <stop offset="100%" stopColor="#00183b" />
-              </linearGradient>
-              <linearGradient
-                id="rightGrad"
-                x1="32"
-                y1="28"
-                x2="54"
-                y2="43"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop offset="0%" stopColor="#ff9f43" />
-                <stop offset="100%" stopColor="#ff7a00" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <img src="/logo.jpg" alt="Logo" style={{ margin: "0 auto 24px auto", display: "block", width: "120px" }} />
 
           <h1 style={title}>CONTAINER INSPECTION</h1>
 
@@ -1610,82 +1566,7 @@ window.onload = function(){
     return (
       <div style={bg}>
         <div style={card}>
-          <svg
-            width="80"
-            height="80"
-            viewBox="0 0 64 64"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            style={{ margin: "0 auto 24px auto", display: "block" }}
-          >
-            <path
-              d="M32 6 L54 17 L32 28 L10 17 Z"
-              fill="url(#topGrad2)"
-              stroke="#004aad"
-              strokeWidth="1"
-            />
-            <path d="M10 17 L32 28 L32 54 L10 43 Z" fill="url(#leftGrad2)" />
-            <path d="M32 28 L54 17 L54 43 L32 54 Z" fill="url(#rightGrad2)" />
-            <path
-              d="M15 20.5 L15 45.5 M20 23 L20 48 M25 25.5 L25 50.5 M30 28 L30 53"
-              stroke="rgba(255,255,255,0.15)"
-              strokeWidth="1.5"
-            />
-            <path
-              d="M37 52.5 L37 27.5 M42 50 L42 25 M47 47.5 L47 22.5 M52 45 L52 20"
-              stroke="rgba(255,255,255,0.25)"
-              strokeWidth="1.5"
-            />
-            <path
-              d="M10 17 L32 28 L54 17 M32 28 L32 54"
-              stroke="#ffffff"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity="0.8"
-            />
-            <path
-              d="M10 17 L10 43 L32 54 L54 43 L54 17 M32 6 L54 17 L32 28 L10 17 Z"
-              stroke="#00357a"
-              strokeWidth="1.5"
-              strokeLinejoin="round"
-            />
-            <defs>
-              <linearGradient
-                id="topGrad2"
-                x1="10"
-                y1="17"
-                x2="54"
-                y2="17"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop offset="0%" stopColor="#2563eb" />
-                <stop offset="100%" stopColor="#004aad" />
-              </linearGradient>
-              <linearGradient
-                id="leftGrad2"
-                x1="10"
-                y1="17"
-                x2="32"
-                y2="54"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop offset="0%" stopColor="#0b2c63" />
-                <stop offset="100%" stopColor="#00183b" />
-              </linearGradient>
-              <linearGradient
-                id="rightGrad2"
-                x1="32"
-                y1="28"
-                x2="54"
-                y2="43"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop offset="0%" stopColor="#ff9f43" />
-                <stop offset="100%" stopColor="#ff7a00" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <img src="/logo.jpg" alt="Logo" style={{ margin: "0 auto 24px auto", display: "block", width: "120px" }} />
 
           <h1 style={title}>DASHBOARD</h1>
 
@@ -2531,9 +2412,16 @@ window.onload = function(){
 
               <p>{item.condition}</p>
 
-              <button style={button} onClick={() => cetakPdf(item)}>
-                CETAK PDF
-              </button>
+              
+<div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+  <button style={{...button, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", flex: 1}} onClick={() => cetakPdf(item)}>
+    <FileText size={16} /> DOC
+  </button>
+  <button style={{...button, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", flex: 1}} onClick={() => cetakFoto(item)}>
+    <Image size={16} /> FOTO
+  </button>
+</div>
+
             </div>
           ))}
 

@@ -25,6 +25,7 @@ import {
   Upload,
   Trash2,
   Pencil,
+  Image,
 } from "lucide-react";
 
 import {
@@ -853,12 +854,11 @@ const OfficeDashboard = ({
 
         {/* LOGO */}
         <div className="logo-section">
-          <div className="logo-box">N</div>
+          <img src="/logo.jpg" alt="Logo" className="logo-box" style={{ width: "40px", height: "40px", background: "transparent", border: "none", objectFit: "contain" }} />
 
           {sidebarOpen && (
             <div>
               <h1 className="logo-title">NPH</h1>
-
               <p className="logo-subtitle">ADIPURUSA</p>
             </div>
           )}
@@ -1627,442 +1627,137 @@ const OfficeDashboard = ({
                           >
                             <Eye size={18} />
                           </button>
-                          <button
-                            className="detail-btn"
-                            onClick={() => {
-                              const win = window.open(
-                                "",
-                                "",
-                                "width=1200,height=900",
-                              );
+                          
+<button
+  className="detail-btn"
+  onClick={() => {
+    const win = window.open("", "", "width=1200,height=900");
+    win.document.write(`
+      <html>
+      <head>
+        <title>BERITA ACARA - Dokumen</title>
+        <style>
+          * { box-sizing: border-box; }
+          @page { size: A4; margin: 10mm; }
+          body { font-family: Arial, sans-serif; padding: 12px; font-size: 10px; color: #000; margin: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #004aad; padding-bottom: 8px; margin-bottom: 12px; }
+          .company { text-align: center; width: 100%; }
+          .company h2 { margin: 0; font-size: 15px; font-weight: bold; color: #004aad; }
+          .company p { margin: 1px 0; font-size: 9px; }
+          .title { text-align: center; font-size: 15px; font-weight: bold; margin: 10px 0 15px 0; letter-spacing: 1px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+          td { border: 1px solid #000; padding: 6px; font-size: 10px; }
+          .label { font-weight: bold; background: #f3f3f3; width: 35%; }
+          .note-title { font-weight: bold; margin-bottom: 6px; margin-top: 8px; font-size: 10px; }
+          .note { border: 1px solid #000; padding: 8px; height: 80px; font-size: 10px; margin-bottom: 12px; }
+          .footer { display: flex; justify-content: space-between; margin-top: 25px; }
+          .ttd { width: 220px; text-align: center; font-size: 10px; }
+          .ttd-line { margin-top: 55px; }
+          @media print { html, body { width: 210mm; height: 297mm; overflow: hidden; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="company">
+            <h2>NPH ADIPURUSA</h2>
+            <p>Container Inspection System</p>
+          </div>
+        </div>
+        <div class="title">BERITA ACARA CONTAINER INSPECTION</div>
+        <table>
+          <tr><td class="label">Nomor Container</td><td>${item.container || "-"}</td></tr>
+          <tr><td class="label">Status</td><td>${item.status || "-"}</td></tr>
+          <tr><td class="label">ISO</td><td>${item.iso || "-"}</td></tr>
+          <tr><td class="label">Category</td><td>${item.category || "-"}</td></tr>
+          <tr><td class="label">Kondisi</td><td>${item.condition || "-"}</td></tr>
+          <tr><td class="label">Sisi</td><td>${item.side || "-"}</td></tr>
+          <tr><td class="label">Hari & Tanggal</td><td>${formatInspectionDatePart(item.date)}</td></tr>
+          <tr><td class="label">Waktu</td><td>${formatInspectionTimePart(item.date)}</td></tr>
+          <tr><td class="label">Grup Petugas</td><td>${item.group || "Lapangan"}</td></tr>
+        </table>
+        <div class="note-title">CATATAN KRONOLOGI</div>
+        <div class="note">${item.note || "-"}</div>
+        <div class="footer">
+          <div class="ttd"><div>Petugas Inspeksi</div><div class="ttd-line">( ${item.petugas || "Petugas Lapangan"} )</div></div>
+          <div class="ttd"><div>Supervisor</div><div class="ttd-line">(................................)</div></div>
+        </div>
+        <script>
+          window.onload = function() { setTimeout(function() { window.print(); }, 500); }
+        </script>
+      </body>
+      </html>
+    `);
+    win.document.close();
+  }}
+  title="Cetak Dokumen"
+>
+  <FileText size={18} />
+</button>
+
+<button
+  className="detail-btn"
+  style={{ marginLeft: "8px" }}
+  onClick={() => {
+    const win = window.open("", "", "width=1200,height=900");
+    win.document.write(`
+      <html>
+      <head>
+        <title>BERITA ACARA - Foto</title>
+        <style>
+          * { box-sizing: border-box; }
+          @page { size: A4; margin: 10mm; }
+          body { font-family: Arial, sans-serif; padding: 12px; font-size: 10px; color: #000; margin: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #004aad; padding-bottom: 8px; margin-bottom: 12px; }
+          .company { text-align: center; width: 100%; }
+          .company h2 { margin: 0; font-size: 15px; font-weight: bold; color: #004aad; }
+          .company p { margin: 1px 0; font-size: 9px; }
+          .photo-title { font-weight: bold; margin-bottom: 10px; font-size: 10px; }
+          .photo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
+          .photo-box { text-align: center; }
+          .photo-label { font-size: 10px; font-weight: bold; margin-bottom: 6px; }
+          .photo-box img { width: 100%; height: 165px; object-fit: cover; border-radius: 8px; border: 2px solid #004aad; }
+          @media print { html, body { width: 210mm; height: 297mm; overflow: hidden; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="company">
+            <h2>NPH ADIPURUSA</h2>
+            <p>Container Inspection System</p>
+          </div>
+        </div>
+        <div class="photo-title">FOTO INSPEKSI - ${item.container || "-"}</div>
+        <div class="photo-grid">
+          <div class="photo-box">
+            <div class="photo-label">FOTO DAMAGE</div>
+            ${item.photo2 ? `<img src="${item.photo2}" />` : ""}
+          </div>
+          ${parsePhotos(item.photo1)
+            .map((url) => url.trim())
+            .filter(Boolean)
+            .map(
+              (url, i) => `
+                <div class="photo-box">
+                  <div class="photo-label">FOTO CONTAINER/CDR ${i + 1}</div>
+                  <img src="${url}" />
+                </div>
+              `
+            )
+            .join("")}
+        </div>
+        <script>
+          window.onload = function() { setTimeout(function() { window.print(); }, 500); }
+        </script>
+      </body>
+      </html>
+    `);
+    win.document.close();
+  }}
+  title="Cetak Foto"
+>
+  <Image size={18} />
+</button>
 
-                              win.document.write(`
-
-<html>
-
-<head>
-
-<title>
-BERITA ACARA
-</title>
-
-<style>
-
-*{
-box-sizing:border-box;
-}
-
-@page{
-size:A4;
-margin:10mm;
-}
-
-body{
-
-font-family:Arial,sans-serif;
-padding:12px;
-font-size:10px;
-color:#000;
-margin:0;
-background:#fff;
--webkit-print-color-adjust:exact;
-print-color-adjust:exact;
-
-}
-
-.header{
-
-display:flex;
-justify-content:space-between;
-align-items:flex-end;
-border-bottom:3px solid #004aad;
-padding-bottom:8px;
-margin-bottom:12px;
-
-}
-
-.logo{
-
-width:130px;
-display:block;
-margin-bottom:-4px;
-
-}
-
-.company{
-
-text-align:right;
-
-}
-
-.company h2{
-
-margin:0;
-font-size:15px;
-font-weight:bold;
-color:#004aad;
-
-}
-
-.company p{
-
-margin:1px 0;
-font-size:9px;
-
-}
-
-.title{
-
-text-align:center;
-font-size:15px;
-font-weight:bold;
-margin:10px 0 15px 0;
-letter-spacing:1px;
-
-}
-
-table{
-
-width:100%;
-border-collapse:collapse;
-margin-bottom:12px;
-
-}
-
-td{
-
-border:1px solid #000;
-padding:6px;
-font-size:10px;
-
-}
-
-.label{
-
-font-weight:bold;
-background:#f3f3f3;
-width:35%;
-
-}
-
-.note-title{
-
-font-weight:bold;
-margin-bottom:6px;
-margin-top:8px;
-font-size:10px;
-
-}
-
-.note{
-
-border:1px solid #000;
-padding:8px;
-height:80px;
-font-size:10px;
-margin-bottom:12px;
-
-}
-
-.photo-title{
-
-font-weight:bold;
-margin-bottom:10px;
-font-size:10px;
-
-}
-
-.photo-grid{
-
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:15px;
-margin-bottom:20px;
-
-}
-
-.photo-box{
-
-text-align:center;
-
-}
-
-.photo-label{
-
-font-size:10px;
-font-weight:bold;
-margin-bottom:6px;
-
-}
-
-.photo-box img{
-
-width:100%;
-height:165px;
-object-fit:cover;
-border-radius:8px;
-border:2px solid #004aad;
-
-}
-
-.footer{
-
-display:flex;
-justify-content:space-between;
-margin-top:25px;
-
-}
-
-.ttd{
-
-width:220px;
-text-align:center;
-font-size:10px;
-
-}
-
-.ttd-line{
-
-margin-top:55px;
-
-}
-
-@media print{
-
-html,body{
-
-width:210mm;
-height:297mm;
-overflow:hidden;
-
-}
-
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="header" style="justify-content: center; text-align: center;">
-
-<div class="company" style="text-align: center; width: 100%;">
-
-<h2>
-NPH ADIPURUSA
-</h2>
-
-<p>
-Container Inspection System
-</p>
-
-</div>
-
-</div>
-
-<div class="title">
-
-BERITA ACARA CONTAINER INSPECTION
-
-</div>
-
-<table>
-
-<tr>
-<td class="label">
-Nomor Container
-</td>
-
-<td>
-${item.container || "-"}
-</td>
-</tr>
-
-
-
-<tr>
-<td class="label">
-Status
-</td>
-
-<td>
-${item.status || "-"}
-</td>
-</tr>
-
-<tr>
-<td class="label">
-ISO
-</td>
-
-<td>
-${item.iso || "-"}
-</td>
-</tr>
-
-<tr>
-<td class="label">
-Category
-</td>
-
-<td>
-${item.category || "-"}
-</td>
-</tr>
-
-<tr>
-<td class="label">
-Kondisi
-</td>
-
-<td>
-${item.condition || "-"}
-</td>
-</tr>
-
-<tr>
-<td class="label">
-Sisi
-</td>
-
-<td>
-${item.side || "-"}
-</td>
-</tr>
-
-<tr>
-<td class="label">
-Hari & Tanggal
-</td>
-
-<td>
-${formatInspectionDatePart(item.date)}
-</td>
-
-</tr>
-
-<tr>
-<td class="label">
-Waktu
-</td>
-
-<td>
-${formatInspectionTimePart(item.date)}
-</td>
-
-</tr>
-
-<tr>
-<td class="label">
-Grup Petugas
-</td>
-
-<td>
-${item.group || "Lapangan"}
-</td>
-
-</tr>
-
-</table>
-
-<div class="note-title">
-
-CATATAN KRONOLOGI
-
-</div>
-
-<div class="note">
-
-${item.note || "-"}
-
-</div>
-
-<div class="photo-title">
-
-FOTO INSPEKSI
-
-</div>
-
-<div class="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
-
-<div class="photo-box">
-
-<div class="photo-label">
-
-FOTO DAMAGE
-
-</div>
-
-${item.photo2 ? `<img src="${item.photo2}" />` : ""}
-
-</div>
-
-${parsePhotos(item.photo1)
-  .map((url) => url.trim())
-  .filter(Boolean)
-  .map(
-    (url, i) => `
-  <div class="photo-box" style="text-align: center;">
-    <div class="photo-label" style="font-size: 10px; font-weight: bold; margin-bottom: 6px;">FOTO CONTAINER/CDR ${i + 1}</div>
-    <img src="${url}" style="width: 100%; height: 165px; object-fit: cover; border-radius: 8px; border: 2px solid #004aad;" />
-  </div>
-`,
-  )
-  .join("")}
-
-</div>
-
-<div class="footer">
-
-<div class="ttd">
-
-<div>
-Petugas Inspeksi
-</div>
-
-<div class="ttd-line">
-
-( ${item.petugas || "Petugas Lapangan"} )
-
-</div>
-
-</div>
-
-<div class="ttd">
-
-<div>
-Supervisor
-</div>
-
-<div class="ttd-line">
-
-(................................)
-
-</div>
-
-</div>
-
-</div>
-
-<script>
-window.onload = function() {
-  setTimeout(function() {
-    window.print();
-  }, 500);
-}
-</script>
-</body>
-
-</html>
-
-`);
-
-                              win.document.close();
-                            }}
-                          >
-                            PDF
-                          </button>
 
                           {user?.username === "adminRAL" && (
                             <button
