@@ -576,17 +576,17 @@ export default function App() {
       const result = await Tesseract.recognize(file, "eng");
       const text = result.data.text;
 
-      // Attempt to extract container number format (4 letters, 7 digits)
-      const matches = text.match(/[A-Z]{4}\s?\d{7}/i);
+      // Remove all spaces to easily match the format (e.g., TAKU 239266 8 -> TAKU2392668)
+      const cleanText = text.replace(/\s+/g, "");
+      // Attempt to extract container number format (3-4 letters, 6-7 digits)
+      const matches = cleanText.match(/[A-Z]{3,4}\d{6,7}/i);
+
       let scannedNum = "";
       if (matches) {
-        scannedNum = matches[0].replace(/\s/g, "").toUpperCase();
+        scannedNum = matches[0].toUpperCase();
       } else {
-        // Fallback: take alphanumeric characters up to 11
-        scannedNum = text
-          .replace(/[^A-Z0-9]/gi, "")
-          .substring(0, 11)
-          .toUpperCase();
+        // Fallback: leave empty so user can type manually instead of inputting garbage text
+        scannedNum = "";
       }
 
       setContainer(scannedNum);
@@ -1092,7 +1092,7 @@ export default function App() {
         container: container.toUpperCase().trim(),
         shipName: shipName || "-",
         status: status || "-",
-        iso: iso || "-",
+        iso: iso && iso !== "-ISO Code-" ? iso.split(" - ")[0] : "-",
         category: category || "-",
         condition:
           selectedConditions.length > 0
