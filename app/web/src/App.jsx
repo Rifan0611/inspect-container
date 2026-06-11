@@ -571,55 +571,14 @@ export default function App() {
 
     setIsScanning(true);
 
-    // Simulate OCR scanner delay
+    // Simulate simple loading UX
     setTimeout(() => {
-      // Find a container from availableContainers
-      let scannedNum = "";
-      if (availableContainers.length > 0) {
-        // Pick a random container from the manifest
-        const randIdx = Math.floor(Math.random() * availableContainers.length);
-        scannedNum =
-          availableContainers[randIdx].container
-            ?.toString()
-            .toUpperCase()
-            .trim() || "";
-      } else {
-        // Fallback: generate a realistic container number
-        const prefixes = ["MSKU", "TCLU", "TRLU", "MEDU", "CMAU"];
-        const randPrefix =
-          prefixes[Math.floor(Math.random() * prefixes.length)];
-        const randNum1 = Math.floor(100000 + Math.random() * 900000);
-        const randNum2 = Math.floor(Math.random() * 10);
-        scannedNum = `${randPrefix} ${randNum1}-${randNum2}`;
-      }
-
-      setContainer(scannedNum);
-
-      // Auto-fill from manifest
-      const found = manifestList.find(
-        (item) =>
-          item.container?.toString().toUpperCase().trim() === scannedNum,
-      );
-      if (found) {
-        setShipName(found.shipName || "");
-        setStatus(found.status || "");
-        setIso(found.iso || "");
-        setCategory(found.category || "");
-      } else {
-        setShipName("");
-        setStatus("");
-        setIso("");
-        setCategory("");
-      }
-
       setContainerNoPhoto({
         file,
         url: URL.createObjectURL(file),
       });
       setIsScanning(false);
-
-      alert(`Pindai berhasil! Container terdeteksi: ${scannedNum}`);
-    }, 1500);
+    }, 500);
   };
 
   const handleSearchContainer = () => {
@@ -2040,14 +1999,7 @@ window.print();
           {/* CARD UTAMA */}
           <div className="inspection-card">
             {/* NOMOR CONTAINER & FOTO NOMOR CONTAINER */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "20px",
-                marginBottom: "20px",
-              }}
-            >
+            <div className="form-grid">
               <div className="form-group">
                 <label>
                   Nomor Container
@@ -2194,14 +2146,7 @@ window.print();
             </div>
 
             {/* METADATA INPUTS */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "20px",
-                marginBottom: "20px",
-              }}
-            >
+            <div className="form-grid">
               <div className="form-group">
                 <label>Category</label>
                 <SearchSelect
@@ -2228,14 +2173,7 @@ window.print();
               </div>
             </div>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "20px",
-                marginBottom: "20px",
-              }}
-            >
+            <div className="form-grid">
               <div className="form-group" style={{ gridColumn: "span 2" }}>
                 <label>ISO Code</label>
                 <SearchSelect
@@ -2462,14 +2400,7 @@ window.print();
             </div>
 
             {/* CHECKLIST SISI & KONDISI */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "20px",
-                marginBottom: "24px",
-              }}
-            >
+            <div className="form-grid">
               {/* KONDISI */}
               <div className="form-group">
                 <MultiSelectDropdown
