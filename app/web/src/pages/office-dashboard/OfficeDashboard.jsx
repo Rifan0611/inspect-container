@@ -159,6 +159,7 @@ const OfficeDashboard = ({
   const [editPetugas, setEditPetugas] = useState("");
   const [editGroup, setEditGroup] = useState("");
   const [editDate, setEditDate] = useState("");
+  const [editPhoto2, setEditPhoto2] = useState("");
 
   useEffect(() => {
     if (editingInspection) {
@@ -216,6 +217,7 @@ const OfficeDashboard = ({
             petugas: editPetugas,
             group: editGroup,
             date: editDate,
+              photo2: editPhoto2,
           }),
         },
       );
@@ -1357,7 +1359,7 @@ const OfficeDashboard = ({
 </button>
 
 
-                          {user?.username === "adminRAL" && (
+                          {(user?.username === "adminRAL" || user?.role !== "PETUGAS") && (
                             <button
                               className="edit-btn"
                               style={{ marginLeft: "8px" }}
