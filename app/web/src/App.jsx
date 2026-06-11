@@ -5,7 +5,6 @@ import "./pages/Inspection.css";
 import { Save, Camera, ArrowLeft, Loader2 } from "lucide-react";
 import SearchSelect, { ISO_CODES, CATEGORIES } from "./components/SearchSelect";
 import MultiSelectDropdown from "./components/MultiSelectDropdown";
-import Tesseract from "tesseract.js";
 
 import * as XLSX from "xlsx";
 
@@ -351,7 +350,6 @@ export default function App() {
   });
 
   const [isUploading, setIsUploading] = useState(false);
-  const [containerNoPhoto, setContainerNoPhoto] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
   const [manifestList, setManifestList] = useState([]);
   const [inspectedContainers, setInspectedContainers] = useState([]);
@@ -563,46 +561,6 @@ export default function App() {
       setStatus("");
       setIso("");
       setCategory("");
-    }
-  };
-
-  const handleContainerNoPhotoChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setIsScanning(true);
-
-    try {
-      const result = await Tesseract.recognize(file, "eng");
-      const text = result.data.text;
-
-      // Remove all spaces to easily match the format (e.g., TAKU 239266 8 -> TAKU2392668)
-      const cleanText = text.replace(/\s+/g, "");
-      // Attempt to extract container number format (3-4 letters, 6-7 digits)
-      const matches = cleanText.match(/[A-Z]{3,4}\d{6,7}/i);
-
-      let scannedNum = "";
-      if (matches) {
-        scannedNum = matches[0].toUpperCase();
-      } else {
-        // Fallback: leave empty so user can type manually instead of inputting garbage text
-        scannedNum = "";
-      }
-
-      setContainer(scannedNum);
-
-      setContainerNoPhoto({
-        file,
-        url: URL.createObjectURL(file),
-      });
-      setIsScanning(false);
-    } catch (err) {
-      console.error(err);
-      setContainerNoPhoto({
-        file,
-        url: URL.createObjectURL(file),
-      });
-      setIsScanning(false);
     }
   };
 
@@ -997,10 +955,6 @@ export default function App() {
       alert("Harap masukkan nomor container!");
       return;
     }
-    if (!containerNoPhoto) {
-      alert("Harap ambil atau unggah foto nomor container!");
-      return;
-    }
     if (photosList.length === 0) {
       alert("Harap ambil atau unggah foto formulir CDR!");
       return;
@@ -1009,44 +963,6 @@ export default function App() {
     setIsUploading(true);
 
     try {
-      // Upload container number photo
-      let uploadedContainerNoUrl = "";
-      if (containerNoPhoto) {
-        if (containerNoPhoto.file) {
-          const compressedBlob = await compressImage(containerNoPhoto.file);
-          const formData = new FormData();
-          formData.append("photo", compressedBlob, containerNoPhoto.file.name);
-
-          const uploadRes = await fetch(`${API_URL}/api/upload/image`, {
-            method: "POST",
-            body: formData,
-          });
-
-          let uploadData;
-          const uploadContentType = uploadRes.headers.get("content-type");
-          if (
-            uploadContentType &&
-            uploadContentType.includes("application/json")
-          ) {
-            uploadData = await uploadRes.json();
-          } else {
-            const errorText = await uploadRes.text();
-            throw new Error(
-              `Upload fail (${uploadRes.status}): ${errorText.substring(0, 100)}`,
-            );
-          }
-
-          if (!uploadRes.ok) {
-            throw new Error(
-              uploadData.message || "Gagal mengunggah foto nomor container",
-            );
-          }
-          uploadedContainerNoUrl = `${API_URL}/uploads/${uploadData.filename || uploadData.file}`;
-        } else {
-          uploadedContainerNoUrl = containerNoPhoto.url;
-        }
-      }
-
       // Upload all photos in the list
       const uploadedUrls = [];
       for (const photoObj of photosList) {
@@ -1101,7 +1017,7 @@ export default function App() {
         side: selectedSides.length > 0 ? selectedSides.join(", ") : "General",
         note: note,
         photo1: uploadedPhotoUrl,
-        photo2: uploadedContainerNoUrl,
+        photo2: "",
         petugas: activeUser?.nama || "Petugas Lapangan",
         group: activeUser?.group || "",
         date: new Date().toISOString(),
@@ -2023,9 +1939,9 @@ window.print();
 
           {/* CARD UTAMA */}
           <div className="inspection-card">
-            {/* NOMOR CONTAINER & FOTO NOMOR CONTAINER */}
+            {/* NOMOR CONTAINER */}
             <div className="form-grid">
-              <div className="form-group">
+              <div className="form-group" style={{ gridColumn: "span 2" }}>
                 <label>
                   Nomor Container
                   <span className="required-star">*</span>
@@ -2037,135 +1953,6 @@ window.print();
                   placeholder="Masukkan nomor container..."
                   className="form-input"
                   disabled={isUploading}
-                />
-              </div>
-              <div className="form-group">
-                <label>
-                  Foto Nomor Container <span className="required-star">*</span>
-                </label>
-                {containerNoPhoto ? (
-                  <div
-                    style={{
-                      position: "relative",
-                      height: "46px",
-                      borderRadius: "8px",
-                      overflow: "hidden",
-                      border: "1px solid #cbd5e1",
-                    }}
-                  >
-                    <img
-                      src={containerNoPhoto.url}
-                      alt="Foto Nomor Container"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
-                    <button
-                      type="button"
-                      style={{
-                        position: "absolute",
-                        top: "2px",
-                        right: "2px",
-                        background: "rgba(239, 68, 68, 0.9)",
-                        color: "white",
-                        border: "none",
-                        width: "18px",
-                        height: "18px",
-                        borderRadius: "50%",
-                        fontSize: "10px",
-                        fontWeight: "800",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        zIndex: 10,
-                      }}
-                      onClick={() => {
-                        setContainerNoPhoto(null);
-                        setContainer("");
-                        setShipName("");
-                        setStatus("");
-                        setIso("");
-                        setCategory("");
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ) : (
-                  <div
-                    className="cdr-dropzone"
-                    style={{
-                      height: "46px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "8px",
-                      padding: "0 10px",
-                      cursor: "pointer",
-                      border: "1px dashed #cbd5e1",
-                      borderRadius: "8px",
-                      boxSizing: "border-box",
-                      background: "#f8fafc",
-                    }}
-                    onClick={() =>
-                      !isScanning &&
-                      document.getElementById("containerNoPhotoInput").click()
-                    }
-                  >
-                    {isScanning ? (
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <Loader2
-                          className="animate-spin"
-                          size={16}
-                          style={{ color: "#3b82f6" }}
-                        />
-                        <span
-                          style={{
-                            fontSize: "12px",
-                            fontWeight: "700",
-                            color: "#3b82f6",
-                          }}
-                        >
-                          Pindai...
-                        </span>
-                      </div>
-                    ) : (
-                      <>
-                        <Camera
-                          size={18}
-                          className="placeholder-icon"
-                          style={{ color: "#64748b" }}
-                        />
-                        <span
-                          style={{
-                            fontSize: "12px",
-                            fontWeight: "700",
-                            color: "#475569",
-                          }}
-                        >
-                          Ambil Foto Nomor
-                        </span>
-                      </>
-                    )}
-                  </div>
-                )}
-                <input
-                  id="containerNoPhotoInput"
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  style={{ display: "none" }}
-                  disabled={isScanning}
-                  onChange={handleContainerNoPhotoChange}
                 />
               </div>
             </div>
