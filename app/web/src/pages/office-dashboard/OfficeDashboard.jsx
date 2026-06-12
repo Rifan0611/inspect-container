@@ -176,6 +176,12 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 </table>
 <div class="photo-title">FOTO INSPEKSI</div>
 <div class="photo-grid">
+  ${item.photo2 ? `
+    <div class="photo-box">
+      <div class="photo-label">FOTO KONDISI / DAMAGE</div>
+      <img src="${item.photo2}" />
+    </div>
+  ` : ""}
   ${photos.map((url, i) => `
     <div class="photo-box">
       <div class="photo-label">FOTO CONTAINER/CDR ${i + 1}</div>
@@ -250,6 +256,12 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 <div class="photo-title">FOTO INSPEKSI - ${item.container || "-"}</div>
 <div style="text-align:center; margin-bottom: 20px; font-size:11px;">Waktu Inspeksi: <b>${dateFormatted}</b></div>
 <div class="photo-grid">
+  ${item.photo2 ? `
+    <div class="photo-box">
+      <div class="photo-label">FOTO KONDISI / DAMAGE</div>
+      <img src="${item.photo2}" />
+    </div>
+  ` : ""}
   ${photos.map((url, i) => `
     <div class="photo-box">
       <div class="photo-label">FOTO CONTAINER/CDR ${i + 1}</div>
