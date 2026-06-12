@@ -1,6 +1,6 @@
 import OfficeDashboard from "./pages/office-dashboard/OfficeDashboard";
 import API_URL from "./config/api";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./pages/Inspection.css";
 import { Save, Camera, ArrowLeft, Loader2, Image, FileText } from "lucide-react";
 import SearchSelect, { ISO_CODES, CATEGORIES } from "./components/SearchSelect";
