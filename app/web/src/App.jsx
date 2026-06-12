@@ -2185,35 +2185,6 @@ window.onload = function() {
                       },
                     ]);
                     e.target.value = "";
-
-                    // Run OCR
-                    try {
-                      const apiKey = getGeminiApiKey();
-                      if (!apiKey) {
-                        setIsScanning(false);
-                        e.target.value = "";
-                        return; // User cancelled
-                      }
-
-                      const compressedBlob = await compressImage(file);
-                      const detectedNumber = await scanContainerWithGemini(compressedBlob, apiKey);
-                      
-                      if (detectedNumber && !detectedNumber.startsWith("DEBUG_RAW")) {
-                        setContainer(detectedNumber);
-                        
-                        if (typeof handleContainerChange === 'function') {
-                          handleContainerChange({ target: { value: detectedNumber } });
-                        } else if (typeof cariContainer === 'function') {
-                          cariContainer(detectedNumber);
-                        }
-                      } else {
-                        const debugText = detectedNumber ? detectedNumber.replace("DEBUG_RAW: ", "") : "";
-                        alert(`Nomor kontainer tidak ditemukan pada foto oleh Gemini Vision.\n(Teks terbaca: ${debugText}...)\nPastikan foto cukup jelas dan coba lagi.`);
-                      }
-                    } catch (err) {
-                      console.error("Gemini Error:", err);
-                      alert("Terjadi kesalahan saat memproses foto dengan Gemini API.\n" + (err.message || ""));
-                    }
                   }
                 }}
               />
