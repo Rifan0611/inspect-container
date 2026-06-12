@@ -2137,6 +2137,8 @@ window.onload = function() {
                     try {
                       const apiKey = getGeminiApiKey();
                       if (!apiKey) {
+                        setIsScanning(false);
+                        e.target.value = "";
                         return; // User cancelled
                       }
 
