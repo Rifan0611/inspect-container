@@ -1873,10 +1873,38 @@ window.onload = function() {
                       
                       try {
                         const { data: { text } } = await Tesseract.recognize(file, 'eng');
-                        const cleanText = text.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-                        const match = cleanText.match(/[A-Z0-9]{10,11}/);
-                        if (match) {
-                          const detectedNumber = match[0];
+                        // Advanced algorithm to extract container number from noisy OCR text
+                        const extractContainerNumber = (rawText) => {
+                          const clean = rawText.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                          let bestMatch = null;
+                          let bestScore = -1;
+
+                          for (let i = 0; i <= clean.length - 11; i++) {
+                            const candidate = clean.substring(i, i + 11);
+                            const prefix = candidate.substring(0, 4);
+                            const suffix = candidate.substring(4, 11);
+                            
+                            const prefixLetters = (prefix.match(/[A-Z]/g) || []).length;
+                            const suffixNumbers = (suffix.match(/[0-9]/g) || []).length;
+                            
+                            // A container is usually 4 letters + 7 numbers. Allow 1-2 OCR errors.
+                            if (prefixLetters >= 3 && suffixNumbers >= 5) {
+                              let score = prefixLetters + suffixNumbers;
+                              // Standard ISO prefixes end with U, J, or Z
+                              if (['U', 'J', 'Z'].includes(prefix[3])) {
+                                score += 2;
+                              }
+                              if (score > bestScore) {
+                                bestScore = score;
+                                bestMatch = candidate;
+                              }
+                            }
+                          }
+                          return bestMatch;
+                        };
+
+                        const detectedNumber = extractContainerNumber(text);
+                        if (detectedNumber) {
                           setContainer(detectedNumber);
                           
                           if (typeof handleContainerChange === 'function') {
@@ -1885,9 +1913,9 @@ window.onload = function() {
                             cariContainer(detectedNumber);
                           }
                           
-                          alert(`Pindai berhasil! Nomor kontainer: ${detectedNumber}\n\n(Mohon periksa kembali jika ada huruf/angka yang kurang tepat akibat foto kurang jelas)`);
+                          alert(`Pindai berhasil! Nomor kontainer: ${detectedNumber}\n\n(Mohon periksa kembali jika ada huruf/angka yang kurang tepat)`);
                         } else {
-                          alert("Nomor kontainer belum dapat terbaca dari foto ini. Silakan ketik manual atau coba foto ulang dari sudut yang berbeda.");
+                          alert("Nomor kontainer belum dapat terbaca dengan baik. Silakan ketik manual atau coba foto ulang.");
                         }
                       } catch (err) {
                         console.error("OCR Error:", err);
@@ -2077,13 +2105,37 @@ window.onload = function() {
                     // Run OCR
                     try {
                       const { data: { text } } = await Tesseract.recognize(file, 'eng');
-                      const cleanText = text.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-                      const match = cleanText.match(/[A-Z0-9]{10,11}/);
-                      if (match) {
-                        const detectedNumber = match[0];
+                      const extractContainerNumber = (rawText) => {
+                        const clean = rawText.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                        let bestMatch = null;
+                        let bestScore = -1;
+
+                        for (let i = 0; i <= clean.length - 11; i++) {
+                          const candidate = clean.substring(i, i + 11);
+                          const prefix = candidate.substring(0, 4);
+                          const suffix = candidate.substring(4, 11);
+                          
+                          const prefixLetters = (prefix.match(/[A-Z]/g) || []).length;
+                          const suffixNumbers = (suffix.match(/[0-9]/g) || []).length;
+                          
+                          if (prefixLetters >= 3 && suffixNumbers >= 5) {
+                            let score = prefixLetters + suffixNumbers;
+                            if (['U', 'J', 'Z'].includes(prefix[3])) {
+                              score += 2;
+                            }
+                            if (score > bestScore) {
+                              bestScore = score;
+                              bestMatch = candidate;
+                            }
+                          }
+                        }
+                        return bestMatch;
+                      };
+
+                      const detectedNumber = extractContainerNumber(text);
+                      if (detectedNumber) {
                         setContainer(detectedNumber);
                         
-                        // Auto-fill manifest data if available
                         if (typeof handleContainerChange === 'function') {
                           handleContainerChange({ target: { value: detectedNumber } });
                         } else if (typeof cariContainer === 'function') {
