@@ -1889,8 +1889,7 @@ window.onload = function() {
                     style={{ flex: 1, margin: 0 }}
                   />
                   <button
-                    type="button"
-                    onClick={() => !isUploading && document.getElementById("ocrContainerInput").click()}
+                    onClick={() => !isUploading && !isScanning && document.getElementById("ocrContainerInput").click()}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -1907,9 +1906,9 @@ window.onload = function() {
                       fontSize: "14px",
                       flexShrink: 0
                     }}
-                    disabled={isUploading}
+                    disabled={isUploading || isScanning}
                   >
-                    📷 Scan
+                    {isScanning ? <Loader2 className="animate-spin" size={16} /> : "📷 Scan"}
                   </button>
                   <input
                     id="ocrContainerInput"
@@ -1923,9 +1922,11 @@ window.onload = function() {
                       if (!file) return;
                       
                       try {
+                        setIsScanning(true);
                         const apiKey = getGeminiApiKey();
                         if (!apiKey) {
                           e.target.value = "";
+                          setIsScanning(false);
                           return;
                         }
                         
@@ -1950,6 +1951,7 @@ window.onload = function() {
                         console.error("Gemini Error:", err);
                         alert("Terjadi kesalahan saat memproses foto menggunakan Gemini API.\n" + (err.message || ""));
                       } finally {
+                        setIsScanning(false);
                         e.target.value = "";
                       }
                     }}

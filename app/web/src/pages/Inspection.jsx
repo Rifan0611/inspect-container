@@ -215,6 +215,7 @@ export default function Inspection() {
       const apiKey = getGeminiApiKey();
       if (!apiKey) {
         setIsScanning(false);
+        e.target.value = "";
         return;
       }
 
@@ -827,10 +828,14 @@ export default function Inspection() {
                       url: objectUrl,
                     },
                   ]);
-                  // Run OCR on documentation photo too
                   try {
+                    setIsScanning(true);
                     const apiKey = getGeminiApiKey();
-                    if (!apiKey) return;
+                    if (!apiKey) {
+                      setIsScanning(false);
+                      e.target.value = "";
+                      return;
+                    }
 
                     const compressedBlob = await compressImage(file);
                     const detectedNumber = await scanContainerWithGemini(compressedBlob, apiKey);
@@ -855,6 +860,9 @@ export default function Inspection() {
                   } catch (err) {
                     console.error("Gemini Error:", err);
                     alert("Terjadi kesalahan saat memproses foto menggunakan Gemini API.\n" + (err.message || ""));
+                  } finally {
+                    setIsScanning(false);
+                    e.target.value = "";
                   }
                   e.target.value = "";
                 }
