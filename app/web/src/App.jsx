@@ -790,6 +790,7 @@ window.onload = function() {
         <div style={card}>
           <img src="/logo.jpg" alt="Logo" style={{ margin: "0 auto 24px auto", display: "block", width: "120px" }} />
 
+          <img src="/logo.jpg" alt="Logo" style={{ margin: "0 auto 24px auto", display: "block", width: "120px" }} />
           <h1 style={title}>CONTAINER INSPECTION</h1>
 
           <input
@@ -825,6 +826,7 @@ window.onload = function() {
         <div style={card}>
           <img src="/logo.jpg" alt="Logo" style={{ margin: "0 auto 24px auto", display: "block", width: "120px" }} />
 
+          <img src="/logo.jpg" alt="Logo" style={{ margin: "0 auto 24px auto", display: "block", width: "120px" }} />
           <h1 style={title}>DASHBOARD</h1>
 
           <h2 style={roleText}>
