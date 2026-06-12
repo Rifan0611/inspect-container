@@ -44,11 +44,60 @@ const compressImage = (file) => {
       };
       img.onerror = () => {
         resolve(file);
-      };
     };
     reader.onerror = () => {
       resolve(file);
     };
+  });
+};
+
+const preprocessImageForOCR = (file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 1200;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+          const contrast = 1.5; 
+          let color = ((gray / 255 - 0.5) * contrast + 0.5) * 255;
+          color = Math.min(255, Math.max(0, color));
+          
+          data[i] = color;
+          data[i + 1] = color;
+          data[i + 2] = color;
+        }
+        ctx.putImageData(imageData, 0, 0);
+        canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.9);
+      };
+      img.onerror = () => resolve(file);
+    };
+    reader.onerror = () => resolve(file);
   });
 };
 
@@ -158,7 +207,8 @@ export default function Inspection() {
     });
 
     try {
-      const { data: { text } } = await Tesseract.recognize(file, 'eng');
+      const processedBlob = await preprocessImageForOCR(file);
+      const { data: { text } } = await Tesseract.recognize(processedBlob, 'eng');
       
       const extractContainerNumber = (rawText) => {
         const clean = rawText.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -796,7 +846,8 @@ export default function Inspection() {
                   
                   // Run OCR on documentation photo too
                   try {
-                    const { data: { text } } = await Tesseract.recognize(file, 'eng');
+                    const processedBlob = await preprocessImageForOCR(file);
+                    const { data: { text } } = await Tesseract.recognize(processedBlob, 'eng');
                     const extractContainerNumber = (rawText) => {
                       const clean = rawText.toUpperCase().replace(/[^A-Z0-9]/g, '');
                       let bestMatch = null;

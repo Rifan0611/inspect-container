@@ -48,10 +48,86 @@ const compressImageToBase64 = (file, callback) => {
       const dataUrl = canvas.toDataURL("image/jpeg", 0.5);
       callback(dataUrl);
     };
-    img.onerror = () => {
-      callback(event.target.result);
-    };
+    img.onerror = () => callback(null);
   };
+  reader.onerror = () => callback(null);
+};
+
+const preprocessImageForOCR = (file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 1200;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+          const contrast = 1.5; 
+          let color = ((gray / 255 - 0.5) * contrast + 0.5) * 255;
+          color = Math.min(255, Math.max(0, color));
+          
+          data[i] = color;
+          data[i + 1] = color;
+          data[i + 2] = color;
+        }
+        ctx.putImageData(imageData, 0, 0);
+        canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.9);
+      };
+      img.onerror = () => resolve(file);
+    };
+    reader.onerror = () => resolve(file);
+  });
+};
+
+const extractContainerNumber = (rawText) => {
+  const clean = rawText.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  let bestMatch = null;
+  let bestScore = -1;
+
+  for (let i = 0; i <= clean.length - 11; i++) {
+    const candidate = clean.substring(i, i + 11);
+    const prefix = candidate.substring(0, 4);
+    const suffix = candidate.substring(4, 11);
+    
+    const prefixLetters = (prefix.match(/[A-Z]/g) || []).length;
+    const suffixNumbers = (suffix.match(/[0-9]/g) || []).length;
+    
+    if (prefixLetters >= 3 && suffixNumbers >= 5) {
+      let score = prefixLetters + suffixNumbers;
+      if (['U', 'J', 'Z'].includes(prefix[3])) {
+        score += 2;
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = candidate;
+      }
+    }
+  }
+  return bestMatch;
 };
 
 const compressImage = (file) => {
@@ -1872,37 +1948,10 @@ window.onload = function() {
                       if (!file) return;
                       
                       try {
-                        const { data: { text } } = await Tesseract.recognize(file, 'eng');
-                        // Advanced algorithm to extract container number from noisy OCR text
-                        const extractContainerNumber = (rawText) => {
-                          const clean = rawText.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                          let bestMatch = null;
-                          let bestScore = -1;
-
-                          for (let i = 0; i <= clean.length - 11; i++) {
-                            const candidate = clean.substring(i, i + 11);
-                            const prefix = candidate.substring(0, 4);
-                            const suffix = candidate.substring(4, 11);
-                            
-                            const prefixLetters = (prefix.match(/[A-Z]/g) || []).length;
-                            const suffixNumbers = (suffix.match(/[0-9]/g) || []).length;
-                            
-                            // A container is usually 4 letters + 7 numbers. Allow 1-2 OCR errors.
-                            if (prefixLetters >= 3 && suffixNumbers >= 5) {
-                              let score = prefixLetters + suffixNumbers;
-                              // Standard ISO prefixes end with U, J, or Z
-                              if (['U', 'J', 'Z'].includes(prefix[3])) {
-                                score += 2;
-                              }
-                              if (score > bestScore) {
-                                bestScore = score;
-                                bestMatch = candidate;
-                              }
-                            }
-                          }
-                          return bestMatch;
-                        };
-
+                        // Preprocess image to improve OCR accuracy on large/blurry photos
+                        const processedBlob = await preprocessImageForOCR(file);
+                        const { data: { text } } = await Tesseract.recognize(processedBlob, 'eng');
+                        
                         const detectedNumber = extractContainerNumber(text);
                         if (detectedNumber) {
                           setContainer(detectedNumber);
@@ -2104,34 +2153,10 @@ window.onload = function() {
 
                     // Run OCR
                     try {
-                      const { data: { text } } = await Tesseract.recognize(file, 'eng');
-                      const extractContainerNumber = (rawText) => {
-                        const clean = rawText.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                        let bestMatch = null;
-                        let bestScore = -1;
-
-                        for (let i = 0; i <= clean.length - 11; i++) {
-                          const candidate = clean.substring(i, i + 11);
-                          const prefix = candidate.substring(0, 4);
-                          const suffix = candidate.substring(4, 11);
-                          
-                          const prefixLetters = (prefix.match(/[A-Z]/g) || []).length;
-                          const suffixNumbers = (suffix.match(/[0-9]/g) || []).length;
-                          
-                          if (prefixLetters >= 3 && suffixNumbers >= 5) {
-                            let score = prefixLetters + suffixNumbers;
-                            if (['U', 'J', 'Z'].includes(prefix[3])) {
-                              score += 2;
-                            }
-                            if (score > bestScore) {
-                              bestScore = score;
-                              bestMatch = candidate;
-                            }
-                          }
-                        }
-                        return bestMatch;
-                      };
-
+                      // Preprocess image
+                      const processedBlob = await preprocessImageForOCR(file);
+                      const { data: { text } } = await Tesseract.recognize(processedBlob, 'eng');
+                      
                       const detectedNumber = extractContainerNumber(text);
                       if (detectedNumber) {
                         setContainer(detectedNumber);
