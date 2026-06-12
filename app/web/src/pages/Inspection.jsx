@@ -70,9 +70,17 @@ export default function Inspection() {
   const [selectedSides, setSelectedSides] = useState([]);
   const [selectedConditions, setSelectedConditions] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [locationGPS, setLocationGPS] = useState(null);
 
   useEffect(() => {
     loadManifestAndInspections();
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setLocationGPS({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => console.warn("Geo error:", err),
+        { enableHighAccuracy: true }
+      );
+    }
   }, []);
 
   const loadManifestAndInspections = async () => {
@@ -348,6 +356,12 @@ export default function Inspection() {
 
       const activeUser = JSON.parse(localStorage.getItem("user"));
 
+      let finalNote = note;
+      if (locationGPS) {
+        const mapsLink = `https://maps.google.com/?q=${locationGPS.lat},${locationGPS.lng}`;
+        finalNote = note ? `${note}\n\nLokasi GPS: ${mapsLink}` : `Lokasi GPS: ${mapsLink}`;
+      }
+
       const data = {
         container: containerNumber,
         shipName: shipName || "-",
@@ -357,7 +371,7 @@ export default function Inspection() {
         condition:
           selectedConditions.length > 0 ? selectedConditions.join(", ") : "-",
         side: selectedSides.length > 0 ? selectedSides.join(", ") : "-",
-        note: note,
+        note: finalNote,
         photo1: uploadedPhotoUrl,
         photo2: uploadedContainerNoUrl,
         petugas: activeUser?.nama || "Petugas Lapangan",
