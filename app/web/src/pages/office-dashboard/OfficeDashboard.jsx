@@ -111,6 +111,18 @@ const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 900);
   const cetakPdf = (item) => {
     const win = window.open("", "", "width=1200,height=900");
 
+    const selectedSides = item.side ? item.side.split(",").map(s => s.trim()) : [];
+    const sidesMap = [
+      { val: "Front/Depan", label: "Front (Depan)", x: 12, y: 30 },
+      { val: "Left Side/Sisi Kiri", label: "Left Side (Kiri)", x: 28, y: 45 },
+      { val: "Bottom/Bawah", label: "Bottom (Bawah)", x: 18, y: 75 },
+      { val: "Inside/Dalam", label: "Inside (Dalam)", x: 50, y: 58 },
+      { val: "Roof/Atas", label: "Roof (Atas)", x: 80, y: 26 },
+      { val: "Right Side/Sisi Kanan", label: "Right Side (Kanan)", x: 88, y: 48 },
+      { val: "Rear/Belakang", label: "Rear/Doors (Belakang)", x: 71, y: 60 },
+    ];
+
+
     let dateFormatted = "-";
     if (item.date) {
       try {
@@ -152,6 +164,13 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 .ttd { text-align:center; width:150px; }
 .ttd-line { margin-top:50px; border-top:1px solid #000; padding-top:4px; }
 @media print { html,body { width:210mm; height:297mm; overflow:hidden; } }
+
+.diagram-container { position:relative; width:100%; max-width:600px; margin:20px auto; border:2px solid #cbd5e1; border-radius:16px; overflow:hidden; background:white; }
+.diagram-image { width:100%; height:auto; display:block; }
+.diagram-hotspot { position:absolute; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; }
+.hotspot-badge { display:flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:rgba(239,68,68,0.95); color:white; border:2px solid white; font-size:12px; font-weight:bold; }
+.hotspot-badge.checked { background:rgba(34,197,94,0.95); }
+.hotspot-label { background:rgba(15,23,42,0.85); color:white; font-size:8px; font-weight:bold; padding:2px 4px; border-radius:4px; margin-top:2px; white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -174,6 +193,21 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
   <tr><td>Catatan</td><td>:</td><td>${item.note || "-"}</td></tr>
   <tr><td>Petugas Lapangan</td><td>:</td><td>${item.petugas || "-"}</td></tr>
 </table>
+
+<div class="photo-title" style="margin-top:20px;">VISUAL SISI KERUSAKAN</div>
+<div class="diagram-container">
+  <img class="diagram-image" src="${window.location.origin}/container-diagram.png" />
+  ${sidesMap.map(hotspot => {
+    const isChecked = selectedSides.includes(hotspot.val);
+    return `
+      <div class="diagram-hotspot" style="left:${hotspot.x}%; top:${hotspot.y}%;">
+        <div class="hotspot-badge ${isChecked ? 'checked' : ''}">${isChecked ? '&#10003;' : '!'}</div>
+        <div class="hotspot-label">${hotspot.label}</div>
+      </div>
+    `;
+  }).join("")}
+</div>
+
 <div class="photo-title">FOTO INSPEKSI</div>
 <div class="photo-grid">
   ${item.photo2 ? `
@@ -214,6 +248,18 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
   const cetakFoto = (item) => {
     const win = window.open("", "", "width=1200,height=900");
 
+    const selectedSides = item.side ? item.side.split(",").map(s => s.trim()) : [];
+    const sidesMap = [
+      { val: "Front/Depan", label: "Front (Depan)", x: 12, y: 30 },
+      { val: "Left Side/Sisi Kiri", label: "Left Side (Kiri)", x: 28, y: 45 },
+      { val: "Bottom/Bawah", label: "Bottom (Bawah)", x: 18, y: 75 },
+      { val: "Inside/Dalam", label: "Inside (Dalam)", x: 50, y: 58 },
+      { val: "Roof/Atas", label: "Roof (Atas)", x: 80, y: 26 },
+      { val: "Right Side/Sisi Kanan", label: "Right Side (Kanan)", x: 88, y: 48 },
+      { val: "Rear/Belakang", label: "Rear/Doors (Belakang)", x: 71, y: 60 },
+    ];
+
+
     let dateFormatted = "-";
     if (item.date) {
       try {
@@ -244,6 +290,13 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 .photo-label { font-size:10px; font-weight:bold; margin-bottom:6px; }
 .photo-box img { width:100%; height:300px; object-fit:contain; border-radius:8px; border:2px solid #004aad; }
 @media print { html,body { width:210mm; height:297mm; overflow:hidden; } }
+
+.diagram-container { position:relative; width:100%; max-width:600px; margin:20px auto; border:2px solid #cbd5e1; border-radius:16px; overflow:hidden; background:white; }
+.diagram-image { width:100%; height:auto; display:block; }
+.diagram-hotspot { position:absolute; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; }
+.hotspot-badge { display:flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:rgba(239,68,68,0.95); color:white; border:2px solid white; font-size:12px; font-weight:bold; }
+.hotspot-badge.checked { background:rgba(34,197,94,0.95); }
+.hotspot-label { background:rgba(15,23,42,0.85); color:white; font-size:8px; font-weight:bold; padding:2px 4px; border-radius:4px; margin-top:2px; white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -253,6 +306,21 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
     <p>Container Inspection System</p>
   </div>
 </div>
+
+<div class="photo-title" style="margin-top:20px;">VISUAL SISI KERUSAKAN</div>
+<div class="diagram-container">
+  <img class="diagram-image" src="${window.location.origin}/container-diagram.png" />
+  ${sidesMap.map(hotspot => {
+    const isChecked = selectedSides.includes(hotspot.val);
+    return `
+      <div class="diagram-hotspot" style="left:${hotspot.x}%; top:${hotspot.y}%;">
+        <div class="hotspot-badge ${isChecked ? 'checked' : ''}">${isChecked ? '&#10003;' : '!'}</div>
+        <div class="hotspot-label">${hotspot.label}</div>
+      </div>
+    `;
+  }).join("")}
+</div>
+
 <div class="photo-title">FOTO INSPEKSI - ${item.container || "-"}</div>
 <div style="text-align:center; margin-bottom: 20px; font-size:11px;">Waktu Inspeksi: <b>${dateFormatted}</b></div>
 <div class="photo-grid">
