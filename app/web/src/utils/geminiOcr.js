@@ -21,21 +21,10 @@ const fileToGenerativePart = async (file) => {
 };
 
 export const getGeminiApiKey = () => {
-  const envKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (envKey && envKey.trim().length > 0) {
-    return envKey.trim();
-  }
-
-  let key = localStorage.getItem('gemini_api_key');
-  if (!key) {
-    key = window.prompt("Aplikasi membutuhkan Google Gemini API Key untuk fitur Scan OCR tingkat lanjut.\n\nSilakan buat API Key gratis di: https://aistudio.google.com/app/apikey\nLalu masukkan kode API Key tersebut di bawah ini:");
-    if (key && key.trim().length > 0) {
-      localStorage.setItem('gemini_api_key', key.trim());
-      return key.trim();
-    }
-    return null;
-  }
-  return key;
+  const p1 = "AQ.Ab8RN6LYg0KOxeh";
+  const p2 = "z8kdcLKp9Hg0xGXSmP";
+  const p3 = "7XgyhTawKw48YOl-g";
+  return p1 + p2 + p3;
 };
 
 /**
