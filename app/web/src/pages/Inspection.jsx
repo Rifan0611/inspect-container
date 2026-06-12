@@ -20,7 +20,7 @@ const compressImage = (file) => {
         const canvas = document.createElement("canvas");
         let width = img.width;
         let height = img.height;
-        const maxDim = 800;
+        const maxDim = 1200;
         if (width > maxDim || height > maxDim) {
           if (width > height) {
             height = Math.round((height * maxDim) / width);
@@ -112,10 +112,11 @@ const extractContainerNumberAdvanced = (data) => {
       
       for (const word of data.words) {
         const t = word.text.toUpperCase().replace(/[^A-Z]/g, '');
-        if (t.length >= 3 && t.length <= 5) {
-          if (/^[A-Z]{3}[UJZ]$/.test(t) || /^[A-Z]{4}$/.test(t)) {
+        if (t.length >= 3 && t.length <= 6) {
+          const match = t.match(/[A-Z]{3}[UJZ]/);
+          if (match) {
             prefixWord = word;
-            bestPrefixText = t;
+            bestPrefixText = match[0];
             break;
           }
         }
@@ -126,6 +127,13 @@ const extractContainerNumberAdvanced = (data) => {
         const expectedHeight = bbox.y1 - bbox.y0;
         
         const numberWords = [];
+        
+        // Also extract any numbers that might be accidentally grouped into the prefix word
+        const prefixNums = prefixWord.text.toUpperCase().replace(/O/g, '0').replace(/I|L/g, '1').replace(/S/g, '5').replace(/Z/g, '2').replace(/B/g, '8').replace(/[^0-9]/g, '');
+        if (prefixNums.length > 0) {
+          numberWords.push({ text: prefixNums, bbox: prefixWord.bbox });
+        }
+        
         for (const word of data.words) {
           if (word === prefixWord) continue;
           let text = word.text.toUpperCase().replace(/O/g, '0').replace(/I|L/g, '1').replace(/S/g, '5').replace(/Z/g, '2').replace(/B/g, '8');
@@ -313,7 +321,8 @@ export default function Inspection() {
         }
         alert(`Pindai berhasil! Container terdeteksi: ${scannedNum}\n\n(Mohon periksa kembali jika ada huruf/angka yang kurang tepat)`);
       } else {
-        const snippet = data.text.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+        const rawString = data.text || (typeof data === 'string' ? data : '');
+        const snippet = rawString.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
         alert(`Nomor kontainer tidak ditemukan pada foto. Silakan foto ulang.\n(Teks terbaca: ${snippet}...)`);
       }
     } catch (err) {
@@ -919,7 +928,8 @@ export default function Inspection() {
                       }
                       alert(`Nomor kontainer otomatis terdeteksi dari foto: ${detectedNumber}\n\n(Mohon periksa kembali jika ada huruf/angka yang kurang tepat)`);
                     } else {
-                      const snippet = data.text.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+                      const rawString = data.text || (typeof data === 'string' ? data : '');
+                      const snippet = rawString.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
                       alert(`Nomor kontainer tidak ditemukan pada foto. Silakan foto ulang.\n(Teks terbaca: ${snippet}...)`);
                     }
                   } catch (err) {
