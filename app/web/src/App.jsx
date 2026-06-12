@@ -103,7 +103,59 @@ const preprocessImageForOCR = (file) => {
   });
 };
 
-const extractContainerNumber = (rawText) => {
+const extractContainerNumberAdvanced = (data) => {
+  if (data && data.words) {
+    try {
+      let prefixWord = null;
+      let bestPrefixText = "";
+      
+      for (const word of data.words) {
+        const t = word.text.toUpperCase().replace(/[^A-Z]/g, '');
+        if (t.length >= 3 && t.length <= 5) {
+          if (/^[A-Z]{3}[UJZ]$/.test(t) || /^[A-Z]{4}$/.test(t)) {
+            prefixWord = word;
+            bestPrefixText = t;
+            break;
+          }
+        }
+      }
+      
+      if (prefixWord) {
+        const bbox = prefixWord.bbox;
+        const expectedHeight = bbox.y1 - bbox.y0;
+        
+        const numberWords = [];
+        for (const word of data.words) {
+          if (word === prefixWord) continue;
+          let text = word.text.toUpperCase().replace(/O/g, '0').replace(/I|L/g, '1').replace(/S/g, '5').replace(/Z/g, '2').replace(/B/g, '8');
+          text = text.replace(/[^0-9]/g, '');
+          
+          if (text.length > 0) {
+            const wbox = word.bbox;
+            if (wbox.y1 > bbox.y0 - expectedHeight * 1.5 && wbox.x1 > bbox.x0 - expectedHeight * 2) {
+              numberWords.push({ text, bbox: wbox });
+            }
+          }
+        }
+        
+        numberWords.sort((a, b) => {
+          if (Math.abs(a.bbox.y0 - b.bbox.y0) > expectedHeight * 1.5) {
+            return a.bbox.y0 - b.bbox.y0;
+          }
+          return a.bbox.x0 - b.bbox.x0;
+        });
+        
+        const fullNumbers = numberWords.map(w => w.text).join('');
+        if (fullNumbers.length >= 6) {
+          return bestPrefixText.substring(0,4) + fullNumbers.substring(0, 7);
+        }
+      }
+    } catch(e) {
+      console.error("Spatial extraction failed", e);
+    }
+  }
+
+  const rawText = data.text || data;
   const clean = rawText.toUpperCase().replace(/[^A-Z0-9]/g, '');
   let bestMatch = null;
   let bestScore = -1;
@@ -1948,9 +2000,9 @@ window.onload = function() {
                       if (!file) return;
                       
                       try {
-                        const { data: { text } } = await Tesseract.recognize(file, 'eng');
+                        const { data } = await Tesseract.recognize(file, 'eng');
                         
-                        const detectedNumber = extractContainerNumber(text);
+                        const detectedNumber = extractContainerNumberAdvanced(data);
                         if (detectedNumber) {
                           setContainer(detectedNumber);
                           
@@ -1962,7 +2014,7 @@ window.onload = function() {
                           
                           alert(`Pindai berhasil! Nomor kontainer: ${detectedNumber}\n\n(Mohon periksa kembali jika ada huruf/angka yang kurang tepat)`);
                         } else {
-                          const snippet = text.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+                          const snippet = data.text.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
                           alert(`Nomor kontainer tidak ditemukan pada foto. Silakan foto ulang.\n(Teks terbaca: ${snippet}...)`);
                         }
                       } catch (err) {
@@ -2152,9 +2204,9 @@ window.onload = function() {
 
                     // Run OCR
                     try {
-                      const { data: { text } } = await Tesseract.recognize(file, 'eng');
+                      const { data } = await Tesseract.recognize(file, 'eng');
                       
-                      const detectedNumber = extractContainerNumber(text);
+                      const detectedNumber = extractContainerNumberAdvanced(data);
                       if (detectedNumber) {
                         setContainer(detectedNumber);
                         
@@ -2166,7 +2218,7 @@ window.onload = function() {
                         
                         alert(`Nomor kontainer otomatis terdeteksi dari foto: ${detectedNumber}\n\n(Mohon periksa kembali jika ada huruf/angka yang kurang tepat)`);
                       } else {
-                        const snippet = text.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+                        const snippet = data.text.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
                         alert(`Nomor kontainer tidak ditemukan pada foto. Silakan foto ulang.\n(Teks terbaca: ${snippet}...)`);
                       }
                     } catch (err) {
