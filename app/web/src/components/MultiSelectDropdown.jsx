@@ -1,14 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 
 export default function MultiSelectDropdown({
-  options,
-  value,
+  options = [],
+  value = [],
+  selectedValues,
   onChange,
   placeholder,
   disabled,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+  
+  // Use either value or selectedValues (for backwards compatibility)
+  const actualValue = value || selectedValues || [];
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -21,22 +25,21 @@ export default function MultiSelectDropdown({
   }, []);
 
   const handleToggle = (optValue) => {
-    // Determine the new value array
     let newValue;
-    if (value.includes(optValue)) {
-      newValue = value.filter((v) => v !== optValue);
+    if (actualValue.includes(optValue)) {
+      newValue = actualValue.filter((v) => v !== optValue);
     } else {
-      newValue = [...value, optValue];
+      newValue = [...actualValue, optValue];
     }
-    onChange(newValue, optValue); // Pass the toggled value as second argument so parent can handle special cases like "GOOD"
+    onChange(newValue, optValue); 
   };
 
   const displayValue =
-    value.length === 0
+    actualValue.length === 0
       ? placeholder
-      : value.length <= 2
-        ? value.join(", ")
-        : `${value.length} opsi terpilih`;
+      : actualValue.length <= 2
+        ? actualValue.join(", ")
+        : `${actualValue.length} opsi terpilih`;
 
   return (
     <div ref={dropdownRef} style={{ position: "relative", width: "100%" }}>
@@ -98,7 +101,10 @@ export default function MultiSelectDropdown({
           }}
         >
           {options.map((opt, idx) => {
-            const isChecked = value.includes(opt.val);
+            const isObject = typeof opt === "object" && opt !== null;
+            const optValue = isObject ? opt.val : opt;
+            const optLabel = isObject ? opt.label : opt;
+            const isChecked = actualValue.includes(optValue);
             return (
               <label
                 key={idx}
@@ -123,7 +129,7 @@ export default function MultiSelectDropdown({
                 <input
                   type="checkbox"
                   checked={isChecked}
-                  onChange={() => handleToggle(opt.val)}
+                  onChange={() => handleToggle(optValue)}
                   style={{
                     marginRight: "10px",
                     width: "16px",
@@ -131,7 +137,7 @@ export default function MultiSelectDropdown({
                     cursor: "pointer",
                   }}
                 />
-                {opt.label}
+                {optLabel}
               </label>
             );
           })}
