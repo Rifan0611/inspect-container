@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@heroicons/react": "^2.2.0",
     "axios": "^1.16.1",
     "framer-motion": "^12.38.0",
@@ -21,7 +22,6 @@
     "react-icons": "^5.6.0",
     "react-router-dom": "^7.15.1",
     "recharts": "^3.8.1",
-    "tesseract.js": "^7.0.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

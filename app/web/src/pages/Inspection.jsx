@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Save, Camera, ArrowLeft, Loader2 } from "lucide-react";
 import API_URL from "../config/api";
-import Tesseract from "tesseract.js";
+import { getGeminiApiKey, scanContainerWithGemini } from "../utils/geminiOcr";
 import "./Inspection.css";
 import SearchSelect, {
   ISO_CODES,
@@ -104,92 +104,7 @@ const preprocessImageForOCR = (file) => {
   });
 };
 
-const extractContainerNumberAdvanced = (data) => {
-  if (data && data.words) {
-    try {
-      let prefixWord = null;
-      let bestPrefixText = "";
-      
-      for (const word of data.words) {
-        const t = word.text.toUpperCase().replace(/[^A-Z]/g, '');
-        if (t.length >= 3 && t.length <= 6) {
-          const match = t.match(/[A-Z]{3}[UJZ]/);
-          if (match) {
-            prefixWord = word;
-            bestPrefixText = match[0];
-            break;
-          }
-        }
-      }
-      
-      if (prefixWord) {
-        const bbox = prefixWord.bbox;
-        const expectedHeight = bbox.y1 - bbox.y0;
-        
-        const numberWords = [];
-        
-        // Also extract any numbers that might be accidentally grouped into the prefix word
-        const prefixNums = prefixWord.text.toUpperCase().replace(/O/g, '0').replace(/I|L/g, '1').replace(/S/g, '5').replace(/Z/g, '2').replace(/B/g, '8').replace(/[^0-9]/g, '');
-        if (prefixNums.length > 0) {
-          numberWords.push({ text: prefixNums, bbox: prefixWord.bbox });
-        }
-        
-        for (const word of data.words) {
-          if (word === prefixWord) continue;
-          let text = word.text.toUpperCase().replace(/O/g, '0').replace(/I|L/g, '1').replace(/S/g, '5').replace(/Z/g, '2').replace(/B/g, '8');
-          text = text.replace(/[^0-9]/g, '');
-          
-          if (text.length > 0) {
-            const wbox = word.bbox;
-            if (wbox.y1 > bbox.y0 - expectedHeight * 1.5 && wbox.x1 > bbox.x0 - expectedHeight * 2) {
-              numberWords.push({ text, bbox: wbox });
-            }
-          }
-        }
-        
-        numberWords.sort((a, b) => {
-          if (Math.abs(a.bbox.y0 - b.bbox.y0) > expectedHeight * 1.5) {
-            return a.bbox.y0 - b.bbox.y0;
-          }
-          return a.bbox.x0 - b.bbox.x0;
-        });
-        
-        const fullNumbers = numberWords.map(w => w.text).join('');
-        if (fullNumbers.length >= 6) {
-          return bestPrefixText.substring(0,4) + fullNumbers.substring(0, 7);
-        }
-      }
-    } catch(e) {
-      console.error("Spatial extraction failed", e);
-    }
-  }
 
-  const rawText = data.text || data;
-  const clean = rawText.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  let bestMatch = null;
-  let bestScore = -1;
-
-  for (let i = 0; i <= clean.length - 11; i++) {
-    const candidate = clean.substring(i, i + 11);
-    const prefix = candidate.substring(0, 4);
-    const suffix = candidate.substring(4, 11);
-    
-    const prefixLetters = (prefix.match(/[A-Z]/g) || []).length;
-    const suffixNumbers = (suffix.match(/[0-9]/g) || []).length;
-    
-    if (prefixLetters >= 3 && suffixNumbers >= 5) {
-      let score = prefixLetters + suffixNumbers;
-      if (['U', 'J', 'Z'].includes(prefix[3])) {
-        score += 2;
-      }
-      if (score > bestScore) {
-        bestScore = score;
-        bestMatch = candidate;
-      }
-    }
-  }
-  return bestMatch;
-};
 
 export default function Inspection() {
   const navigate = useNavigate();
@@ -297,10 +212,15 @@ export default function Inspection() {
     });
 
     try {
+      const apiKey = getGeminiApiKey();
+      if (!apiKey) {
+        setIsScanning(false);
+        return;
+      }
+
       const compressedBlob = await compressImage(file);
-      const { data } = await Tesseract.recognize(compressedBlob, 'eng');
+      const scannedNum = await scanContainerWithGemini(compressedBlob, apiKey);
       
-      const scannedNum = extractContainerNumberAdvanced(data);
       if (scannedNum) {
         setContainerNumber(scannedNum);
         
@@ -321,13 +241,11 @@ export default function Inspection() {
         }
         alert(`Pindai berhasil! Container terdeteksi: ${scannedNum}\n\n(Mohon periksa kembali jika ada huruf/angka yang kurang tepat)`);
       } else {
-        const rawString = data.text || (typeof data === 'string' ? data : '');
-        const snippet = rawString.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
-        alert(`Nomor kontainer tidak ditemukan pada foto. Silakan foto ulang.\n(Teks terbaca: ${snippet}...)`);
+        alert(`Nomor kontainer tidak ditemukan pada foto oleh Gemini Vision.\nPastikan foto cukup jelas dan coba lagi.`);
       }
     } catch (err) {
-      console.error("OCR Error:", err);
-      alert("Terjadi kesalahan saat membaca foto.");
+      console.error("Gemini Error:", err);
+      alert("Terjadi kesalahan saat memproses foto menggunakan Gemini API.\n" + (err.message || ""));
     } finally {
       setIsScanning(false);
       e.target.value = "";
@@ -910,10 +828,12 @@ export default function Inspection() {
                   ]);
                   // Run OCR on documentation photo too
                   try {
+                    const apiKey = getGeminiApiKey();
+                    if (!apiKey) return;
+
                     const compressedBlob = await compressImage(file);
-                    const { data } = await Tesseract.recognize(compressedBlob, 'eng');
+                    const detectedNumber = await scanContainerWithGemini(compressedBlob, apiKey);
                     
-                    const detectedNumber = extractContainerNumberAdvanced(data);
                     if (detectedNumber) {
                       setContainerNumber(detectedNumber);
                       
@@ -928,12 +848,11 @@ export default function Inspection() {
                       }
                       alert(`Nomor kontainer otomatis terdeteksi dari foto: ${detectedNumber}\n\n(Mohon periksa kembali jika ada huruf/angka yang kurang tepat)`);
                     } else {
-                      const rawString = data.text || (typeof data === 'string' ? data : '');
-                      const snippet = rawString.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
-                      alert(`Nomor kontainer tidak ditemukan pada foto. Silakan foto ulang.\n(Teks terbaca: ${snippet}...)`);
+                      alert(`Nomor kontainer tidak ditemukan pada foto oleh Gemini Vision.\nPastikan foto cukup jelas dan coba lagi.`);
                     }
                   } catch (err) {
-                    console.error("OCR Error:", err);
+                    console.error("Gemini Error:", err);
+                    alert("Terjadi kesalahan saat memproses foto menggunakan Gemini API.\n" + (err.message || ""));
                   }
                   e.target.value = "";
                 }
