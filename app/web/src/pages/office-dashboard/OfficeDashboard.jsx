@@ -1409,7 +1409,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
   onClick={() => cetakFoto(item)}
   title="Cetak Foto"
 >
-  <Camera size={18} />
+  <Image size={18} />
 </button>
 
 
