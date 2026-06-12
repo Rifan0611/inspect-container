@@ -207,8 +207,7 @@ export default function Inspection() {
     });
 
     try {
-      const processedBlob = await preprocessImageForOCR(file);
-      const { data: { text } } = await Tesseract.recognize(processedBlob, 'eng');
+      const { data: { text } } = await Tesseract.recognize(file, 'eng');
       
       const extractContainerNumber = (rawText) => {
         const clean = rawText.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -258,7 +257,8 @@ export default function Inspection() {
         }
         alert(`Pindai berhasil! Container terdeteksi: ${scannedNum}\n\n(Mohon periksa kembali jika ada huruf/angka yang kurang tepat)`);
       } else {
-        alert("Nomor kontainer belum dapat terbaca dengan baik. Silakan ketik manual atau coba foto ulang.");
+        const snippet = text.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+        alert(`Nomor kontainer tidak ditemukan pada foto. Silakan foto ulang.\n(Teks terbaca: ${snippet}...)`);
       }
     } catch (err) {
       console.error("OCR Error:", err);
@@ -843,11 +843,9 @@ export default function Inspection() {
                       url: objectUrl,
                     },
                   ]);
-                  
                   // Run OCR on documentation photo too
                   try {
-                    const processedBlob = await preprocessImageForOCR(file);
-                    const { data: { text } } = await Tesseract.recognize(processedBlob, 'eng');
+                    const { data: { text } } = await Tesseract.recognize(file, 'eng');
                     const extractContainerNumber = (rawText) => {
                       const clean = rawText.toUpperCase().replace(/[^A-Z0-9]/g, '');
                       let bestMatch = null;
@@ -889,6 +887,9 @@ export default function Inspection() {
                         setCategory(found.category || "");
                       }
                       alert(`Nomor kontainer otomatis terdeteksi dari foto: ${detectedNumber}\n\n(Mohon periksa kembali jika ada huruf/angka yang kurang tepat)`);
+                    } else {
+                      const snippet = text.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+                      alert(`Nomor kontainer tidak ditemukan pada foto. Silakan foto ulang.\n(Teks terbaca: ${snippet}...)`);
                     }
                   } catch (err) {
                     console.error("OCR Error:", err);
