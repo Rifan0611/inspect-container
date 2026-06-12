@@ -1827,14 +1827,76 @@ window.onload = function() {
                   Nomor Container
                   <span className="required-star">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={container}
-                  onChange={handleContainerChange}
-                  placeholder="Masukkan nomor container..."
-                  className="form-input"
-                  disabled={isUploading}
-                />
+                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                  <input
+                    type="text"
+                    value={container}
+                    onChange={handleContainerChange}
+                    placeholder="Masukkan nomor container..."
+                    className="form-input"
+                    disabled={isUploading}
+                    style={{ flex: 1, margin: 0 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => !isUploading && document.getElementById("ocrContainerInput").click()}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      background: "#3b82f6",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "8px",
+                      padding: "0 16px",
+                      height: "46px",
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                      fontSize: "14px",
+                      flexShrink: 0
+                    }}
+                    disabled={isUploading}
+                  >
+                    📷 Scan
+                  </button>
+                  <input
+                    id="ocrContainerInput"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    style={{ display: "none" }}
+                    disabled={isUploading}
+                    onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      
+                      try {
+                        const { data: { text } } = await Tesseract.recognize(file, 'eng');
+                        const match = text.match(/[A-Z]{4}\s*\d{7}/i);
+                        if (match) {
+                          const detectedNumber = match[0].replace(/\s+/g, '').toUpperCase();
+                          setContainer(detectedNumber);
+                          
+                          if (typeof handleContainerChange === 'function') {
+                            handleContainerChange({ target: { value: detectedNumber } });
+                          } else if (typeof cariContainer === 'function') {
+                            cariContainer(detectedNumber);
+                          }
+                          
+                          alert(`Pindai berhasil! Nomor kontainer: ${detectedNumber}`);
+                        } else {
+                          alert("Nomor kontainer tidak terdeteksi dari foto. Pastikan foto jelas dan terang.");
+                        }
+                      } catch (err) {
+                        console.error("OCR Error:", err);
+                        alert("Terjadi kesalahan saat memproses foto.");
+                      } finally {
+                        e.target.value = "";
+                      }
+                    }}
+                  />
+                </div>
               </div>
             </div>
 
