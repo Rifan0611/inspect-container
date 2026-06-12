@@ -22,35 +22,65 @@ import {
 } from "recharts";
 
 const compressImageToBase64 = (file, callback) => {
+  if (!file || !(file instanceof Blob)) {
+    return callback(null);
+  }
+  
   const reader = new FileReader();
-  reader.readAsDataURL(file);
+  
+  const timeoutId = setTimeout(() => {
+    console.error("compressImageToBase64 timeout");
+    callback(null);
+  }, 10000); // 10 seconds timeout
+
+  const cleanup = () => clearTimeout(timeoutId);
+
   reader.onload = (event) => {
     const img = new Image();
     img.src = event.target.result;
     img.onload = () => {
-      const canvas = document.createElement("canvas");
-      let width = img.width;
-      let height = img.height;
-      const maxDim = 600;
-      if (width > maxDim || height > maxDim) {
-        if (width > height) {
-          height = Math.round((height * maxDim) / width);
-          width = maxDim;
-        } else {
-          width = Math.round((width * maxDim) / height);
-          height = maxDim;
+      try {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 600;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
         }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.5);
+        cleanup();
+        callback(dataUrl);
+      } catch(e) {
+        cleanup();
+        callback(null);
       }
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, width, height);
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.5);
-      callback(dataUrl);
     };
-    img.onerror = () => callback(null);
+    img.onerror = () => {
+      cleanup();
+      callback(null);
+    }
   };
-  reader.onerror = () => callback(null);
+  reader.onerror = () => {
+    cleanup();
+    callback(null);
+  }
+  
+  try {
+    reader.readAsDataURL(file);
+  } catch(e) {
+    cleanup();
+    callback(null);
+  }
 };
 
 const preprocessImageForOCR = (file) => {
@@ -107,44 +137,69 @@ const preprocessImageForOCR = (file) => {
 
 const compressImage = (file) => {
   return new Promise((resolve) => {
+    if (!file || !(file instanceof Blob)) {
+      return resolve(file);
+    }
     const reader = new FileReader();
-    reader.readAsDataURL(file);
+    
+    const timeoutId = setTimeout(() => {
+      console.error("compressImage timeout");
+      resolve(file);
+    }, 10000);
+
+    const cleanup = () => clearTimeout(timeoutId);
+
     reader.onload = (event) => {
       const img = new Image();
       img.src = event.target.result;
       img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-        const maxDim = 1200;
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          } else {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
+        try {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 1200;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
           }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(
+            (blob) => {
+              cleanup();
+              resolve(blob || file);
+            },
+            "image/jpeg",
+            0.7,
+          );
+        } catch (e) {
+          cleanup();
+          resolve(file);
         }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
-        canvas.toBlob(
-          (blob) => {
-            resolve(blob || file);
-          },
-          "image/jpeg",
-          0.7,
-        );
       };
       img.onerror = () => {
+        cleanup();
         resolve(file);
-      };
+      }
     };
     reader.onerror = () => {
+      cleanup();
       resolve(file);
-    };
+    }
+    
+    try {
+      reader.readAsDataURL(file);
+    } catch(e) {
+      cleanup();
+      resolve(file);
+    }
   });
 };
 
