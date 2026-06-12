@@ -34,7 +34,7 @@ const compressImageToBase64 = (file, callback) => {
   const cleanup = () => clearTimeout(timeoutId);
 
   const objectUrl = URL.createObjectURL(file);
-  const img = new Image();
+  const img = new window.Image();
   
   img.onload = () => {
     try {
@@ -81,7 +81,7 @@ const preprocessImageForOCR = (file) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = (event) => {
-      const img = new Image();
+      const img = new window.Image();
       img.src = event.target.result;
       img.onload = () => {
         const canvas = document.createElement("canvas");
@@ -142,7 +142,7 @@ const compressImage = (file) => {
     const cleanup = () => clearTimeout(timeoutId);
 
     const objectUrl = URL.createObjectURL(file);
-    const img = new Image();
+    const img = new window.Image();
 
     img.onload = () => {
       try {
