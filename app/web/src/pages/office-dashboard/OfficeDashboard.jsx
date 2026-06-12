@@ -1231,8 +1231,7 @@ const OfficeDashboard = ({
 <button
   className="detail-btn"
   onClick={() => {
-    const win = window.open("", "", "width=1200,height=900");
-    win.document.write(`
+    const htmlContent = `
       <html>
       <head>
         <title>BERITA ACARA - Dokumen</title>
@@ -1306,8 +1305,10 @@ const OfficeDashboard = ({
         </script>
       </body>
       </html>
-    `);
-    win.document.close();
+    `;
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
   }}
   title="Cetak Dokumen"
 >
@@ -1318,8 +1319,7 @@ const OfficeDashboard = ({
   className="detail-btn"
   style={{ marginLeft: "8px" }}
   onClick={() => {
-    const win = window.open("", "", "width=1200,height=900");
-    win.document.write(`
+    const htmlContent = `
       <html>
       <head>
         <title>BERITA ACARA - Foto</title>
@@ -1390,8 +1390,10 @@ const OfficeDashboard = ({
         </script>
       </body>
       </html>
-    `);
-    win.document.close();
+    `;
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
   }}
   title="Cetak Foto"
 >
