@@ -581,9 +581,9 @@
 }
 
 .hotspot-badge.checked {
-  background: rgba(239, 68, 68, 0.95);
+  background: rgba(34, 197, 94, 0.95);
   transform: scale(1.25);
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.6);
 }
 
 .diagram-hotspot:hover .hotspot-badge {
