@@ -270,6 +270,13 @@ const parsePhotos = (photoStr) => {
 };
 
 export default function App() {
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const formatInspectionDate = (dateStr) => {
     if (!dateStr) return "-";
     try {
@@ -2037,6 +2044,30 @@ window.onload = function() {
                   placeholder="-ISO Code-"
                   disabled={isUploading}
                 />
+              </div>
+            </div>
+
+            <div className="form-grid">
+              <div className="form-group" style={{ gridColumn: "span 2" }}>
+                <label>Waktu & Tanggal Inspeksi</label>
+                <input
+                  type="text"
+                  value={currentTime.toLocaleString("id-ID", {
+                    weekday: "long",
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit"
+                  }) + " WIB"}
+                  disabled
+                  className="form-input"
+                  style={{ backgroundColor: "#f8fafc", color: "#64748b", fontWeight: "bold", border: "1px solid #e2e8f0" }}
+                />
+                <p style={{ fontSize: "11px", color: "#64748b", marginTop: "4px" }}>
+                  *Waktu akan terekam secara otomatis saat Anda menekan tombol Simpan.
+                </p>
               </div>
             </div>
 

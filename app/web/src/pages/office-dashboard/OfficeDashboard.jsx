@@ -161,6 +161,20 @@ const OfficeDashboard = ({
   const [editDate, setEditDate] = useState("");
   const [editPhoto2, setEditPhoto2] = useState("");
 
+  const formatInspectionDatePart = (dateString) => {
+    if (!dateString) return "-";
+    const d = new Date(dateString);
+    const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+    const day = days[d.getDay()];
+    return `${day}, ${d.toLocaleDateString("id-ID")}`;
+  };
+
+  const formatInspectionTimePart = (dateString) => {
+    if (!dateString) return "-";
+    const d = new Date(dateString);
+    return d.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' });
+  };
+
   useEffect(() => {
     if (editingInspection) {
       setEditContainer(editingInspection.container || "");
