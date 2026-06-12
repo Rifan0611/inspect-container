@@ -2185,6 +2185,26 @@ window.onload = function() {
                       },
                     ]);
                     e.target.value = "";
+
+                    // Quietly run OCR in the background without blocking or alerting
+                    try {
+                      const apiKey = getGeminiApiKey();
+                      if (apiKey) {
+                        const compressedBlob = await compressImage(file);
+                        const detectedNumber = await scanContainerWithGemini(compressedBlob, apiKey);
+                        
+                        if (detectedNumber && !detectedNumber.startsWith("DEBUG_RAW")) {
+                          setContainer(detectedNumber);
+                          if (typeof handleContainerChange === 'function') {
+                            handleContainerChange({ target: { value: detectedNumber } });
+                          } else if (typeof cariContainer === 'function') {
+                            cariContainer(detectedNumber);
+                          }
+                        }
+                      }
+                    } catch (err) {
+                      console.warn("Silent OCR failure:", err.message);
+                    }
                   }
                 }}
               />
