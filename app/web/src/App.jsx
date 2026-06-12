@@ -1342,7 +1342,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
     return (
       <div style={bg}>
         <div style={card}>
-          <img src="/logo.jpg" alt="Logo" style={{ margin: "0 auto 24px auto", display: "block", width: "120px" }} />
+          <img src="/logo.jpg" alt="Logo" style={{ margin: "0 auto 24px auto", display: "block", width: "120px", height: "60px", objectFit: "cover", objectPosition: "top" }} />
 
           <h1 style={title}>CONTAINER INSPECTION</h1>
 
@@ -1377,7 +1377,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
     return (
       <div style={bg}>
         <div style={card}>
-          <img src="/logo.jpg" alt="Logo" style={{ margin: "0 auto 24px auto", display: "block", width: "120px" }} />
+          <img src="/logo.jpg" alt="Logo" style={{ margin: "0 auto 24px auto", display: "block", width: "120px", height: "60px", objectFit: "cover", objectPosition: "top" }} />
 
           <h1 style={title}>DASHBOARD</h1>
 
