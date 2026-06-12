@@ -2000,7 +2000,8 @@ window.onload = function() {
                       if (!file) return;
                       
                       try {
-                        const { data } = await Tesseract.recognize(file, 'eng');
+                        const compressedBlob = await compressImage(file);
+                        const { data } = await Tesseract.recognize(compressedBlob, 'eng');
                         
                         const detectedNumber = extractContainerNumberAdvanced(data);
                         if (detectedNumber) {
@@ -2204,7 +2205,8 @@ window.onload = function() {
 
                     // Run OCR
                     try {
-                      const { data } = await Tesseract.recognize(file, 'eng');
+                      const compressedBlob = await compressImage(file);
+                      const { data } = await Tesseract.recognize(compressedBlob, 'eng');
                       
                       const detectedNumber = extractContainerNumberAdvanced(data);
                       if (detectedNumber) {

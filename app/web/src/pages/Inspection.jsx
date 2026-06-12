@@ -44,6 +44,7 @@ const compressImage = (file) => {
       };
       img.onerror = () => {
         resolve(file);
+      };
     };
     reader.onerror = () => {
       resolve(file);
@@ -288,7 +289,8 @@ export default function Inspection() {
     });
 
     try {
-      const { data } = await Tesseract.recognize(file, 'eng');
+      const compressedBlob = await compressImage(file);
+      const { data } = await Tesseract.recognize(compressedBlob, 'eng');
       
       const scannedNum = extractContainerNumberAdvanced(data);
       if (scannedNum) {
@@ -899,7 +901,8 @@ export default function Inspection() {
                   ]);
                   // Run OCR on documentation photo too
                   try {
-                    const { data } = await Tesseract.recognize(file, 'eng');
+                    const compressedBlob = await compressImage(file);
+                    const { data } = await Tesseract.recognize(compressedBlob, 'eng');
                     
                     const detectedNumber = extractContainerNumberAdvanced(data);
                     if (detectedNumber) {
