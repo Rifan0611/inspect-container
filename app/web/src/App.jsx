@@ -1,8 +1,6 @@
 import OfficeDashboard from "./pages/office-dashboard/OfficeDashboard";
 import API_URL from "./config/api";
-import React, { useState, useEffect } from "react";
-import InspectionForm from "./components/InspectionForm";
-import HistoryTable from "./components/HistoryTable";
+import React, { useState } from "react";
 import "./pages/Inspection.css";
 import { Save, Camera, ArrowLeft, Loader2, Image, FileText } from "lucide-react";
 import SearchSelect, { ISO_CODES, CATEGORIES } from "./components/SearchSelect";
@@ -23,6 +21,173 @@ import {
   Cell,
 } from "recharts";
 
+const compressImageToBase64 = (file, callback) => {
+  if (!file || !(file instanceof Blob)) {
+    return callback(null);
+  }
+  
+  const timeoutId = setTimeout(() => {
+    console.error("compressImageToBase64 timeout");
+    callback(null);
+  }, 10000); // 10 seconds timeout
+
+  const cleanup = () => clearTimeout(timeoutId);
+
+  const objectUrl = URL.createObjectURL(file);
+  const img = new Image();
+  
+  img.onload = () => {
+    try {
+      const canvas = document.createElement("canvas");
+      let width = img.width;
+      let height = img.height;
+      const maxDim = 600;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.5);
+      
+      URL.revokeObjectURL(objectUrl);
+      cleanup();
+      callback(dataUrl);
+    } catch(e) {
+      URL.revokeObjectURL(objectUrl);
+      cleanup();
+      callback(null);
+    }
+  };
+  
+  img.onerror = () => {
+    URL.revokeObjectURL(objectUrl);
+    cleanup();
+    callback(null);
+  }
+
+  img.src = objectUrl;
+};
+
+const preprocessImageForOCR = (file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 1200;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+          const contrast = 1.5; 
+          let color = ((gray / 255 - 0.5) * contrast + 0.5) * 255;
+          color = Math.min(255, Math.max(0, color));
+          
+          data[i] = color;
+          data[i + 1] = color;
+          data[i + 2] = color;
+        }
+        ctx.putImageData(imageData, 0, 0);
+        canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.9);
+      };
+      img.onerror = () => resolve(file);
+    };
+    reader.onerror = () => resolve(file);
+  });
+};
+
+
+
+const compressImage = (file) => {
+  return new Promise((resolve) => {
+    if (!file || !(file instanceof Blob)) {
+      return resolve(file);
+    }
+    
+    const timeoutId = setTimeout(() => {
+      console.error("compressImage timeout");
+      resolve(file);
+    }, 10000);
+
+    const cleanup = () => clearTimeout(timeoutId);
+
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 1200;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            URL.revokeObjectURL(objectUrl);
+            cleanup();
+            resolve(blob || file);
+          },
+          "image/jpeg",
+          0.7,
+        );
+      } catch (e) {
+        URL.revokeObjectURL(objectUrl);
+        cleanup();
+        resolve(file);
+      }
+    };
+    
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      cleanup();
+      resolve(file);
+    }
+    
+    img.src = objectUrl;
+  });
+};
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -258,16 +423,42 @@ export default function App() {
     return [];
   });
 
+  const [container, setContainer] = useState("");
+
+  const [shipName, setShipName] = useState("");
+
+  const [status, setStatus] = useState("");
+
+  const [iso, setIso] = useState("");
+
+  const [category, setCategory] = useState("");
+
+  const [photo1, setPhoto1] = useState("");
+
+  const [photo2, setPhoto2] = useState("");
+
+  const [search, setSearch] = useState("");
+
+  const [condition, setCondition] = useState("GOOD");
+
+  const [side, setSide] = useState("");
+
+  const [note, setNote] = useState("");
+
   const [history, setHistory] = useState(() => {
     try {
-      const saved = localStorage.getItem("history");
-      return saved ? JSON.parse(saved) : [];
+      const val = localStorage.getItem("history");
+      if (val) {
+        const parsed = JSON.parse(val);
+        if (Array.isArray(parsed)) return parsed;
+      }
     } catch (e) {}
     return [];
   });
-  const [manifestList, setManifestList] = useState([]);
-  const [search, setSearch] = useState("");
 
+  const [isUploading, setIsUploading] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [manifestList, setManifestList] = useState([]);
   const [inspectedContainers, setInspectedContainers] = useState([]);
   const [cdrFile, setCdrFile] = useState(null);
   const [photosList, setPhotosList] = useState([]);
@@ -459,13 +650,75 @@ export default function App() {
     return !isAlreadyInspected && !isLoadedOrOut;
   });
 
+  const handleContainerChange = (e) => {
+    const value = e.target.value.toUpperCase().trim();
+    setContainer(value);
 
+    const found = manifestList.find(
+      (item) => item.container?.toString().toUpperCase().trim() === value,
+    );
 
-  
+    if (found) {
+      setShipName(found.shipName || "");
+      setStatus(found.status || "");
+      setIso(found.iso || "");
+      setCategory(found.category || "");
+    } else {
+      setShipName("");
+      setStatus("");
+      setIso("");
+      setCategory("");
+    }
+  };
 
-  
+  const handleSearchContainer = () => {
+    if (!container.trim()) {
+      alert("Harap masukkan nomor container terlebih dahulu!");
+      return;
+    }
+    const found = availableContainers.find(
+      (item) => item.container?.toString().toUpperCase().trim() === container,
+    );
 
-  
+    if (found) {
+      alert("Data container ditemukan!");
+    } else {
+      const inManifest = manifestList.find(
+        (item) => item.container?.toString().toUpperCase().trim() === container,
+      );
+      if (inManifest) {
+        const statusStr = (inManifest.status || "")
+          .toString()
+          .toUpperCase()
+          .trim();
+        const isLoadedOrOut =
+          statusStr === "MUAT" ||
+          statusStr === "GATE OUT" ||
+          statusStr === "KELUAR" ||
+          statusStr === "LOAD";
+        if (isLoadedOrOut) {
+          alert(
+            `Container ${container} tidak dapat diinspeksi karena statusnya sudah "${inManifest.status}" (Muat/Keluar).`,
+          );
+        } else {
+          alert(`Container ${container} sudah pernah diinspeksi sebelumnya.`);
+        }
+      } else {
+        alert("Nomor container tidak ditemukan di manifest.");
+      }
+    }
+  };
+
+  const handleSideChange = (val) => {
+    setSide(val);
+  };
+
+  const handleConditionChange = (val) => {
+    setCondition(val);
+    if (val === "GOOD") {
+      setSide("");
+    }
+  };
 
   const login = async () => {
     const currentHour = new Date().getHours();
@@ -684,24 +937,348 @@ export default function App() {
   // AUTO CARI CONTAINER
   // ======================================================
 
-  
+  const cariContainer = (value) => {
+    const upperValue = value.toUpperCase();
 
-  
+    setContainer(upperValue);
+
+    const found = manifestData.find((item) => {
+      const nomorContainer = String(
+        item["CONTAINER"] ||
+          item["Container"] ||
+          item["NO CONTAINER"] ||
+          item["NOMOR CONTAINER"] ||
+          item["container"] ||
+          "",
+      ).toUpperCase();
+
+      return nomorContainer === upperValue;
+    });
+
+    if (found) {
+      setShipName(
+        found.shipName ||
+          found["VESSEL"] ||
+          found["KAPAL"] ||
+          found["SHIP"] ||
+          found["Carrier"] ||
+          "",
+      );
+
+      setStatus(
+        found.status ||
+          found["STATUS"] ||
+          found["FULL/EMPTY"] ||
+          found["FULL EMPTY"] ||
+          "",
+      );
+
+      setIso(found.iso || found["ISO"] || found["ISO CODE"] || "");
+
+      setCategory(found.category || found["CATEGORY"] || found["TYPE"] || "");
+    } else {
+      setShipName("");
+      setStatus("");
+      setIso("");
+      setCategory("");
+    }
+  };
+
+  const cariContainerLive = async () => {
+    if (!container.trim()) {
+      alert("Harap masukkan nomor container terlebih dahulu!");
+      return;
+    }
+
+    const value = container.toUpperCase().trim();
+    try {
+      const response = await fetch(`${API_URL}/api/manifest`);
+      const data = await response.json();
+
+      if (Array.isArray(data)) {
+        setManifestData(data);
+        localStorage.setItem("manifestData", JSON.stringify(data));
+
+        const found = data.find((item) => {
+          const nomorContainer = String(
+            item.container ||
+              item["CONTAINER"] ||
+              item["Container"] ||
+              item["NO CONTAINER"] ||
+              item["NOMOR CONTAINER"] ||
+              "",
+          )
+            .toUpperCase()
+            .trim();
+          return nomorContainer === value;
+        });
+
+        if (found) {
+          setShipName(
+            found.shipName ||
+              found["VESSEL"] ||
+              found["KAPAL"] ||
+              found["SHIP"] ||
+              found["Carrier"] ||
+              "",
+          );
+          setStatus(
+            found.status ||
+              found["STATUS"] ||
+              found["FULL/EMPTY"] ||
+              found["FULL EMPTY"] ||
+              "",
+          );
+          setIso(found.iso || found["ISO"] || found["ISO CODE"] || "");
+          setCategory(
+            found.category || found["CATEGORY"] || found["TYPE"] || "",
+          );
+          alert("Data container ditemukan!");
+        } else {
+          setShipName("");
+          setStatus("");
+          setIso("");
+          setCategory("");
+          alert(
+            "Nomor container tidak ditemukan di manifest. Harap pastikan manifest sudah di-import di dashboard.",
+          );
+        }
+      } else {
+        console.warn("Manifest data received from API is not an array:", data);
+        alert("Gagal mengambil data manifest (format data tidak sesuai).");
+      }
+    } catch (err) {
+      console.error("ERROR SEARCHING CONTAINER", err);
+      alert("Gagal mengambil data manifest terbaru dari server.");
+    }
+  };
 
   // ======================================================
   // SAVE DATA
   // ======================================================
 
-  
+  const simpanData = async () => {
+    if (!container.trim()) {
+      alert("Harap masukkan nomor container!");
+      return;
+    }
+    if (photosList.length === 0) {
+      alert("Harap ambil atau unggah foto formulir CDR!");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      // Convert all photos to Base64 strings directly to avoid ephemeral Vercel storage deletion
+      const uploadedUrls = [];
+      const base64Results = await Promise.all(
+          photosList.map(async (photoObj) => {
+            if (photoObj.file) {
+              return await new Promise((resolve) => {
+                compressImageToBase64(photoObj.file, resolve);
+              });
+            }
+            return photoObj.url;
+          })
+        );
+        uploadedUrls.push(...base64Results);
+        
+        const uploadedPhotoUrl = uploadedUrls.join("|");
+
+      const activeUser = JSON.parse(localStorage.getItem("user")) || user;
+
+      const data = {
+        container: container.toUpperCase().trim(),
+        shipName: shipName || "-",
+        status: status || "-",
+        iso: iso && iso !== "-ISO Code-" ? iso.split(" - ")[0] : "-",
+        category: category || "-",
+        condition:
+          selectedConditions.length > 0
+            ? selectedConditions.join(", ")
+            : "Good",
+        side: selectedSides.length > 0 ? selectedSides.join(", ") : "General",
+        note: note,
+        photo1: uploadedPhotoUrl,
+        photo2: "",
+        petugas: activeUser?.nama || "Petugas Lapangan",
+        group: activeUser?.group || "",
+        date: new Date().toISOString(),
+      };
+
+      const response = await fetch(`${API_URL}/api/inspection`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      let resData;
+      const resContentType = response.headers.get("content-type");
+      if (resContentType && resContentType.includes("application/json")) {
+        resData = await response.json();
+      } else {
+        const errorText = await response.text();
+        throw new Error(
+          `Simpan fail (${response.status}): ${errorText.substring(0, 100)}`,
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(resData?.error || "Gagal menyimpan inspeksi ke server");
+      }
+
+      const historyDataToSave = { ...data, photo1: "", photo2: "" };
+      const newHistory = [historyDataToSave, ...history];
+      setHistory(newHistory);
+      localStorage.setItem("history", JSON.stringify(newHistory.slice(0, 5)));
+
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new Event("focus"));
+
+      alert("INSPEKSI CDR BERHASIL TERSIMPAN");
+
+      // Reset form
+      setContainer("");
+      setShipName("");
+      setStatus("");
+      setIso("");
+      setCategory("");
+      setSelectedConditions(["Good"]);
+      setSelectedSides([]);
+      setNote("");
+      setPhoto1("");
+      setPhoto2("");
+      setCdrFile(null);
+      setPhotosList([]);
+
+      setPage("history");
+    } catch (err) {
+      console.error("Save error:", err);
+      alert("Error: " + err.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   // ======================================================
   // CETAK PDF
   // ======================================================
 
-  
+  const cetakPdf = (item) => {
+    const win = window.open("", "", "width=1200,height=900");
+
+    let dateFormatted = "-";
+    if (item.date) {
+      try {
+        const d = new Date(item.date);
+        dateFormatted = d.toLocaleString("id-ID", {
+          weekday: "long", day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit"
+        }) + " WIB";
+      } catch(e) {}
+    }
+
+    const photos = parsePhotos(item.photo1).map(url => url.trim()).filter(Boolean);
+
+    win.document.write(`
+<html>
+<head>
+<title>BERITA ACARA</title>
+<style>
+* { box-sizing:border-box; }
+@page { size:A4; margin:10mm; }
+body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; margin:0; background:#fff; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.header { display:flex; justify-content:space-between; align-items:flex-end; border-bottom:3px solid #004aad; padding-bottom:8px; margin-bottom:12px; }
+.company { text-align:right; width: 100%; text-align: center; }
+.company h2 { margin:0; font-size:15px; font-weight:bold; color:#004aad; }
+.company p { margin:1px 0; font-size:9px; }
+.title { text-align:center; font-size:15px; font-weight:bold; margin:10px 0 15px 0; letter-spacing:1px; }
+table { width:100%; border-collapse:collapse; margin-bottom:12px; }
+td { border:1px solid #000; padding:6px; font-size:10px; }
+.label { font-weight:bold; background:#f3f3f3; width:35%; }
+.note-title { font-weight:bold; margin-bottom:6px; margin-top:8px; font-size:10px; }
+.note { border:1px solid #000; padding:8px; height:80px; font-size:10px; margin-bottom:12px; }
+.photo-title { font-weight:bold; margin-bottom:10px; font-size:10px; }
+.photo-grid { display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px; }
+.photo-box { text-align:center; }
+.photo-label { font-size:10px; font-weight:bold; margin-bottom:6px; }
+.photo-box img { width:100%; height:165px; object-fit:cover; border-radius:8px; border:2px solid #004aad; }
+.footer { display:flex; justify-content:space-between; margin-top:25px; }
+.ttd { width:220px; text-align:center; font-size:10px; }
+.ttd-line { margin-top:55px; }
+@media print { html,body { width:210mm; height:297mm; overflow:hidden; } }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="company">
+    <h2>NPH ADIPURUSA</h2>
+    <p>Container Inspection System</p>
+  </div>
+</div>
+<div class="title">BERITA ACARA CONTAINER INSPECTION</div>
+<table>
+  <tr><td class="label">Nomor Container</td><td>${item.container || "-"}</td></tr>
+  <tr><td class="label">Status</td><td>${item.status || "-"}</td></tr>
+  <tr><td class="label">Kategori</td><td>${item.category || "-"}</td></tr>
+  <tr><td class="label">ISO Code</td><td>${item.iso || "-"}</td></tr>
+  <tr><td class="label">Kapal</td><td>${item.shipName || "-"}</td></tr>
+  <tr><td class="label">Kondisi Kerusakan</td><td>${item.condition || "-"}</td></tr>
+  <tr><td class="label">Sisi Container</td><td>${item.side || "-"}</td></tr>
+  <tr><td class="label">Waktu Inspeksi</td><td>${dateFormatted}</td></tr>
+</table>
+<div class="note-title">Catatan Kronologi / Kerusakan Lainnya :</div>
+<div class="note">${item.note || "-"}</div>
+<div class="photo-title">FOTO DOKUMENTASI CONTAINER :</div>
+<div class="photo-grid">
+  ${photos.map((url, i) => `
+    <div class="photo-box">
+      <div class="photo-label">FOTO CONTAINER ${i + 1}</div>
+      <img src="${url}" />
+    </div>
+  `).join("")}
+</div>
+<div class="footer">
+  <div class="ttd">
+    <div>Dibuat oleh (Petugas Lapangan),</div>
+    <div class="ttd-line">( ${item.petugas || "______________________"} )</div>
+  </div>
+  <div class="ttd">
+    <div>Mengetahui (Spv / Manager),</div>
+    <div class="ttd-line">( ______________________ )</div>
+  </div>
+</div>
+<script>
+  window.onload = function() {
+    var imgs = document.getElementsByTagName('img');
+    if (imgs.length === 0) { window.print(); return; }
+    var loaded = 0;
+    function checkDone() { loaded++; if (loaded === imgs.length) window.print(); }
+    for (var i = 0; i < imgs.length; i++) {
+      if (imgs[i].complete) { loaded++; } else { imgs[i].addEventListener('load', checkDone); imgs[i].addEventListener('error', checkDone); }
+    }
+    if (loaded === imgs.length) window.print();
+  }
+</script>
+</body>
+</html>`);
+    win.document.close();
+  };
 
   const cetakFoto = (item) => {
     const win = window.open("", "", "width=1200,height=900");
+
+    let dateFormatted = "-";
+    if (item.date) {
+      try {
+        const d = new Date(item.date);
+        dateFormatted = d.toLocaleString("id-ID", {
+          weekday: "long", day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit"
+        }) + " WIB";
+      } catch(e) {}
+    }
+
+    const photos = parsePhotos(item.photo1).map(url => url.trim()).filter(Boolean);
 
     win.document.write(`
 <html>
@@ -712,73 +1289,50 @@ export default function App() {
 @page { size:A4; margin:10mm; }
 body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; margin:0; background:#fff; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 .header { display:flex; justify-content:space-between; align-items:flex-end; border-bottom:3px solid #004aad; padding-bottom:8px; margin-bottom:12px; }
-.logo { width:130px; display:block; margin-bottom:-4px; }
-.company { text-align:right; }
+.company { text-align:right; width:100%; text-align:center; }
 .company h2 { margin:0; font-size:15px; font-weight:bold; color:#004aad; }
 .company p { margin:1px 0; font-size:9px; }
-.photo-title { font-weight:bold; margin-bottom:10px; font-size:10px; }
+.photo-title { font-weight:bold; margin-bottom:10px; font-size:12px; text-align:center; margin-top:10px; }
 .photo-grid { display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px; }
 .photo-box { text-align:center; }
 .photo-label { font-size:10px; font-weight:bold; margin-bottom:6px; }
-.photo-box img { width:100%; height:165px; object-fit:cover; border-radius:8px; border:2px solid #004aad; }
+.photo-box img { width:100%; height:300px; object-fit:contain; border-radius:8px; border:2px solid #004aad; }
 @media print { html,body { width:210mm; height:297mm; overflow:hidden; } }
 </style>
 </head>
 <body>
-<div class="header" style="justify-content: center; text-align: center;">
-<div class="company" style="text-align: center; width: 100%;">
-<h2>NPH ADIPURUSA</h2>
-<p>Container Inspection System</p>
-</div>
+<div class="header">
+  <div class="company">
+    <h2>NPH ADIPURUSA</h2>
+    <p>Container Inspection System</p>
+  </div>
 </div>
 <div class="photo-title">FOTO INSPEKSI - ${item.container || "-"}</div>
-<div class="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
-<div class="photo-box">
-<div class="photo-label">FOTO DAMAGE</div>
-${item.photo2 ? `<img src="${item.photo2}" />` : ""}
-</div>
-${parsePhotos(item.photo1)
-  .map((url) => url.trim())
-  .filter(Boolean)
-  .map(
-    (url, i) => `
-  <div class="photo-box" style="text-align: center;">
-    <div class="photo-label" style="font-size: 10px; font-weight: bold; margin-bottom: 6px;">FOTO CONTAINER/CDR ${i + 1}</div>
-    <img src="${url}" style="width: 100%; height: 165px; object-fit: cover; border-radius: 8px; border: 2px solid #004aad;" />
-  </div>
-`,
-  )
-  .join("")}
+<div style="text-align:center; margin-bottom: 20px; font-size:11px;">Waktu Inspeksi: <b>${dateFormatted}</b></div>
+<div class="photo-grid">
+  ${photos.map((url, i) => `
+    <div class="photo-box">
+      <div class="photo-label">FOTO CONTAINER/CDR ${i + 1}</div>
+      <img src="${url}" />
+    </div>
+  `).join("")}
 </div>
 <script>
-window.onload = function() {
-  var imgs = document.getElementsByTagName('img');
-  if (imgs.length === 0) {
-    window.print();
-    return;
-  }
-  var loaded = 0;
-  function checkDone() {
-    loaded++;
+  window.onload = function() {
+    var imgs = document.getElementsByTagName('img');
+    if (imgs.length === 0) { window.print(); return; }
+    var loaded = 0;
+    function checkDone() { loaded++; if (loaded === imgs.length) window.print(); }
+    for (var i = 0; i < imgs.length; i++) {
+      if (imgs[i].complete) { loaded++; } else { imgs[i].addEventListener('load', checkDone); imgs[i].addEventListener('error', checkDone); }
+    }
     if (loaded === imgs.length) window.print();
   }
-  for (var i = 0; i < imgs.length; i++) {
-    if (imgs[i].complete) {
-      loaded++;
-    } else {
-      imgs[i].addEventListener('load', checkDone);
-      imgs[i].addEventListener('error', checkDone);
-    }
-  }
-  if (loaded === imgs.length) window.print();
-}
 </script>
 </body>
-</html>
-`);
+</html>`);
     win.document.close();
   };
-
 
   // ======================================================
   // LOGIN PAGE
@@ -790,7 +1344,6 @@ window.onload = function() {
         <div style={card}>
           <img src="/logo.jpg" alt="Logo" style={{ margin: "0 auto 24px auto", display: "block", width: "120px" }} />
 
-          <img src="/logo.jpg" alt="Logo" style={{ margin: "0 auto 24px auto", display: "block", width: "120px" }} />
           <h1 style={title}>CONTAINER INSPECTION</h1>
 
           <input
@@ -826,7 +1379,6 @@ window.onload = function() {
         <div style={card}>
           <img src="/logo.jpg" alt="Logo" style={{ margin: "0 auto 24px auto", display: "block", width: "120px" }} />
 
-          <img src="/logo.jpg" alt="Logo" style={{ margin: "0 auto 24px auto", display: "block", width: "120px" }} />
           <h1 style={title}>DASHBOARD</h1>
 
           <h2 style={roleText}>
@@ -1037,16 +1589,513 @@ window.onload = function() {
 
   if (page === "inspection") {
     return (
-      <InspectionForm
-        user={user}
-        manifestList={manifestList}
-        onSaveSuccess={(newInspection) => {
-          const newHistory = [newInspection, ...history];
-          setHistory(newHistory);
-          localStorage.setItem("history", JSON.stringify(newHistory.slice(0, 5)));
-        }}
-        onBack={() => setPage("dashboard")}
-      />
+      <div className="inspection-container-page">
+        <div className="inspection-wrapper">
+          {/* BANNER KUNING */}
+          <div className="form-header-banner">FORM PETUGAS (INSPEKSI CDR)</div>
+
+          {/* CARD UTAMA */}
+          <div className="inspection-card">
+            {/* NOMOR CONTAINER */}
+            <div className="form-grid">
+              <div className="form-group" style={{ gridColumn: "span 2" }}>
+                <label>
+                  Nomor Container
+                  <span className="required-star">*</span>
+                </label>
+                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                  <input
+                    type="text"
+                    value={container}
+                    onChange={handleContainerChange}
+                    placeholder="Masukkan nomor container..."
+                    className="form-input"
+                    disabled={isUploading}
+                    style={{ flex: 1, margin: 0 }}
+                  />
+                  <button
+                    onClick={() => !isUploading && !isScanning && document.getElementById("ocrContainerInput").click()}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      background: "#3b82f6",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "8px",
+                      padding: "0 16px",
+                      height: "46px",
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                      fontSize: "14px",
+                      flexShrink: 0
+                    }}
+                    disabled={isUploading || isScanning}
+                  >
+                    {isScanning ? <Loader2 className="animate-spin" size={16} /> : "📷 Scan"}
+                  </button>
+                  <input
+                    id="ocrContainerInput"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    style={{ display: "none" }}
+                    disabled={isUploading}
+                    onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      
+                      try {
+                        setIsScanning(true);
+                        const apiKey = getGeminiApiKey();
+                        if (!apiKey) {
+                          e.target.value = "";
+                          setIsScanning(false);
+                          return;
+                        }
+                        
+                        const compressedBlob = await compressImage(file);
+                        const detectedNumber = await scanContainerWithGemini(compressedBlob, apiKey);
+                        
+                        if (detectedNumber && !detectedNumber.startsWith("DEBUG_RAW")) {
+                          setContainer(detectedNumber);
+                          
+                          if (typeof handleContainerChange === 'function') {
+                            handleContainerChange({ target: { value: detectedNumber } });
+                          } else if (typeof cariContainer === 'function') {
+                            cariContainer(detectedNumber);
+                          }
+                        } else {
+                          const debugText = detectedNumber ? detectedNumber.replace("DEBUG_RAW: ", "") : "";
+                          alert(`Nomor kontainer tidak ditemukan pada foto oleh Gemini Vision.\n(Teks terbaca: ${debugText}...)\nPastikan foto cukup jelas dan coba lagi.`);
+                        }
+                      } catch (err) {
+                        console.error("Gemini Error:", err);
+                        alert("Terjadi kesalahan saat memproses foto menggunakan Gemini API.\n" + (err.message || ""));
+                      } finally {
+                        setIsScanning(false);
+                        e.target.value = "";
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* METADATA INPUTS */}
+            <div className="form-grid">
+              <div className="form-group">
+                <label>Category</label>
+                <SearchSelect
+                  value={category}
+                  onChange={(val) => setCategory(val)}
+                  options={CATEGORIES}
+                  placeholder="DRY"
+                  disabled={isUploading}
+                />
+              </div>
+              <div className="form-group">
+                <label>Status (Full/Empty)</label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="form-select"
+                  disabled={isUploading}
+                  style={{ backgroundImage: "none", paddingRight: "18px" }}
+                >
+                  <option value="">- Pilih Status -</option>
+                  <option value="FULL">FULL</option>
+                  <option value="EMPTY">EMPTY</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="form-grid">
+              <div className="form-group" style={{ gridColumn: "span 2" }}>
+                <label>ISO Code</label>
+                <SearchSelect
+                  value={iso}
+                  onChange={(val) => setIso(val)}
+                  options={ISO_CODES}
+                  placeholder="-ISO Code-"
+                  disabled={isUploading}
+                />
+              </div>
+            </div>
+
+            <div className="form-grid">
+              <div className="form-group" style={{ gridColumn: "span 2" }}>
+                <label>Waktu & Tanggal Inspeksi</label>
+                <input
+                  type="text"
+                  value={currentTime.toLocaleString("id-ID", {
+                    weekday: "long",
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit"
+                  }) + " WIB"}
+                  disabled
+                  className="form-input"
+                  style={{ backgroundColor: "#f8fafc", color: "#64748b", fontWeight: "bold", border: "1px solid #e2e8f0" }}
+                />
+                <p style={{ fontSize: "11px", color: "#64748b", marginTop: "4px" }}>
+                  *Waktu akan terekam secara otomatis saat Anda menekan tombol Simpan.
+                </p>
+              </div>
+            </div>
+
+            {/* FOTO DOKUMENTASI CDR (HORIZONTAL SCROLLING - LEBIH MODERN & KOMPAK) */}
+            <div className="form-group" style={{ marginBottom: "24px" }}>
+              <label>
+                Foto Dokumentasi / Detail Kerusakan{" "}
+                <span className="required-star">*</span> (Bisa lebih dari satu)
+              </label>
+              <div
+                className="photos-preview-scroll"
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  gap: "12px",
+                  marginTop: "8px",
+                  overflowX: "auto",
+                  paddingBottom: "8px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {photosList.map((photo, idx) => (
+                  <div
+                    key={idx}
+                    className="photo-preview-item"
+                    style={{
+                      position: "relative",
+                      width: "100px",
+                      height: "100px",
+                      borderRadius: "12px",
+                      overflow: "hidden",
+                      border: "2px solid #cbd5e1",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <img
+                      src={photo.url}
+                      alt={`Preview ${idx + 1}`}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="btn-delete-photo"
+                      style={{
+                        position: "absolute",
+                        top: "4px",
+                        right: "4px",
+                        background: "rgba(239, 68, 68, 0.9)",
+                        color: "white",
+                        border: "none",
+                        width: "20px",
+                        height: "20px",
+                        borderRadius: "50%",
+                        fontSize: "11px",
+                        fontWeight: "800",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 10,
+                      }}
+                      onClick={() =>
+                        setPhotosList((prev) =>
+                          prev.filter((_, i) => i !== idx),
+                        )
+                      }
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+
+                {/* ADD PHOTO CARD */}
+                <div
+                  className="cdr-dropzone"
+                  style={{
+                    width: "100px",
+                    height: "100px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "10px",
+                    margin: 0,
+                    boxSizing: "border-box",
+                    flexShrink: 0,
+                    border: "2px dashed #cbd5e1",
+                    borderRadius: "12px",
+                    cursor: "pointer",
+                  }}
+                  onClick={() =>
+                    !isUploading &&
+                    document.getElementById("cdrPhotoInput").click()
+                  }
+                >
+                  <Camera size={20} className="placeholder-icon" />
+                  <p
+                    style={{
+                      margin: "2px 0 0 0",
+                      fontSize: "11px",
+                      fontWeight: "700",
+                    }}
+                  >
+                    Tambah
+                  </p>
+                  <p style={{ margin: "0", fontSize: "9px", color: "#64748b" }}>
+                    Foto
+                  </p>
+                </div>
+              </div>
+
+              <input
+                id="cdrPhotoInput"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                style={{ display: "none" }}
+                disabled={isUploading}
+                onChange={async (e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const objectUrl = URL.createObjectURL(file);
+                    setPhotosList((prev) => [
+                      ...prev,
+                      {
+                        file,
+                        url: objectUrl,
+                      },
+                    ]);
+                    e.target.value = "";
+
+                    // Quietly run OCR in the background without blocking or alerting
+                    try {
+                      const apiKey = getGeminiApiKey();
+                      if (apiKey) {
+                        const compressedBlob = await compressImage(file);
+                        const detectedNumber = await scanContainerWithGemini(compressedBlob, apiKey);
+                        
+                        if (detectedNumber && !detectedNumber.startsWith("DEBUG_RAW")) {
+                          setContainer(detectedNumber);
+                          if (typeof handleContainerChange === 'function') {
+                            handleContainerChange({ target: { value: detectedNumber } });
+                          } else if (typeof cariContainer === 'function') {
+                            cariContainer(detectedNumber);
+                          }
+                        }
+                      }
+                    } catch (err) {
+                      console.warn("Silent OCR failure:", err.message);
+                    }
+                  }
+                }}
+              />
+            </div>
+
+            {/* DIAGRAM INTERAKTIF KONTENER */}
+            <div className="form-group" style={{ marginBottom: "24px" }}>
+              <label>
+                Visual Sisi Kerusakan (Klik area pada diagram untuk memilih)
+              </label>
+              <div className="interactive-diagram-container">
+                <img
+                  src="/container-diagram.png"
+                  alt="Container Damage Diagram"
+                  className="interactive-diagram-image"
+                />
+                {[
+                  { val: "Front/Depan", label: "Front (Depan)", x: 12, y: 30 },
+                  {
+                    val: "Left Side/Sisi Kiri",
+                    label: "Left Side (Kiri)",
+                    x: 28,
+                    y: 45,
+                  },
+                  {
+                    val: "Bottom/Bawah",
+                    label: "Bottom (Bawah)",
+                    x: 18,
+                    y: 75,
+                  },
+                  {
+                    val: "Inside/Dalam",
+                    label: "Inside (Dalam)",
+                    x: 50,
+                    y: 58,
+                  },
+                  { val: "Roof/Atas", label: "Roof (Atas)", x: 80, y: 26 },
+                  {
+                    val: "Right Side/Sisi Kanan",
+                    label: "Right Side (Kanan)",
+                    x: 88,
+                    y: 48,
+                  },
+                  {
+                    val: "Rear/Belakang",
+                    label: "Rear/Doors (Belakang)",
+                    x: 71,
+                    y: 60,
+                  },
+                ].map((hotspot) => {
+                  const isChecked = selectedSides.includes(hotspot.val);
+                  const isDisabled =
+                    selectedConditions.includes("Good") ||
+                    selectedConditions.includes("GOOD");
+                  return (
+                    <div
+                      key={hotspot.val}
+                      className="diagram-hotspot"
+                      style={{ left: `${hotspot.x}%`, top: `${hotspot.y}%` }}
+                      onClick={() => {
+                        if (!isDisabled && !isUploading) {
+                          if (selectedSides.includes(hotspot.val)) {
+                            setSelectedSides(
+                              selectedSides.filter((s) => s !== hotspot.val),
+                            );
+                          } else {
+                            setSelectedSides([...selectedSides, hotspot.val]);
+                          }
+                        }
+                      }}
+                    >
+                      <div
+                        className={`hotspot-badge ${isChecked ? "checked" : ""}`}
+                      >
+                        {isChecked ? "✓" : "!"}
+                      </div>
+                      <span className="hotspot-label">{hotspot.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* CHECKLIST SISI & KONDISI */}
+            <div className="form-grid">
+              {/* KONDISI */}
+              <div className="form-group">
+                <MultiSelectDropdown
+                  options={[
+                    { val: "GOOD", label: "GOOD" },
+                    { val: "Bent/Bengkok", label: "Bent/Bengkok" },
+                    { val: "Broken/Pecah", label: "Broken/Pecah" },
+                    { val: "Hole/Berlubang", label: "Hole/Berlubang" },
+                    { val: "Cut/Terpotong", label: "Cut/Terpotong" },
+                    { val: "Dented/Penyok", label: "Dented/Penyok" },
+                    { val: "Missing/Hilang", label: "Missing/Hilang" },
+                    { val: "Scraped/Tergores", label: "Scraped/Tergores" },
+                    { val: "Torn/Robek", label: "Torn/Robek" },
+                    { val: "Leaking/Bocor", label: "Leaking/Bocor" },
+                  ]}
+                  value={selectedConditions}
+                  placeholder="Ceklis Kondisi Kontainer"
+                  disabled={isUploading}
+                  onChange={(newVal, toggledVal) => {
+                    if (toggledVal === "GOOD" || toggledVal === "Good") {
+                      if (newVal.includes(toggledVal)) {
+                        setSelectedConditions(["GOOD"]);
+                        setSelectedSides([]);
+                      } else {
+                        setSelectedConditions(newVal);
+                      }
+                    } else {
+                      // If selecting something else, remove "GOOD"
+                      setSelectedConditions(
+                        newVal.filter((v) => v !== "GOOD" && v !== "Good"),
+                      );
+                    }
+                  }}
+                />
+              </div>
+
+              {/* SISI */}
+              <div className="form-group">
+                <MultiSelectDropdown
+                  options={[
+                    { val: "Front/Depan", label: "Front/Depan" },
+                    { val: "Rear/Belakang", label: "Rear/Belakang" },
+                    {
+                      val: "Left Side/Sisi Kiri",
+                      label: "Left Side/Sisi Kiri",
+                    },
+                    {
+                      val: "Right Side/Sisi Kanan",
+                      label: "Right Side/Sisi Kanan",
+                    },
+                    { val: "Roof/Atas", label: "Roof/Atas" },
+                    { val: "Bottom/Bawah", label: "Bottom/Bawah" },
+                    { val: "Inside/Dalam", label: "Inside/Dalam" },
+                  ]}
+                  value={selectedSides}
+                  placeholder="Ceklis Sisi Kerusakan"
+                  disabled={
+                    isUploading ||
+                    selectedConditions.includes("Good") ||
+                    selectedConditions.includes("GOOD")
+                  }
+                  onChange={(newVal) => setSelectedSides(newVal)}
+                />
+              </div>
+            </div>
+
+            {/* CATATAN */}
+            <div className="form-group" style={{ marginBottom: "24px" }}>
+              <label>Catatan Kronologi</label>
+              <textarea
+                placeholder="Tambahkan catatan kronologi jika diperlukan..."
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                className="form-textarea"
+                disabled={isUploading}
+              />
+            </div>
+
+            {/* BUTTON ACTIONS */}
+            <div className="form-footer-buttons">
+              <button
+                type="button"
+                className="btn-back"
+                onClick={() => setPage("dashboard")}
+                disabled={isUploading}
+              >
+                <ArrowLeft size={18} />
+                <span>Kembali</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn-save-inspection"
+                onClick={simpanData}
+                disabled={isUploading}
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>Menyimpan ke Server...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save size={18} />
+                    <span>Simpan Inspeksi CDR</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -1280,7 +2329,26 @@ window.onload = function() {
         <div style={card}>
           <h1 style={title}>RIWAYAT INSPEKSI</h1>
 
-          <HistoryTable history={history} />
+          {history.map((item, index) => (
+            <div key={index} style={historyBox}>
+              <h2>{item.container}</h2>
+
+              <p>{item.shipName}</p>
+
+              <p>{item.condition}</p>
+
+              
+<div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+  <button style={{...button, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", flex: 1}} onClick={() => cetakPdf(item)}>
+    <FileText size={16} /> DOC
+  </button>
+  <button style={{...button, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", flex: 1}} onClick={() => cetakFoto(item)}>
+    <Image size={16} /> FOTO
+  </button>
+</div>
+
+            </div>
+          ))}
 
           <button style={logoutButton} onClick={() => setPage("dashboard")}>
             KEMBALI
