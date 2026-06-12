@@ -509,8 +509,8 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
   };
 
   const handleDeleteInspection = async (id) => {
-    if (user?.username !== "adminRAL") {
-      alert("Hanya admin utama (adminRAL) yang dapat menghapus data.");
+    if (!(user?.username === "adminRAL" || user?.role !== "PETUGAS")) {
+      alert("Hanya admin dan supervisi yang dapat menghapus data.");
       return;
     }
     if (
@@ -1504,7 +1504,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                             </button>
                           )}
 
-                          {user?.username === "adminRAL" && (
+                          {(user?.username === "adminRAL" || user?.role !== "PETUGAS") && (
                             <button
                               className="delete-btn"
                               style={{ marginLeft: "8px" }}
