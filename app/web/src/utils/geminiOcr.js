@@ -67,21 +67,32 @@ Keluarkan hasil dalam format JSON:
     const result = await model.generateContent([prompt, imagePart]);
     const responseText = result.response.text();
     
-    // Parse JSON
     try {
-      // Find JSON block if Gemini wraps it in ```json ... ```
       const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(jsonStr);
-      return parsed.container_number || null;
+      if (parsed.container_number) {
+        return parsed.container_number.replace(/[^A-Z0-9]/g, '');
+      }
     } catch (parseError) {
       console.error("Gagal parse JSON dari Gemini:", responseText);
-      // Fallback regex if JSON parsing fails but text has something that looks like container
-      const clean = responseText.replace(/[^A-Z0-9]/g, '');
-      const match = clean.match(/[A-Z]{4}[0-9]{7}/);
-      return match ? match[0] : null;
     }
+    
+    // Fallback regex if JSON parsing fails or container_number not found
+    const clean = responseText.replace(/[^A-Z0-9]/g, '');
+    const match = clean.match(/[A-Z]{4}[0-9]{7}/);
+    if (match) {
+      return match[0];
+    }
+    
+    // Return raw text for debugging if all fails
+    return "DEBUG_RAW: " + responseText.substring(0, 50);
+    
   } catch (err) {
     console.error("Gemini API Error:", err);
+    if (err.message && (err.message.includes("API key not valid") || err.message.includes("API key"))) {
+      localStorage.removeItem('gemini_api_key');
+      alert("API Key tidak valid atau salah. Sistem telah menghapusnya dari memori. Silakan coba klik Scan lagi untuk memasukkan API Key yang benar.");
+    }
     throw err;
   }
 };

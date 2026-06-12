@@ -221,7 +221,7 @@ export default function Inspection() {
       const compressedBlob = await compressImage(file);
       const scannedNum = await scanContainerWithGemini(compressedBlob, apiKey);
       
-      if (scannedNum) {
+      if (scannedNum && !scannedNum.startsWith("DEBUG_RAW")) {
         setContainerNumber(scannedNum);
         
         // Auto-fill from manifest
@@ -241,7 +241,8 @@ export default function Inspection() {
         }
         alert(`Pindai berhasil! Container terdeteksi: ${scannedNum}\n\n(Mohon periksa kembali jika ada huruf/angka yang kurang tepat)`);
       } else {
-        alert(`Nomor kontainer tidak ditemukan pada foto oleh Gemini Vision.\nPastikan foto cukup jelas dan coba lagi.`);
+        const debugText = scannedNum ? scannedNum.replace("DEBUG_RAW: ", "") : "";
+        alert(`Nomor kontainer tidak ditemukan pada foto oleh Gemini Vision.\n(Teks terbaca: ${debugText}...)\nPastikan foto cukup jelas dan coba lagi.`);
       }
     } catch (err) {
       console.error("Gemini Error:", err);
@@ -834,7 +835,7 @@ export default function Inspection() {
                     const compressedBlob = await compressImage(file);
                     const detectedNumber = await scanContainerWithGemini(compressedBlob, apiKey);
                     
-                    if (detectedNumber) {
+                    if (detectedNumber && !detectedNumber.startsWith("DEBUG_RAW")) {
                       setContainerNumber(detectedNumber);
                       
                       const found = manifestList.find(
@@ -848,7 +849,8 @@ export default function Inspection() {
                       }
                       alert(`Nomor kontainer otomatis terdeteksi dari foto: ${detectedNumber}\n\n(Mohon periksa kembali jika ada huruf/angka yang kurang tepat)`);
                     } else {
-                      alert(`Nomor kontainer tidak ditemukan pada foto oleh Gemini Vision.\nPastikan foto cukup jelas dan coba lagi.`);
+                      const debugText = detectedNumber ? detectedNumber.replace("DEBUG_RAW: ", "") : "";
+                      alert(`Nomor kontainer tidak ditemukan pada foto oleh Gemini Vision.\n(Teks terbaca: ${debugText}...)\nPastikan foto cukup jelas dan coba lagi.`);
                     }
                   } catch (err) {
                     console.error("Gemini Error:", err);
