@@ -1873,9 +1873,10 @@ window.onload = function() {
                       
                       try {
                         const { data: { text } } = await Tesseract.recognize(file, 'eng');
-                        const match = text.match(/[A-Z]{4}\s*\d{7}/i);
+                        const cleanText = text.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+                        const match = cleanText.match(/[A-Z0-9]{10,11}/);
                         if (match) {
-                          const detectedNumber = match[0].replace(/\s+/g, '').toUpperCase();
+                          const detectedNumber = match[0];
                           setContainer(detectedNumber);
                           
                           if (typeof handleContainerChange === 'function') {
@@ -1884,9 +1885,9 @@ window.onload = function() {
                             cariContainer(detectedNumber);
                           }
                           
-                          alert(`Pindai berhasil! Nomor kontainer: ${detectedNumber}`);
+                          alert(`Pindai berhasil! Nomor kontainer: ${detectedNumber}\n\n(Mohon periksa kembali jika ada huruf/angka yang kurang tepat akibat foto kurang jelas)`);
                         } else {
-                          alert("Nomor kontainer tidak terdeteksi dari foto. Pastikan foto jelas dan terang.");
+                          alert("Nomor kontainer belum dapat terbaca dari foto ini. Silakan ketik manual atau coba foto ulang dari sudut yang berbeda.");
                         }
                       } catch (err) {
                         console.error("OCR Error:", err);
@@ -2076,9 +2077,10 @@ window.onload = function() {
                     // Run OCR
                     try {
                       const { data: { text } } = await Tesseract.recognize(file, 'eng');
-                      const match = text.match(/[A-Z]{4}\s*\d{7}/i);
+                      const cleanText = text.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+                      const match = cleanText.match(/[A-Z0-9]{10,11}/);
                       if (match) {
-                        const detectedNumber = match[0].replace(/\s+/g, '').toUpperCase();
+                        const detectedNumber = match[0];
                         setContainer(detectedNumber);
                         
                         // Auto-fill manifest data if available
@@ -2088,7 +2090,7 @@ window.onload = function() {
                           cariContainer(detectedNumber);
                         }
                         
-                        alert(`Nomor kontainer otomatis terdeteksi dari foto: ${detectedNumber}`);
+                        alert(`Nomor kontainer otomatis terdeteksi dari foto: ${detectedNumber}\n\n(Mohon periksa kembali jika ada huruf/angka yang kurang tepat)`);
                       }
                     } catch (err) {
                       console.error("OCR Error:", err);

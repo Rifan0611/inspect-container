@@ -159,9 +159,10 @@ export default function Inspection() {
 
     try {
       const { data: { text } } = await Tesseract.recognize(file, 'eng');
-      const match = text.match(/[A-Z]{4}\s*\d{7}/i);
+      const cleanText = text.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+      const match = cleanText.match(/[A-Z0-9]{10,11}/);
       if (match) {
-        const scannedNum = match[0].replace(/\s+/g, '').toUpperCase();
+        const scannedNum = match[0];
         setContainerNumber(scannedNum);
         
         // Auto-fill from manifest
@@ -179,9 +180,9 @@ export default function Inspection() {
           setIso("");
           setCategory("");
         }
-        alert(`Pindai berhasil! Container terdeteksi: ${scannedNum}`);
+        alert(`Pindai berhasil! Container terdeteksi: ${scannedNum}\n\n(Mohon periksa kembali jika ada huruf/angka yang kurang tepat)`);
       } else {
-        alert("Nomor kontainer tidak terdeteksi dari foto.");
+        alert("Nomor kontainer belum dapat terbaca dari foto ini. Silakan ketik manual atau coba foto ulang dari sudut yang berbeda.");
       }
     } catch (err) {
       console.error("OCR Error:", err);
@@ -770,9 +771,10 @@ export default function Inspection() {
                   // Run OCR on documentation photo too
                   try {
                     const { data: { text } } = await Tesseract.recognize(file, 'eng');
-                    const match = text.match(/[A-Z]{4}\s*\d{7}/i);
+                    const cleanText = text.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+                    const match = cleanText.match(/[A-Z0-9]{10,11}/);
                     if (match) {
-                      const detectedNumber = match[0].replace(/\s+/g, '').toUpperCase();
+                      const detectedNumber = match[0];
                       setContainerNumber(detectedNumber);
                       
                       const found = manifestList.find(
@@ -784,7 +786,7 @@ export default function Inspection() {
                         setIso(found.iso || "");
                         setCategory(found.category || "");
                       }
-                      alert(`Nomor kontainer otomatis terdeteksi dari foto: ${detectedNumber}`);
+                      alert(`Nomor kontainer otomatis terdeteksi dari foto: ${detectedNumber}\n\n(Mohon periksa kembali jika ada huruf/angka yang kurang tepat)`);
                     }
                   } catch (err) {
                     console.error("OCR Error:", err);
