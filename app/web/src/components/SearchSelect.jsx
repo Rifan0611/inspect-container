@@ -175,7 +175,7 @@ export default function SearchSelect({ value, onChange, options, placeholder, di
   );
 }
 
-export const CATEGORIES = ["DRY", "REEFER", "TANK", "FLAT", "DG"];
+export const CATEGORIES = ["DRY", "REEFER", "TANK", "FLAT", "DG", "HQ"];
 
 export const ISO_CODES = [
   "-ISO Code-",

@@ -7,6 +7,7 @@ import SearchSelect, { ISO_CODES, CATEGORIES } from "./components/SearchSelect";
 import MultiSelectDropdown from "./components/MultiSelectDropdown";
 
 import * as XLSX from "xlsx";
+import Tesseract from "tesseract.js";
 
 import {
   LineChart,
@@ -1445,9 +1446,25 @@ Supervisor
 <script>
 
 window.onload = function(){
-  setTimeout(function() {
+  var imgs = document.getElementsByTagName('img');
+  if (imgs.length === 0) {
     window.print();
-  }, 500);
+    return;
+  }
+  var loaded = 0;
+  function checkDone() {
+    loaded++;
+    if (loaded === imgs.length) window.print();
+  }
+  for (var i = 0; i < imgs.length; i++) {
+    if (imgs[i].complete) {
+      loaded++;
+    } else {
+      imgs[i].addEventListener('load', checkDone);
+      imgs[i].addEventListener('error', checkDone);
+    }
+  }
+  if (loaded === imgs.length) window.print();
 }
 
 </script>
@@ -1513,9 +1530,25 @@ ${parsePhotos(item.photo1)
 </div>
 <script>
 window.onload = function() {
-  setTimeout(function() {
+  var imgs = document.getElementsByTagName('img');
+  if (imgs.length === 0) {
     window.print();
-  }, 500);
+    return;
+  }
+  var loaded = 0;
+  function checkDone() {
+    loaded++;
+    if (loaded === imgs.length) window.print();
+  }
+  for (var i = 0; i < imgs.length; i++) {
+    if (imgs[i].complete) {
+      loaded++;
+    } else {
+      imgs[i].addEventListener('load', checkDone);
+      imgs[i].addEventListener('error', checkDone);
+    }
+  }
+  if (loaded === imgs.length) window.print();
 }
 </script>
 </body>
@@ -1965,17 +1998,39 @@ window.onload = function() {
                 capture="environment"
                 style={{ display: "none" }}
                 disabled={isUploading}
-                onChange={(e) => {
+                onChange={async (e) => {
                   const file = e.target.files[0];
                   if (file) {
+                    const objectUrl = URL.createObjectURL(file);
                     setPhotosList((prev) => [
                       ...prev,
                       {
                         file,
-                        url: URL.createObjectURL(file),
+                        url: objectUrl,
                       },
                     ]);
                     e.target.value = "";
+
+                    // Run OCR
+                    try {
+                      const { data: { text } } = await Tesseract.recognize(file, 'eng');
+                      const match = text.match(/[A-Z]{4}\s*\d{7}/i);
+                      if (match) {
+                        const detectedNumber = match[0].replace(/\s+/g, '').toUpperCase();
+                        setContainer(detectedNumber);
+                        
+                        // Auto-fill manifest data if available
+                        if (typeof handleContainerChange === 'function') {
+                          handleContainerChange({ target: { value: detectedNumber } });
+                        } else if (typeof cariContainer === 'function') {
+                          cariContainer(detectedNumber);
+                        }
+                        
+                        alert(`Nomor kontainer otomatis terdeteksi dari foto: ${detectedNumber}`);
+                      }
+                    } catch (err) {
+                      console.error("OCR Error:", err);
+                    }
                   }
                 }}
               />

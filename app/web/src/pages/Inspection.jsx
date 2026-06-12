@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Save, Camera, ArrowLeft, Loader2 } from "lucide-react";
 import API_URL from "../config/api";
+import Tesseract from "tesseract.js";
 import "./Inspection.css";
 import SearchSelect, {
   ISO_CODES,
@@ -138,61 +139,49 @@ export default function Inspection() {
     }
   };
 
-  const handleContainerNoPhotoChange = (e) => {
+  const handleContainerNoPhotoChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     setIsScanning(true);
+    setContainerNoPhoto({
+      file,
+      url: URL.createObjectURL(file),
+    });
 
-    // Simulate OCR scanner delay
-    setTimeout(() => {
-      // Find a container from availableContainers
-      let scannedNum = "";
-      if (availableContainers.length > 0) {
-        // Pick a random container from the manifest
-        const randIdx = Math.floor(Math.random() * availableContainers.length);
-        scannedNum =
-          availableContainers[randIdx].container
-            ?.toString()
-            .toUpperCase()
-            .trim() || "";
+    try {
+      const { data: { text } } = await Tesseract.recognize(file, 'eng');
+      const match = text.match(/[A-Z]{4}\s*\d{7}/i);
+      if (match) {
+        const scannedNum = match[0].replace(/\s+/g, '').toUpperCase();
+        setContainerNumber(scannedNum);
+        
+        // Auto-fill from manifest
+        const found = manifestList.find(
+          (item) => item.container?.toString().toUpperCase().trim() === scannedNum
+        );
+        if (found) {
+          setShipName(found.shipName || "");
+          setStatus(found.status || "");
+          setIso(found.iso || "");
+          setCategory(found.category || "");
+        } else {
+          setShipName("");
+          setStatus("");
+          setIso("");
+          setCategory("");
+        }
+        alert(`Pindai berhasil! Container terdeteksi: ${scannedNum}`);
       } else {
-        // Fallback: generate a realistic container number
-        const prefixes = ["MSKU", "TCLU", "TRLU", "MEDU", "CMAU"];
-        const randPrefix =
-          prefixes[Math.floor(Math.random() * prefixes.length)];
-        const randNum1 = Math.floor(100000 + Math.random() * 900000);
-        const randNum2 = Math.floor(Math.random() * 10);
-        scannedNum = `${randPrefix} ${randNum1}-${randNum2}`;
+        alert("Nomor kontainer tidak terdeteksi dari foto.");
       }
-
-      setContainerNumber(scannedNum);
-
-      // Auto-fill from manifest
-      const found = manifestList.find(
-        (item) =>
-          item.container?.toString().toUpperCase().trim() === scannedNum,
-      );
-      if (found) {
-        setShipName(found.shipName || "");
-        setStatus(found.status || "");
-        setIso(found.iso || "");
-        setCategory(found.category || "");
-      } else {
-        setShipName("");
-        setStatus("");
-        setIso("");
-        setCategory("");
-      }
-
-      setContainerNoPhoto({
-        file,
-        url: URL.createObjectURL(file),
-      });
+    } catch (err) {
+      console.error("OCR Error:", err);
+      alert("Terjadi kesalahan saat membaca foto.");
+    } finally {
       setIsScanning(false);
-
-      alert(`Pindai berhasil! Container terdeteksi: ${scannedNum}`);
-    }, 1500);
+      e.target.value = "";
+    }
   };
 
   const handleSearchContainer = () => {
@@ -752,16 +741,40 @@ export default function Inspection() {
               capture="environment"
               style={{ display: "none" }}
               disabled={isUploading}
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files[0];
                 if (file) {
+                  const objectUrl = URL.createObjectURL(file);
                   setPhotos((prev) => [
                     ...prev,
                     {
                       file,
-                      url: URL.createObjectURL(file),
+                      url: objectUrl,
                     },
                   ]);
+                  
+                  // Run OCR on documentation photo too
+                  try {
+                    const { data: { text } } = await Tesseract.recognize(file, 'eng');
+                    const match = text.match(/[A-Z]{4}\s*\d{7}/i);
+                    if (match) {
+                      const detectedNumber = match[0].replace(/\s+/g, '').toUpperCase();
+                      setContainerNumber(detectedNumber);
+                      
+                      const found = manifestList.find(
+                        (item) => item.container?.toString().toUpperCase().trim() === detectedNumber
+                      );
+                      if (found) {
+                        setShipName(found.shipName || "");
+                        setStatus(found.status || "");
+                        setIso(found.iso || "");
+                        setCategory(found.category || "");
+                      }
+                      alert(`Nomor kontainer otomatis terdeteksi dari foto: ${detectedNumber}`);
+                    }
+                  } catch (err) {
+                    console.error("OCR Error:", err);
+                  }
                   e.target.value = "";
                 }
               }}

@@ -1282,7 +1282,27 @@ const OfficeDashboard = ({
           <div class="ttd"><div>Supervisor</div><div class="ttd-line">(................................)</div></div>
         </div>
         <script>
-          window.onload = function() { setTimeout(function() { window.print(); }, 500); }
+          window.onload = function() {
+            var imgs = document.getElementsByTagName('img');
+            if (imgs.length === 0) {
+              window.print();
+              return;
+            }
+            var loaded = 0;
+            function checkDone() {
+              loaded++;
+              if (loaded === imgs.length) window.print();
+            }
+            for (var i = 0; i < imgs.length; i++) {
+              if (imgs[i].complete) {
+                loaded++;
+              } else {
+                imgs[i].addEventListener('load', checkDone);
+                imgs[i].addEventListener('error', checkDone);
+              }
+            }
+            if (loaded === imgs.length) window.print();
+          }
         </script>
       </body>
       </html>
@@ -1346,7 +1366,27 @@ const OfficeDashboard = ({
             .join("")}
         </div>
         <script>
-          window.onload = function() { setTimeout(function() { window.print(); }, 500); }
+          window.onload = function() {
+            var imgs = document.getElementsByTagName('img');
+            if (imgs.length === 0) {
+              window.print();
+              return;
+            }
+            var loaded = 0;
+            function checkDone() {
+              loaded++;
+              if (loaded === imgs.length) window.print();
+            }
+            for (var i = 0; i < imgs.length; i++) {
+              if (imgs[i].complete) {
+                loaded++;
+              } else {
+                imgs[i].addEventListener('load', checkDone);
+                imgs[i].addEventListener('error', checkDone);
+              }
+            }
+            if (loaded === imgs.length) window.print();
+          }
         </script>
       </body>
       </html>
