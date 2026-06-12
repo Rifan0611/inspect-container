@@ -2151,8 +2151,6 @@ window.onload = function() {
                         } else if (typeof cariContainer === 'function') {
                           cariContainer(detectedNumber);
                         }
-                        
-                        alert(`Nomor kontainer otomatis terdeteksi dari foto: ${detectedNumber}\n\n(Mohon periksa kembali jika ada huruf/angka yang kurang tepat)`);
                       } else {
                         const debugText = detectedNumber ? detectedNumber.replace("DEBUG_RAW: ", "") : "";
                         alert(`Nomor kontainer tidak ditemukan pada foto oleh Gemini Vision.\n(Teks terbaca: ${debugText}...)\nPastikan foto cukup jelas dan coba lagi.`);
@@ -2345,7 +2343,7 @@ window.onload = function() {
                 {isUploading ? (
                   <>
                     <Loader2 size={18} className="animate-spin" />
-                    <span>Menyimpan...</span>
+                    <span>Menyimpan ke Server...</span>
                   </>
                 ) : (
                   <>
