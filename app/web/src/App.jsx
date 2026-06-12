@@ -2235,7 +2235,7 @@ window.onload = function() {
                       <div
                         className={`hotspot-badge ${isChecked ? "checked" : ""}`}
                       >
-                        {isChecked ? "✓" : "!"}
+                        {isChecked ? "!" : "+"}
                       </div>
                       <span className="hotspot-label">{hotspot.label}</span>
                     </div>
