@@ -1941,8 +1941,6 @@ window.onload = function() {
                           } else if (typeof cariContainer === 'function') {
                             cariContainer(detectedNumber);
                           }
-                          
-                          alert(`Pindai berhasil! Nomor kontainer: ${detectedNumber}\n\n(Mohon periksa kembali jika ada huruf/angka yang kurang tepat)`);
                         } else {
                           const debugText = detectedNumber ? detectedNumber.replace("DEBUG_RAW: ", "") : "";
                           alert(`Nomor kontainer tidak ditemukan pada foto oleh Gemini Vision.\n(Teks terbaca: ${debugText}...)\nPastikan foto cukup jelas dan coba lagi.`);
