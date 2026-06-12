@@ -54,18 +54,8 @@ router.post("/", (req, res) => {
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
-  // Format date to MySQL datetime in Asia/Jakarta (WIB) timezone
+  // Format date to MySQL datetime (pass Date object directly for mysql2 to handle)
   const dateObj = new Date(date);
-  const tzDate = new Date(dateObj.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
-  const formattedDate = [
-    tzDate.getFullYear(),
-    String(tzDate.getMonth() + 1).padStart(2, '0'),
-    String(tzDate.getDate()).padStart(2, '0')
-  ].join('-') + ' ' + [
-    String(tzDate.getHours()).padStart(2, '0'),
-    String(tzDate.getMinutes()).padStart(2, '0'),
-    String(tzDate.getSeconds()).padStart(2, '0')
-  ].join(':');
 
   db.query(
     query,
@@ -82,7 +72,7 @@ router.post("/", (req, res) => {
       photo2,
       petugas,
       group || "Lapangan",
-      formattedDate
+      dateObj
     ],
     (err, result) => {
       if (err) {
@@ -128,19 +118,9 @@ router.put("/:id", (req, res) => {
   }
 
   // Format date if provided
-  let formattedDate = null;
+  let dateObj = null;
   if (date) {
-    const dateObj = new Date(date);
-    const tzDate = new Date(dateObj.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
-    formattedDate = [
-      tzDate.getFullYear(),
-      String(tzDate.getMonth() + 1).padStart(2, '0'),
-      String(tzDate.getDate()).padStart(2, '0')
-    ].join('-') + ' ' + [
-      String(tzDate.getHours()).padStart(2, '0'),
-      String(tzDate.getMinutes()).padStart(2, '0'),
-      String(tzDate.getSeconds()).padStart(2, '0')
-    ].join(':');
+    dateObj = new Date(date);
   }
 
   let query = `
@@ -169,9 +149,9 @@ router.put("/:id", (req, res) => {
     group || "Lapangan"
   ];
 
-  if (formattedDate) {
+  if (dateObj) {
     query += `, \`date\` = ?`;
-    params.push(formattedDate);
+    params.push(dateObj);
   }
 
   query += ` WHERE id = ?`;
