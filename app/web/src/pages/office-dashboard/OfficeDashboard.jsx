@@ -185,6 +185,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 </body>
 </html>
     `);
+    win.document.close();
   };
 
   const cetakFoto = (item) => {
@@ -295,6 +296,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 </body>
 </html>
     `);
+    win.document.close();
   };
 
   const [activeMenu, setActiveMenu] = useState("dashboard");
