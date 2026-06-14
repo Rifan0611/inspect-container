@@ -629,7 +629,13 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
   useEffect(() => {
     const refreshHistory = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/inspection`);
+        const response = await fetch(`${API_URL}/api/inspection?t=${Date.now()}`, {
+          cache: "no-store",
+          headers: {
+            "Pragma": "no-cache",
+            "Cache-Control": "no-cache"
+          }
+        });
         const data = await response.json();
         if (Array.isArray(data)) {
           setHistoryData(data);

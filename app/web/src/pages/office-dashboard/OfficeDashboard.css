@@ -431,6 +431,15 @@ tr:hover{
   height:40px;
   border-radius:12px;
   cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  transition:all 0.2s ease;
+}
+
+.detail-btn:hover{
+  background:#dbeafe;
+  color:#1d4ed8;
 }
 
 .delete-btn{
