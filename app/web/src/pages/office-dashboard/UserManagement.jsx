@@ -649,6 +649,7 @@ export default function UserManagement() {
               <thead>
                 <tr>
                   <th>Nama & Username</th>
+                  <th>Password</th>
                   <th>Jabatan</th>
                   <th>Group</th>
                   <th>Aksi</th>
@@ -665,6 +666,11 @@ export default function UserManagement() {
                         <span className="username-text">{item.nama || "Tanpa Nama"}</span>
                         <span style={{ fontSize: "12px", color: "#64748b" }}>@{item.username}</span>
                       </div>
+                    </td>
+                    <td>
+                      <span style={{ fontFamily: "monospace", backgroundColor: "#f1f5f9", padding: "4px 8px", borderRadius: "4px", fontSize: "13px", border: "1px solid #e2e8f0" }}>
+                        {item.password || "-"}
+                      </span>
                     </td>
                     <td>
                       <span className={`role-badge ${getRoleBadgeColor(item.jabatan)}`}>
