@@ -3,7 +3,7 @@ import Settings from "./pages/Settings";
 import API_URL from "./config/api";
 import React, { useState, useEffect } from "react";
 import "./pages/Inspection.css";
-import { Save, Camera, ArrowLeft, Loader2, Image, FileText } from "lucide-react";
+import { Save, Camera, ArrowLeft, Loader2, Image, FileText, Search } from "lucide-react";
 import SearchSelect, { ISO_CODES, CATEGORIES } from "./components/SearchSelect";
 import MultiSelectDropdown from "./components/MultiSelectDropdown";
 
@@ -2404,26 +2404,41 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
         <div style={card}>
           <h1 style={title}>RIWAYAT INSPEKSI</h1>
 
-          {history.map((item, index) => (
-            <div key={index} style={historyBox}>
-              <h2>{item.container}</h2>
+          <div style={{ position: "relative", marginBottom: "20px" }}>
+            <Search size={20} style={{ position: "absolute", left: "15px", top: "18px", color: "#64748b" }} />
+            <input
+              type="text"
+              placeholder="Cari Nomor Container..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ ...input, paddingLeft: "45px", marginBottom: "0", padding: "15px 15px 15px 45px" }}
+            />
+          </div>
 
-              <p>{item.shipName}</p>
+          <div style={{ maxHeight: "60vh", overflowY: "auto", paddingRight: "5px" }}>
+          {history
+            .filter((item) => item.container.toLowerCase().includes(search.toLowerCase()))
+            .map((item, index) => (
+            <div key={index} style={{ ...historyBox, padding: "15px", marginBottom: "12px" }}>
+              <h2 style={{ fontSize: "16px", margin: "0 0 5px 0", color: "#0f172a" }}>{item.container}</h2>
 
-              <p>{item.condition}</p>
+              <p style={{ fontSize: "13px", margin: "0 0 3px 0", color: "#475569" }}>{item.shipName || "-"}</p>
+
+              <p style={{ fontSize: "13px", margin: "0 0 8px 0", color: "#475569" }}>{item.condition || "Good"}</p>
 
               
 <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-  <button style={{...button, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", flex: 1}} onClick={() => cetakPdf(item)}>
+  <button style={{...button, padding: "10px", fontSize: "13px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", flex: 1, marginBottom: 0}} onClick={() => cetakPdf(item)}>
     <FileText size={16} /> DOC
   </button>
-  <button style={{...button, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", flex: 1}} onClick={() => cetakFoto(item)}>
+  <button style={{...button, padding: "10px", fontSize: "13px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", flex: 1, marginBottom: 0}} onClick={() => cetakFoto(item)}>
     <Image size={16} /> FOTO
   </button>
 </div>
 
             </div>
           ))}
+          </div>
 
           <button style={logoutButton} onClick={() => setPage("dashboard")}>
             KEMBALI
