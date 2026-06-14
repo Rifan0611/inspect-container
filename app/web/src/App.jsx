@@ -1429,7 +1429,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
   if (page === "login") {
     return (
       <div style={bg}>
-        <form style={card} onSubmit={(e) => { e.preventDefault(); login(); }}>
+        <div style={card}>
           <img src="/logo.jpg" alt="Logo" style={{ margin: "0 auto 24px auto", display: "block", width: "120px" }} />
 
           <h1 style={title}>CONTAINER INSPECTION</h1>
@@ -1438,9 +1438,8 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
+            onKeyUp={(e) => {
+              if (e.key === "Enter" || e.keyCode === 13) {
                 login();
               }
             }}
@@ -1452,19 +1451,18 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
+            onKeyUp={(e) => {
+              if (e.key === "Enter" || e.keyCode === 13) {
                 login();
               }
             }}
             style={input}
           />
 
-          <button type="submit" style={button}>
+          <button style={button} onClick={login}>
             LOGIN
           </button>
-        </form>
+        </div>
       </div>
     );
   }
