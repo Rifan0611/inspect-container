@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { UserPlus, Trash2, Shield, Search, UserCheck, Clock, Layers, Upload, FileSpreadsheet, CheckCircle2, AlertCircle } from "lucide-react";
+import { UserPlus, Trash2, Shield, Search, UserCheck, Clock, Layers, Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Eye, EyeOff } from "lucide-react";
 import * as XLSX from "xlsx";
 import API_URL from "../../config/api";
 
@@ -62,6 +62,14 @@ export default function UserManagement() {
   const [newGroup, setNewGroup] = useState("");
   const [newJabatan, setNewJabatan] = useState("PETUGAS");
   const [searchTerm, setSearchTerm] = useState("");
+  const [visiblePasswords, setVisiblePasswords] = useState({});
+
+  const togglePassword = (username) => {
+    setVisiblePasswords(prev => ({
+      ...prev,
+      [username]: !prev[username]
+    }));
+  };
 
   // Excel import state
   const [activeTab, setActiveTab] = useState("manual"); // "manual" or "excel"
@@ -668,9 +676,18 @@ export default function UserManagement() {
                       </div>
                     </td>
                     <td>
-                      <span style={{ fontFamily: "monospace", backgroundColor: "#f1f5f9", padding: "4px 8px", borderRadius: "4px", fontSize: "13px", border: "1px solid #e2e8f0" }}>
-                        {item.password || "-"}
-                      </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ fontFamily: "monospace", backgroundColor: "#f1f5f9", padding: "4px 8px", borderRadius: "4px", fontSize: "13px", border: "1px solid #e2e8f0", minWidth: "60px", textAlign: "center" }}>
+                          {visiblePasswords[item.username] ? (item.password || "-") : "••••••••"}
+                        </span>
+                        <button 
+                          onClick={() => togglePassword(item.username)}
+                          style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b", display: "flex", alignItems: "center", padding: "4px" }}
+                          title={visiblePasswords[item.username] ? "Sembunyikan Password" : "Lihat Password"}
+                        >
+                          {visiblePasswords[item.username] ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
                     </td>
                     <td>
                       <span className={`role-badge ${getRoleBadgeColor(item.jabatan)}`}>
