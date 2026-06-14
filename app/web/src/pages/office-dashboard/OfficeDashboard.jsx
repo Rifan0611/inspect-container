@@ -1191,54 +1191,51 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                         <td>{item.side}</td>
 
                         <td>
-                          <button
-                            className="detail-btn"
-                            style={{ marginRight: "8px" }}
-                            onClick={() => setSelectedInspection(item)}
-                            title="Lihat Detail Inspeksi"
-                          >
-                            <Eye size={18} />
-                          </button>
-                          
-<button
-  className="detail-btn"
-  onClick={() => cetakPdf(item)}
-  title="Cetak Dokumen"
->
-  <FileText size={18} />
-</button>
-
-<button
-  className="detail-btn"
-  style={{ marginLeft: "8px" }}
-  onClick={() => cetakFoto(item)}
-  title="Cetak Foto"
->
-  <Image size={18} />
-</button>
-
-
-                          {(user?.username === "adminRAL" || user?.role !== "PETUGAS") && (
+                          <div style={{ display: "flex", gap: "8px", justifyContent: "center", alignItems: "center", whiteSpace: "nowrap" }}>
                             <button
-                              className="edit-btn"
-                              style={{ marginLeft: "8px" }}
-                              onClick={() => setEditingInspection(item)}
-                              title="Edit Inspeksi"
+                              className="detail-btn"
+                              onClick={() => setSelectedInspection(item)}
+                              title="Lihat Detail Inspeksi"
                             >
-                              <Pencil size={18} />
+                              <Eye size={18} />
                             </button>
-                          )}
-
-                          {(user?.username === "adminRAL" || user?.role !== "PETUGAS") && (
+                            
                             <button
-                              className="delete-btn"
-                              style={{ marginLeft: "8px" }}
-                              onClick={() => handleDeleteInspection(item.id)}
-                              title="Hapus Inspeksi"
+                              className="detail-btn"
+                              onClick={() => cetakPdf(item)}
+                              title="Cetak Dokumen"
                             >
-                              <Trash2 size={18} />
+                              <FileText size={18} />
                             </button>
-                          )}
+
+                            <button
+                              className="detail-btn"
+                              onClick={() => cetakFoto(item)}
+                              title="Cetak Foto"
+                            >
+                              <Image size={18} />
+                            </button>
+
+                            {(user?.username === "adminRAL" || user?.role !== "PETUGAS") && (
+                              <button
+                                className="edit-btn"
+                                onClick={() => setEditingInspection(item)}
+                                title="Edit Inspeksi"
+                              >
+                                <Pencil size={18} />
+                              </button>
+                            )}
+
+                            {(user?.username === "adminRAL" || user?.role !== "PETUGAS") && (
+                              <button
+                                className="delete-btn"
+                                onClick={() => handleDeleteInspection(item.id)}
+                                title="Hapus Inspeksi"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
