@@ -1235,7 +1235,7 @@ td { border:1px solid #000; padding:6px; font-size:10px; }
     <p>Container Inspection System</p>
   </div>
 </div>
-<div class="title">BERITA ACARA CONTAINER INSPECTION</div>
+<div class="title">INSPECTION REPORT (CDR)</div>
 <table>
   <tr><td class="label">Nomor Container</td><td>${item.container || "-"}</td></tr>
   <tr><td class="label">Status</td><td>${item.status || "-"}</td></tr>
