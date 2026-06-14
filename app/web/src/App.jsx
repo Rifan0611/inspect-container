@@ -1,4 +1,5 @@
 import OfficeDashboard from "./pages/office-dashboard/OfficeDashboard";
+import Settings from "./pages/Settings";
 import API_URL from "./config/api";
 import React, { useState, useEffect } from "react";
 import "./pages/Inspection.css";
@@ -934,6 +935,13 @@ export default function App() {
   };
 
   // ======================================================
+  // SETTINGS PAGE
+  // ======================================================
+  if (page === "settings") {
+    return <Settings onBack={() => setPage("dashboard")} />;
+  }
+
+  // ======================================================
   // AUTO CARI CONTAINER
   // ======================================================
 
@@ -1471,6 +1479,10 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 
           <button style={button} onClick={() => setPage("history")}>
             RIWAYAT INSPEKSI
+          </button>
+
+          <button style={button} onClick={() => setPage("settings")}>
+            PENGATURAN AKUN
           </button>
 
           {(role === "MANAGER" ||
