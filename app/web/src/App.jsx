@@ -1477,6 +1477,11 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             CONTAINER INSPECTION
           </button>
 
+          {role === "PETUGAS" && (
+            <button style={button} onClick={() => setPage("history")}>
+              RIWAYAT INSPEKSI
+            </button>
+          )}
 
           <button style={button} onClick={() => setPage("settings")}>
             PENGATURAN AKUN
@@ -2417,7 +2422,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 
           <div style={{ maxHeight: "60vh", overflowY: "auto", paddingRight: "5px" }}>
           {history
-            .filter((item) => item.container.toLowerCase().includes(search.toLowerCase()))
+            .filter((item) => (item?.container || "").toLowerCase().includes((search || "").toLowerCase()))
             .map((item, index) => (
             <div key={index} style={{ ...historyBox, padding: "15px", marginBottom: "12px" }}>
               <h2 style={{ fontSize: "16px", margin: "0 0 5px 0", color: "#0f172a" }}>{item.container}</h2>
