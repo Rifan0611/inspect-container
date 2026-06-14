@@ -1103,8 +1103,6 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
           <div className="dashboard-summary" style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px" }}>
             <StatCard title="Total Inspeksi" value={totalInspeksi} color="blue" />
             <StatCard title="Total Damage" value={totalDamage} color="orange" />
-            <StatCard title="Total Good" value={totalGood} color="green" />
-            <StatCard title="Waiting Repair" value={waitingRepair} color="purple" />
           </div>
         )}
 
