@@ -1,4 +1,5 @@
 import OfficeDashboard from "./pages/office-dashboard/OfficeDashboard";
+import Settings from "./pages/Settings";
 import API_URL from "./config/api";
 import React, { useState, useEffect } from "react";
 import "./pages/Inspection.css";
@@ -1414,68 +1415,6 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
     win.document.close();
   };
 
-  // ======================================================
-  // LOGIN PAGE
-  // ======================================================
-
-  if (page === "login") {
-    return (
-      <div style={bg}>
-        <div style={card}>
-          <img src="/logo.jpg" alt="Logo" style={{ margin: "0 auto 24px auto", display: "block", width: "120px" }} />
-
-          <h1 style={title}>CONTAINER INSPECTION</h1>
-
-          <input
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            style={input}
-          />
-
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={input}
-          />
-
-          <button style={button} onClick={login}>
-            LOGIN
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // ======================================================
-  // DASHBOARD
-  // ======================================================
-
-  if (page === "dashboard") {
-    return (
-      <div style={bg}>
-        <div style={card}>
-          <img src="/logo.jpg" alt="Logo" style={{ margin: "0 auto 24px auto", display: "block", width: "120px" }} />
-
-          <h1 style={title}>DASHBOARD</h1>
-
-          <h2 style={roleText}>
-            {role === "PETUGAS" ? "PETUGAS LAPANGAN" : role}
-          </h2>
-
-          <button style={button} onClick={() => setPage("inspection")}>
-            CONTAINER INSPECTION
-          </button>
-
-          <button style={button} onClick={() => setPage("history")}>
-            RIWAYAT INSPEKSI
-          </button>
-
-          {(role === "MANAGER" ||
-            role === "ADMIN" ||
-            role === "SUPERVISOR" ||
             role === "ASSISTANT SUPERVISOR") && (
             <>
               <button style={button} onClick={() => setPage("manager")}>
