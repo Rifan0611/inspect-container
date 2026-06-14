@@ -80,4 +80,24 @@ router.delete("/accounts/:username", (req, res) => {
   });
 });
 
+// Update account password
+router.put("/accounts/:username/password", (req, res) => {
+  const { username } = req.params;
+  const { password } = req.body;
+  if (!password) {
+    return res.status(400).json({ error: "Password is required" });
+  }
+
+  db.query("UPDATE accounts SET password = ? WHERE username = ?", [password.trim(), username], (err, result) => {
+    if (err) {
+      console.error("Error updating password:", err);
+      return res.status(500).json({ error: "Failed to update password" });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Account not found" });
+    }
+    res.json({ message: "Password updated successfully" });
+  });
+});
+
 module.exports = router;
