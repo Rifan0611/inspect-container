@@ -4,11 +4,13 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import API_URL from "../config/api";
 
 export default function Settings(){
   const navigate = useNavigate();
   const [newPassword, setNewPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const user = JSON.parse(localStorage.getItem("user"));
@@ -58,13 +60,34 @@ export default function Settings(){
           Ganti password untuk: <strong>{user?.username || "-"}</strong>
         </h3>
         
-        <input
-          type="password"
-          placeholder="Masukkan Password Baru"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          style={{ width:"100%", padding:18, marginTop:10, borderRadius:18, border:"1px solid #ccc", fontSize:18 }}
-        />
+        <div style={{ position: "relative", width: "100%", marginTop: 10 }}>
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Masukkan Password Baru"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            style={{ width:"100%", padding:18, paddingRight: 50, borderRadius:18, border:"1px solid #ccc", fontSize:18 }}
+          />
+          <button
+            onClick={() => setShowPassword(!showPassword)}
+            style={{
+              position: "absolute",
+              right: 15,
+              top: "50%",
+              transform: "translateY(-50%)",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "#64748b",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 5
+            }}
+          >
+            {showPassword ? <EyeOff size={24} /> : <Eye size={24} />}
+          </button>
+        </div>
         
         <button
           onClick={handleUpdatePassword}
