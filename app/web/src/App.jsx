@@ -1438,6 +1438,12 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                login();
+              }
+            }}
             style={input}
           />
 
@@ -1446,6 +1452,12 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                login();
+              }
+            }}
             style={input}
           />
 
