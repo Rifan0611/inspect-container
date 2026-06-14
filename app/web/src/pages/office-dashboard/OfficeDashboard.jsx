@@ -4,13 +4,13 @@
 // =========================================
 
 import React, { useState, useEffect } from "react";
-import * as XLSX from "xlsx";
 import UserManagement from "./UserManagement";
 import API_URL from "../../config/api";
 import SearchSelect, {
   ISO_CODES,
   CATEGORIES,
 } from "../../components/SearchSelect";
+import MultiSelectDropdown from "../../components/MultiSelectDropdown";
 import {
   Home,
   ClipboardList,
@@ -28,19 +28,6 @@ import {
   Image,
 } from "lucide-react";
 
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  PieChart as RePieChart,
-  Pie,
-  Cell,
-} from "recharts";
-
 import "./OfficeDashboard.css";
 
 const parsePhotos = (photoStr) => {
@@ -49,51 +36,6 @@ const parsePhotos = (photoStr) => {
   if (photoStr.startsWith("data:image")) return [photoStr];
   return photoStr.split(",");
 };
-
-/* =========================================
-   DATA CHART
-========================================= */
-
-const lineData = [
-  { day: "01/05", value: 40 },
-  { day: "05/05", value: 70 },
-  { day: "10/05", value: 35 },
-  { day: "15/05", value: 90 },
-  { day: "20/05", value: 60 },
-  { day: "24/05", value: 75 },
-];
-
-const pieData = [
-  {
-    name: "Dented",
-    value: 38,
-    color: "#2563eb",
-  },
-
-  {
-    name: "Bent",
-    value: 22,
-    color: "#ef4444",
-  },
-
-  {
-    name: "Broken",
-    value: 12,
-    color: "#f59e0b",
-  },
-
-  {
-    name: "Hole",
-    value: 8,
-    color: "#22c55e",
-  },
-
-  {
-    name: "Lainnya",
-    value: 20,
-    color: "#94a3b8",
-  },
-];
 
 /* =========================================
    COMPONENT
@@ -138,7 +80,7 @@ const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 900);
     win.document.write(`
 <html>
 <head>
-<title>BERITA ACARA - PDF</title>
+<title>NPH ADIPURUSA - Container Inspection System - INSPECTION REPORT (CDR)</title>
 <style>
 * { box-sizing:border-box; }
 @page { size:A4; margin:10mm; }
@@ -163,7 +105,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 .footer { display:flex; justify-content:space-between; margin-top:30px; font-size:10px; }
 .ttd { text-align:center; width:150px; }
 .ttd-line { margin-top:50px; border-top:1px solid #000; padding-top:4px; }
-@media print { html,body { width:210mm; height:297mm; overflow:hidden; } }
+@media print { html,body { width:100%; height:auto; overflow:visible; } }
 
 .diagram-container { position:relative; width:100%; max-width:600px; margin:20px auto; border:2px solid #cbd5e1; border-radius:16px; overflow:hidden; background:white; }
 .diagram-image { width:100%; height:auto; display:block; }
@@ -275,7 +217,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
     win.document.write(`
 <html>
 <head>
-<title>BERITA ACARA - FOTO</title>
+<title>NPH ADIPURUSA - Container Inspection System - INSPECTION REPORT (CDR) - FOTO</title>
 <style>
 * { box-sizing:border-box; }
 @page { size:A4; margin:10mm; }
@@ -289,7 +231,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 .photo-box { text-align:center; }
 .photo-label { font-size:10px; font-weight:bold; margin-bottom:6px; }
 .photo-box img { width:100%; height:300px; object-fit:contain; border-radius:8px; border:2px solid #004aad; }
-@media print { html,body { width:210mm; height:297mm; overflow:hidden; } }
+@media print { html,body { width:100%; height:auto; overflow:visible; } }
 
 .diagram-container { position:relative; width:100%; max-width:600px; margin:20px auto; border:2px solid #cbd5e1; border-radius:16px; overflow:hidden; background:white; }
 .diagram-image { width:100%; height:auto; display:block; }
@@ -388,9 +330,6 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
     localStorage.setItem("show-quick-actions", showQuickActions);
   }, [showQuickActions]);
 
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [fileName, setFileName] = useState("");
-  const [importSuccessMessage, setImportSuccessMessage] = useState("");
   const [selectedInspection, setSelectedInspection] = useState(null);
 
   // Edit states
@@ -415,8 +354,16 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
       setEditStatus(editingInspection.status || "");
       setEditIso(editingInspection.iso || "");
       setEditCategory(editingInspection.category || "");
-      setEditCondition(editingInspection.condition || "GOOD");
-      setEditSide(editingInspection.side || "");
+      setEditCondition(
+        editingInspection.condition
+          ? editingInspection.condition.split(", ")
+          : ["GOOD"]
+      );
+      setEditSide(
+        editingInspection.side
+          ? editingInspection.side.split(", ")
+          : []
+      );
       setEditNote(editingInspection.note || "");
       setEditPetugas(editingInspection.petugas || "");
       setEditGroup(editingInspection.group || "");
@@ -437,7 +384,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
     e.preventDefault();
     if (!editingInspection) return;
 
-    if (!editContainer || !editCondition || !editPetugas || !editDate) {
+    if (!editContainer || !editCondition || editCondition.length === 0 || !editPetugas || !editDate) {
       alert(
         "Harap isi semua kolom wajib (Nomor Container, Kondisi, Petugas, Tanggal).",
       );
@@ -458,8 +405,8 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             status: editStatus,
             iso: editIso,
             category: editCategory,
-            condition: editCondition,
-            side: editSide,
+            condition: Array.isArray(editCondition) ? editCondition.join(", ") : editCondition,
+            side: Array.isArray(editSide) ? editSide.join(", ") : editSide,
             note: editNote,
             petugas: editPetugas,
             group: editGroup,
@@ -484,8 +431,8 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
               status: editStatus,
               iso: editIso,
               category: editCategory,
-              condition: editCondition,
-              side: editSide,
+              condition: Array.isArray(editCondition) ? editCondition.join(", ") : editCondition,
+              side: Array.isArray(editSide) ? editSide.join(", ") : editSide,
               note: editNote,
               petugas: editPetugas,
               group: editGroup,
@@ -543,10 +490,6 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
       alert("Gagal terhubung ke server untuk menghapus.");
     }
   };
-
-  /* MANIFEST */
-
-  const [manifestShipName] = useState("-");
 
   const formatInspectionDate = (dateStr) => {
     if (!dateStr) return "-";
@@ -804,79 +747,6 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 
   const [newJabatan, setNewJabatan] = React.useState("PETUGAS");
 
-  /* DYNAMIC CHART & STATS CALCULATIONS */
-  const getDynamicLineData = () => {
-    const arr = Array.isArray(historyData) ? historyData : [];
-    if (arr.length === 0) {
-      return [{ day: "N/A", value: 0 }];
-    }
-    const counts = {};
-    const sorted = [...arr].sort((a, b) => new Date(a.date) - new Date(b.date));
-    sorted.forEach((item) => {
-      if (!item.date) return;
-      try {
-        const d = new Date(item.date);
-        const formatted = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
-        counts[formatted] = (counts[formatted] || 0) + 1;
-      } catch (e) {}
-    });
-    return Object.keys(counts).map((day) => ({
-      day,
-      value: counts[day],
-    }));
-  };
-
-  const getDynamicPieData = () => {
-    const arr = Array.isArray(historyData) ? historyData : [];
-    const damagedInspections = arr.filter(
-      (item) => item.condition && item.condition.toUpperCase() !== "GOOD",
-    );
-    if (damagedInspections.length === 0) {
-      return [{ name: "Tidak ada kerusakan", value: 1, color: "#22c55e" }];
-    }
-    const counts = {};
-    damagedInspections.forEach((item) => {
-      const cond = item.condition || "Lainnya";
-      counts[cond] = (counts[cond] || 0) + 1;
-    });
-    const colors = [
-      "#2563eb",
-      "#ef4444",
-      "#f59e0b",
-      "#22c55e",
-      "#8b5cf6",
-      "#10b981",
-      "#ff7a00",
-    ];
-    return Object.keys(counts).map((name, index) => ({
-      name,
-      value: counts[name],
-      color: colors[index % colors.length],
-    }));
-  };
-
-  const getStatsPerGroup = () => {
-    const arr = Array.isArray(historyData) ? historyData : [];
-    const counts = {};
-    arr.forEach((item) => {
-      if (!item) return;
-      const gp = item.group || "Lainnya";
-      counts[gp] = (counts[gp] || 0) + 1;
-    });
-    return Object.keys(counts).map((name) => ({ name, count: counts[name] }));
-  };
-
-  const getStatsPerPetugas = () => {
-    const arr = Array.isArray(historyData) ? historyData : [];
-    const counts = {};
-    arr.forEach((item) => {
-      if (!item) return;
-      const pet = item.petugas || "Petugas Lapangan";
-      counts[pet] = (counts[pet] || 0) + 1;
-    });
-    return Object.keys(counts).map((name) => ({ name, count: counts[name] }));
-  };
-
   const handleSearchKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -923,9 +793,6 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
       }
     }
   };
-
-  const dynamicLineData = getDynamicLineData();
-  const dynamicPieData = getDynamicPieData();
 
   const arrHistory = Array.isArray(historyData) ? historyData : [];
   const arrManifest = Array.isArray(manifestData) ? manifestData : [];
@@ -980,106 +847,6 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
     }).length;
   };
   const inspectionsToday = getInspectionsToday();
-
-  /* UPLOAD EXCEL / IMPORT SUBMIT */
-  const handleExcelImportSubmit = async () => {
-    if (!selectedFile) {
-      alert("Harap pilih file Excel terlebih dahulu!");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      try {
-        const data = new Uint8Array(evt.target.result);
-        const workbook = XLSX.read(data, { type: "array" });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(sheet, {
-          defval: "",
-          raw: false,
-        });
-
-        console.log("JSON DATA:", jsonData);
-
-        const formattedData = jsonData.map((item, index) => ({
-          id: index + 1,
-
-          container: String(
-            item.container ||
-              item.CONTAINER ||
-              item.Container ||
-              item["Container Number"] ||
-              item["Container No"] ||
-              item["Container Id"] ||
-              "",
-          )
-            .toUpperCase()
-            .trim(),
-
-          shipName: manifestShipName,
-
-          status: String(
-            item.status ||
-              item.STATUS ||
-              item.Status ||
-              item["MT/FULL"] ||
-              item["FULL/EMPTY"] ||
-              item.Loaded ||
-              "",
-          )
-            .toUpperCase()
-            .trim(),
-
-          iso: String(
-            item.iso ||
-              item.ISO ||
-              item.Iso ||
-              item["ISO CODE"] ||
-              item["ISO"] ||
-              item.Size ||
-              "",
-          ).trim(),
-
-          category: String(
-            item.category ||
-              item.CATEGORY ||
-              item.Category ||
-              item["CATEGORY"] ||
-              item.Type ||
-              "",
-          ).trim(),
-        }));
-        const validData = formattedData.filter((item) => item.container);
-
-        if (validData.length === 0) {
-          alert("Header Excel tidak sesuai format.");
-
-          return;
-        }
-
-        setManifestData(validData);
-
-        localStorage.setItem("manifestData", JSON.stringify(validData));
-
-        await fetch(`${API_URL}/api/manifest`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(validData),
-        });
-        setImportSuccessMessage(
-          `Berhasil import ${formattedData.length} container dari file ${fileName}`,
-        );
-        alert("Manifest berhasil diimport");
-      } catch (err) {
-        console.error(err);
-
-        alert("ERROR : " + err.message);
-      }
-    };
-    reader.readAsArrayBuffer(selectedFile);
-  };
 
   return (
     <div className={`dashboard-layout theme-${theme}`}>
@@ -1156,44 +923,6 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
               {sidebarOpen && <span>Data Inspeksi</span>}
             </button>
 
-            {/* MANIFEST */}
-            <button
-              className={`menu-item ${
-                activeMenu === "manifest" ? "active" : ""
-              }`}
-              onClick={() => {
-                setActiveMenu("manifest");
-                if (window.innerWidth <= 900) setSidebarOpen(false);
-
-                document.getElementById("upload-manifest")?.scrollIntoView({
-                  behavior: "smooth",
-                });
-              }}
-            >
-              <FileText className="menu-icon" size={20} />
-
-              {sidebarOpen && <span>Manifest Kapal</span>}
-            </button>
-
-            {/* LAPORAN */}
-            <button
-              className={`menu-item ${
-                activeMenu === "laporan" ? "active" : ""
-              }`}
-              onClick={() => {
-                setActiveMenu("laporan");
-                if (window.innerWidth <= 900) setSidebarOpen(false);
-
-                document.getElementById("laporan-section")?.scrollIntoView({
-                  behavior: "smooth",
-                });
-              }}
-            >
-              <PieChartIcon className="menu-icon" size={20} />
-
-              {sidebarOpen && <span>Laporan</span>}
-            </button>
-
             {/* USER */}
             {user?.username === "adminRAL" && (
               <button
@@ -1214,22 +943,6 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
               </button>
             )}
           </div>
-          <button
-            className={`menu-item ${activeMenu === "settings" ? "active" : ""}`}
-            onClick={() => {
-              setActiveMenu("settings");
-              if (window.innerWidth <= 900) setSidebarOpen(false);
-              setTimeout(() => {
-                document.getElementById("settings-section")?.scrollIntoView({
-                  behavior: "smooth",
-                });
-              }, 100);
-            }}
-          >
-            <Settings className="menu-icon" size={20} />
-
-            {sidebarOpen && <span>Pengaturan</span>}
-          </button>
         </div>
 
         {/* LOGOUT */}
@@ -1378,13 +1091,23 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
           </div>
         </div>
 
-        {showAdminPanel && user?.username === "adminRAL" && (
+        {activeMenu === "dashboard" && (
+          <div className="dashboard-summary" style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px" }}>
+            <StatCard title="Total Inspeksi" value={totalInspeksi} color="blue" />
+            <StatCard title="Total Damage" value={totalDamage} color="orange" />
+            <StatCard title="Total Good" value={totalGood} color="green" />
+            <StatCard title="Waiting Repair" value={waitingRepair} color="purple" />
+          </div>
+        )}
+
+        {activeMenu === "user" && showAdminPanel && user?.username === "adminRAL" && (
           <div id="user-section">
             <UserManagement />
           </div>
         )}
 
         {/* RIWAYAT INSPEKSI */}
+        {activeMenu === "inspeksi" && (
         <div
           id="table-inspeksi"
           className="table-card"
@@ -1590,8 +1313,10 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             return null;
           })()}
         </div>
+        )}
 
         {/* PENGATURAN / SETTINGS SECTION */}
+        {activeMenu === "settings" && (
         <div
           id="settings-section"
           className="um-card"
@@ -1824,6 +1549,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             </div>
           </div>
         </div>
+        )}
       </main>
 
       {/* DETAIL MODAL */}
@@ -2003,6 +1729,34 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                       color: "#374151",
                     }}
                   >
+                    Nama Kapal
+                  </label>
+                  <input
+                    type="text"
+                    value={editShipName}
+                    onChange={(e) => setEditShipName(e.target.value)}
+                    placeholder="Contoh: KM Kelud"
+                    style={{
+                      padding: "10px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                      fontSize: "14px",
+                    }}
+                  />
+                </div>
+
+                <div
+                  className="form-group-edit"
+                  style={{ display: "flex", flexDirection: "column" }}
+                >
+                  <label
+                    style={{
+                      fontWeight: "600",
+                      marginBottom: "6px",
+                      fontSize: "14px",
+                      color: "#374151",
+                    }}
+                  >
                     ISO
                   </label>
                   <SearchSelect
@@ -2077,30 +1831,29 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                   >
                     Kondisi <span style={{ color: "red" }}>*</span>
                   </label>
-                  <select
-                    value={editCondition}
-                    onChange={(e) => setEditCondition(e.target.value)}
-                    required
-                    style={{
-                      padding: "10px",
-                      borderRadius: "8px",
-                      border: "1px solid #d1d5db",
-                      fontSize: "14px",
-                      background: "white",
+                  <MultiSelectDropdown
+                    options={[
+                      "GOOD",
+                      "Bent/Bengkok",
+                      "Broken/Pecah",
+                      "Hole/Berlubang",
+                      "Cut/Terpotong",
+                      "Dented/Penyok",
+                      "Missing/Hilang",
+                      "Scraped/Tergores",
+                      "Torn/Robek",
+                      "Leaking/Bocor"
+                    ]}
+                    selectedValues={Array.isArray(editCondition) ? editCondition : [editCondition].filter(Boolean)}
+                    onChange={(newVal) => {
+                      if (newVal.length > 4) {
+                        alert("Maksimal 4 opsi yang dapat dipilih.");
+                        return;
+                      }
+                      setEditCondition(newVal);
                     }}
-                  >
-                    <option value="">-Kondisi-</option>
-                    <option value="GOOD">GOOD</option>
-                    <option value="Bent/Bengkok">Bent/Bengkok</option>
-                    <option value="Broken/Pecah">Broken/Pecah</option>
-                    <option value="Hole/Berlubang">Hole/Berlubang</option>
-                    <option value="Cut/Terpotong">Cut/Terpotong</option>
-                    <option value="Dented/Penyok">Dented/Penyok</option>
-                    <option value="Missing/Hilang">Missing/Hilang</option>
-                    <option value="Scraped/Tergores">Scraped/Tergores</option>
-                    <option value="Torn/Robek">Torn/Robek</option>
-                    <option value="Leaking/Bocor">Leaking/Bocor</option>
-                  </select>
+                    placeholder="-Kondisi-"
+                  />
                 </div>
 
                 <div
@@ -2117,30 +1870,26 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                   >
                     Sisi Kerusakan
                   </label>
-                  <select
-                    value={editSide}
-                    onChange={(e) => setEditSide(e.target.value)}
-                    style={{
-                      padding: "10px",
-                      borderRadius: "8px",
-                      border: "1px solid #d1d5db",
-                      fontSize: "14px",
-                      background: "white",
+                  <MultiSelectDropdown
+                    options={[
+                      "Front/Depan",
+                      "Bottom/Bawah",
+                      "Left Side/Sisi Kiri",
+                      "Right Side/Sisi Kanan",
+                      "Roof/Atas",
+                      "Rear/Belakang",
+                      "Inside/Dalam"
+                    ]}
+                    selectedValues={Array.isArray(editSide) ? editSide : [editSide].filter(Boolean)}
+                    onChange={(newVal) => {
+                      if (newVal.length > 4) {
+                        alert("Maksimal 4 opsi yang dapat dipilih.");
+                        return;
+                      }
+                      setEditSide(newVal);
                     }}
-                  >
-                    <option value="">-Sisi-</option>
-                    <option value="Front/Depan">Front/Depan</option>
-                    <option value="Bottom/Bawah">Bottom/Bawah</option>
-                    <option value="Left Side/Sisi Kiri">
-                      Left Side/Sisi Kiri
-                    </option>
-                    <option value="Right Side/Sisi Kanan">
-                      Right Side/Sisi Kanan
-                    </option>
-                    <option value="Roof/Atas">Roof/Atas</option>
-                    <option value="Rear/Belakang">Rear/Belakang</option>
-                    <option value="Inside/Dalam">Inside/Dalam</option>
-                  </select>
+                    placeholder="-Sisi-"
+                  />
                 </div>
 
                 <div

@@ -1,0 +1,18 @@
+const mysql = require('mysql2/promise');
+require('dotenv').config({ path: __dirname + '/.env' });
+
+async function run() {
+  const connection = await mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT,
+  });
+
+  await connection.execute('ALTER TABLE inspections MODIFY COLUMN side VARCHAR(500);');
+  await connection.execute('ALTER TABLE history MODIFY COLUMN side VARCHAR(500);');
+  console.log('Altered successfully');
+  process.exit(0);
+}
+run();

@@ -5,10 +5,7 @@ const Sidebar = ({ onNavigate }) => {
     const menuItems = [
         { name: 'Dashboard', icon: HomeIcon, active: true },
         { name: 'Data Inspeksi', icon: ClipboardDocumentListIcon },
-        { name: 'Manifest Kapal', icon: DocumentTextIcon },
-        { name: 'Laporan', icon: ChartPieIcon },
         { name: 'User', icon: UsersIcon },
-        { name: 'Pengaturan', icon: Cog6ToothIcon },
     ];
 
     return (

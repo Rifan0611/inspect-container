@@ -1195,7 +1195,7 @@ export default function App() {
     win.document.write(`
 <html>
 <head>
-<title>BERITA ACARA</title>
+<title>NPH ADIPURUSA - Container Inspection System - INSPECTION REPORT (CDR)</title>
 <style>
 * { box-sizing:border-box; }
 @page { size:A4; margin:10mm; }
@@ -1218,7 +1218,7 @@ td { border:1px solid #000; padding:6px; font-size:10px; }
 .footer { display:flex; justify-content:space-between; margin-top:25px; }
 .ttd { width:220px; text-align:center; font-size:10px; }
 .ttd-line { margin-top:55px; }
-@media print { html,body { width:210mm; height:297mm; overflow:hidden; } }
+@media print { html,body { width:100%; height:auto; overflow:visible; } }
 
 .diagram-container { position:relative; width:100%; max-width:600px; margin:20px auto; border:2px solid #cbd5e1; border-radius:16px; overflow:hidden; background:white; }
 .diagram-image { width:100%; height:auto; display:block; }
@@ -1335,7 +1335,7 @@ td { border:1px solid #000; padding:6px; font-size:10px; }
     win.document.write(`
 <html>
 <head>
-<title>BERITA ACARA - FOTO</title>
+<title>NPH ADIPURUSA - Container Inspection System - INSPECTION REPORT (CDR) - FOTO</title>
 <style>
 * { box-sizing:border-box; }
 @page { size:A4; margin:10mm; }
@@ -1349,7 +1349,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 .photo-box { text-align:center; }
 .photo-label { font-size:10px; font-weight:bold; margin-bottom:6px; }
 .photo-box img { width:100%; height:300px; object-fit:contain; border-radius:8px; border:2px solid #004aad; }
-@media print { html,body { width:210mm; height:297mm; overflow:hidden; } }
+@media print { html,body { width:100%; height:auto; overflow:visible; } }
 
 .diagram-container { position:relative; width:100%; max-width:600px; margin:20px auto; border:2px solid #cbd5e1; border-radius:16px; overflow:hidden; background:white; }
 .diagram-image { width:100%; height:auto; display:block; }
