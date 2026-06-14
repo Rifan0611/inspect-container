@@ -1477,9 +1477,6 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             CONTAINER INSPECTION
           </button>
 
-          <button style={button} onClick={() => setPage("history")}>
-            RIWAYAT INSPEKSI
-          </button>
 
           <button style={button} onClick={() => setPage("settings")}>
             PENGATURAN AKUN
@@ -1490,11 +1487,6 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             role === "SUPERVISOR" ||
             role === "ASSISTANT SUPERVISOR") && (
             <>
-              <button style={button} onClick={() => setPage("manager")}>
-                {role === "ADMIN"
-                  ? "ADMIN CONTROL PANEL"
-                  : `${role} CONTROL ROOM`}
-              </button>
 
               <button
                 style={{ ...button, background: "#0B1F3A" }}
@@ -1505,16 +1497,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             </>
           )}
 
-          {role !== "PETUGAS" && (
-            <div>
-              <input
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={importExcel}
-                style={input}
-              />
-            </div>
-          )}
+
 
           {/* TABEL TRANSAKSI TERBARU */}
           <div
