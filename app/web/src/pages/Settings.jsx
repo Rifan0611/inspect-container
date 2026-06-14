@@ -3,11 +3,12 @@
 // ========================================
 
 import { useState } from "react";
-import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import API_URL from "../config/api";
 
-export default function Settings({ onBack }){
+export default function Settings(){
+  const navigate = useNavigate();
   const [newPassword, setNewPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -21,7 +22,7 @@ export default function Settings({ onBack }){
     }
     if (!user || !user.username) {
       alert("Sesi login tidak valid. Silakan login kembali.");
-      if (onBack) onBack();
+      navigate("/");
       return;
     }
 
@@ -43,7 +44,7 @@ export default function Settings({ onBack }){
       
       alert("Password berhasil diubah!");
       setNewPassword("");
-      if (onBack) onBack(); // Redirect back to dashboard
+      navigate("/dashboard"); // Redirect back to dashboard
     } catch (err) {
       alert(err.message);
     } finally {
@@ -97,7 +98,7 @@ export default function Settings({ onBack }){
         </button>
         
         <button
-          onClick={() => { if (onBack) onBack(); }}
+          onClick={() => navigate("/dashboard")}
           style={{ width:"100%", padding:18, marginTop:15, border:"none", borderRadius:20, background:"#e2e8f0", color:"#334155", fontSize:18, fontWeight:"bold", cursor:"pointer" }}
         >
           KEMBALI
