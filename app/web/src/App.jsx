@@ -2071,13 +2071,15 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                     { val: "GOOD", label: "GOOD" },
                     { val: "Bent/Bengkok", label: "Bent/Bengkok" },
                     { val: "Broken/Pecah", label: "Broken/Pecah" },
-                    { val: "Hole/Berlubang", label: "Hole/Berlubang" },
+                    { val: "Bulging/Menggelembung", label: "Bulging/Menggelembung" },
+                    { val: "Crushed/Ringsek", label: "Crushed/Ringsek" },
                     { val: "Cut/Terpotong", label: "Cut/Terpotong" },
                     { val: "Dented/Penyok", label: "Dented/Penyok" },
+                    { val: "Hole/Berlubang", label: "Hole/Berlubang" },
+                    { val: "Leaking/Bocor", label: "Leaking/Bocor" },
                     { val: "Missing/Hilang", label: "Missing/Hilang" },
                     { val: "Scraped/Tergores", label: "Scraped/Tergores" },
                     { val: "Torn/Robek", label: "Torn/Robek" },
-                    { val: "Leaking/Bocor", label: "Leaking/Bocor" },
                   ]}
                   value={selectedConditions}
                   placeholder="Ceklis Kondisi Kontainer"

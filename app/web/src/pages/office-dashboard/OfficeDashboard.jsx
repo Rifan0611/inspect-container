@@ -1841,13 +1841,15 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                       "GOOD",
                       "Bent/Bengkok",
                       "Broken/Pecah",
-                      "Hole/Berlubang",
+                      "Bulging/Menggelembung",
+                      "Crushed/Ringsek",
                       "Cut/Terpotong",
                       "Dented/Penyok",
+                      "Hole/Berlubang",
+                      "Leaking/Bocor",
                       "Missing/Hilang",
                       "Scraped/Tergores",
                       "Torn/Robek",
-                      "Leaking/Bocor"
                     ]}
                     selectedValues={Array.isArray(editCondition) ? editCondition : [editCondition].filter(Boolean)}
                     onChange={(newVal) => {
