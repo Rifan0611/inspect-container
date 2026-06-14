@@ -894,6 +894,17 @@ export default function App() {
     alert("USERNAME / PASSWORD SALAH");
   };
 
+  useEffect(() => {
+    const handleGlobalEnter = (e) => {
+      if (page === "login" && (e.key === "Enter" || e.keyCode === 13)) {
+        e.preventDefault();
+        login();
+      }
+    };
+    window.addEventListener("keydown", handleGlobalEnter);
+    return () => window.removeEventListener("keydown", handleGlobalEnter);
+  }, [page, username, password, login]);
+
   // ======================================================
   // IMPORT MANIFEST
   // ======================================================
@@ -1438,8 +1449,9 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            onKeyUp={(e) => {
+            onKeyDown={(e) => {
               if (e.key === "Enter" || e.keyCode === 13) {
+                e.preventDefault();
                 login();
               }
             }}
@@ -1451,8 +1463,9 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            onKeyUp={(e) => {
+            onKeyDown={(e) => {
               if (e.key === "Enter" || e.keyCode === 13) {
+                e.preventDefault();
                 login();
               }
             }}
