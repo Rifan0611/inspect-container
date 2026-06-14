@@ -1429,7 +1429,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
   if (page === "login") {
     return (
       <div style={bg}>
-        <div style={card}>
+        <form style={card} onSubmit={(e) => { e.preventDefault(); login(); }}>
           <img src="/logo.jpg" alt="Logo" style={{ margin: "0 auto 24px auto", display: "block", width: "120px" }} />
 
           <h1 style={title}>CONTAINER INSPECTION</h1>
@@ -1438,7 +1438,6 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && login()}
             style={input}
           />
 
@@ -1447,14 +1446,13 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && login()}
             style={input}
           />
 
-          <button style={button} onClick={login}>
+          <button type="submit" style={button}>
             LOGIN
           </button>
-        </div>
+        </form>
       </div>
     );
   }
