@@ -450,7 +450,7 @@ export default function UserManagement() {
       (acc.group || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       (acc.jabatan || "").toLowerCase().includes(searchTerm.toLowerCase())
     )
-  );
+  ).sort((a, b) => (a.nama || a.username || "").localeCompare(b.nama || b.username || ""));
 
   return (
     <div className="user-management-container">
