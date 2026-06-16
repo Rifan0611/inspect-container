@@ -18,13 +18,14 @@ body {
 body::after {
   content: "RAL";
   position: fixed;
-  bottom: 20px;
-  right: 30px;
-  font-size: 40px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 80px;
   font-weight: 800;
-  color: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.03);
   pointer-events: none;
   z-index: 9999;
   user-select: none;
-  letter-spacing: 4px;
+  letter-spacing: 10px;
 }
