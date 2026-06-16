@@ -39,54 +39,51 @@ export const scanContainerWithGemini = async (file, apiKey) => {
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
+  
   const prompt = `
-Deteksi dan baca nomor container pada foto.
-Fokus hanya pada kode container utama yang berada di badan container.
+Tugas: Ekstrak nomor container dari foto ini.
+Format nomor container: 4 Huruf Kapital diikuti 7 Angka (Contoh: TGHU1234567).
+Fokus hanya pada kode container utama. Abaikan logo, berat, peringatan, atau teks lain.
+PENTING: JANGAN membalas dengan JSON atau teks penjelasan apapun. HANYA tuliskan nomor containernya saja.
+Jika tidak menemukan nomor container yang valid, balas "KOSONG".
+`;
 
-Aturan:
-- Format: XXXX1234567
-- 4 huruf + 7 angka
-- Huruf kapital semua
-- Abaikan tulisan lain seperti logo, berat, warning, atau stiker.
+  const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-3.5-flash"];
+  let lastError = null;
 
-Keluarkan hasil dalam format JSON:
-{
-  "container_number": ""
-}`;
-
-  try {
-    const imagePart = await fileToGenerativePart(file);
-    const result = await model.generateContent([prompt, imagePart]);
-    const responseText = result.response.text();
-    
+  for (const modelName of modelsToTry) {
     try {
-      const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsed = JSON.parse(jsonStr);
-      if (parsed.container_number) {
-        return parsed.container_number.replace(/[^A-Z0-9]/g, '');
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const imagePart = await fileToGenerativePart(file);
+      const result = await model.generateContent([prompt, imagePart]);
+      const responseText = result.response.text();
+      
+      const clean = responseText.replace(/[^A-Z0-9]/g, '');
+      const match = clean.match(/[A-Z]{4}[0-9]{7}/);
+      if (match) {
+        return match[0];
       }
-    } catch (parseError) {
-      console.error("Gagal parse JSON dari Gemini:", responseText);
+      
+      // If we got here, it didn't match the regex. Try fallback string
+      if (clean && clean.length >= 11) {
+         // Return raw text for debugging if all fails but something was detected
+         return "DEBUG_RAW: " + responseText.substring(0, 50);
+      }
+      
+    } catch (err) {
+      console.warn(`Gemini API Error dengan model ${modelName}:`, err.message);
+      lastError = err;
+      
+      if (err.message && (err.message.includes("API key not valid") || err.message.includes("API key"))) {
+        localStorage.removeItem('gemini_api_key');
+        alert("API Key tidak valid atau salah. Sistem telah menghapusnya dari memori. Silakan coba klik Scan lagi untuk memasukkan API Key yang benar.");
+        throw err; // Stop trying if API key is invalid
+      }
+      // Continue to next model if it's 503 or other temporary error
     }
-    
-    // Fallback regex if JSON parsing fails or container_number not found
-    const clean = responseText.replace(/[^A-Z0-9]/g, '');
-    const match = clean.match(/[A-Z]{4}[0-9]{7}/);
-    if (match) {
-      return match[0];
-    }
-    
-    // Return raw text for debugging if all fails
-    return "DEBUG_RAW: " + responseText.substring(0, 50);
-    
-  } catch (err) {
-    console.error("Gemini API Error:", err);
-    if (err.message && (err.message.includes("API key not valid") || err.message.includes("API key"))) {
-      localStorage.removeItem('gemini_api_key');
-      alert("API Key tidak valid atau salah. Sistem telah menghapusnya dari memori. Silakan coba klik Scan lagi untuk memasukkan API Key yang benar.");
-    }
-    throw err;
   }
+
+  // If all models failed, throw the last error
+  console.error("Semua model Gemini gagal.");
+  throw lastError;
 };

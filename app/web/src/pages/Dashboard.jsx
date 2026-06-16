@@ -116,7 +116,13 @@ RIWAYAT INSPEKSI
 
 (role==="MANAGER" ||
 
-role==="SUPERVISOR")
+role==="SUPERVISOR" ||
+
+role==="DIREKSI" ||
+
+role==="FORMAN" ||
+
+role==="ADM")
 
 &&
 

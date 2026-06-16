@@ -8,6 +8,7 @@ import SearchSelect, {
   ISO_CODES,
   CATEGORIES,
 } from "../components/SearchSelect";
+import CameraScanner from "../components/CameraScanner";
 
 const compressImage = (file) => {
   return new Promise((resolve) => {
@@ -125,6 +126,7 @@ export default function Inspection() {
   const [selectedConditions, setSelectedConditions] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [locationGPS, setLocationGPS] = useState(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   useEffect(() => {
     loadManifestAndInspections();
@@ -201,10 +203,20 @@ export default function Inspection() {
     }
   };
 
-  const handleContainerNoPhotoChange = async (e) => {
-    const file = e.target.files[0];
+  const handleContainerNoPhotoChange = async (eOrFile) => {
+    let file;
+    let targetElement = null;
+
+    if (eOrFile?.target?.files) {
+      file = eOrFile.target.files[0];
+      targetElement = eOrFile.target;
+    } else {
+      file = eOrFile;
+    }
+
     if (!file) return;
 
+    setIsCameraOpen(false);
     setIsScanning(true);
     setContainerNoPhoto({
       file,
@@ -215,7 +227,7 @@ export default function Inspection() {
       const apiKey = getGeminiApiKey();
       if (!apiKey) {
         setIsScanning(false);
-        e.target.value = "";
+        if (targetElement) targetElement.value = "";
         return;
       }
 
@@ -250,7 +262,9 @@ export default function Inspection() {
       alert("Terjadi kesalahan saat memproses foto menggunakan Gemini API.\n" + (err.message || ""));
     } finally {
       setIsScanning(false);
-      e.target.value = "";
+      if (targetElement) {
+        targetElement.value = "";
+      }
     }
   };
 
@@ -586,8 +600,7 @@ export default function Inspection() {
                     background: "#f8fafc",
                   }}
                   onClick={() =>
-                    !isScanning &&
-                    document.getElementById("containerNoPhotoInput").click()
+                    !isScanning && setIsCameraOpen(true)
                   }
                 >
                   {isScanning ? (
@@ -1052,6 +1065,12 @@ export default function Inspection() {
           </div>
         </div>
       </div>
+      {isCameraOpen && (
+        <CameraScanner
+          onCapture={(file) => handleContainerNoPhotoChange(file)}
+          onClose={() => setIsCameraOpen(false)}
+        />
+      )}
     </div>
   );
 }

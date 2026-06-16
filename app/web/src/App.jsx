@@ -9,6 +9,7 @@ import MultiSelectDropdown from "./components/MultiSelectDropdown";
 
 import * as XLSX from "xlsx";
 import { getGeminiApiKey, scanContainerWithGemini } from "./utils/geminiOcr";
+import CameraScanner from "./components/CameraScanner";
 
 import {
   LineChart,
@@ -459,6 +460,41 @@ export default function App() {
 
   const [isUploading, setIsUploading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+
+  const handleCameraCapture = async (file) => {
+    if (!file) return;
+    setIsCameraOpen(false);
+    try {
+      setIsScanning(true);
+      const apiKey = getGeminiApiKey();
+      if (!apiKey) {
+        setIsScanning(false);
+        return;
+      }
+      
+      const compressedBlob = await compressImage(file);
+      const detectedNumber = await scanContainerWithGemini(compressedBlob, apiKey);
+      
+      if (detectedNumber && !detectedNumber.startsWith("DEBUG_RAW")) {
+        setContainer(detectedNumber);
+        
+        if (typeof handleContainerChange === 'function') {
+          handleContainerChange({ target: { value: detectedNumber } });
+        } else if (typeof cariContainer === 'function') {
+          cariContainer(detectedNumber);
+        }
+      } else {
+        const debugText = detectedNumber ? detectedNumber.replace("DEBUG_RAW: ", "") : "";
+        alert(`Nomor kontainer tidak ditemukan pada foto oleh Gemini Vision.\n(Teks terbaca: ${debugText}...)\nPastikan foto cukup jelas dan coba lagi.`);
+      }
+    } catch (err) {
+      console.error("Gemini Error:", err);
+      alert("Terjadi kesalahan saat memproses foto menggunakan Gemini API.\n" + (err.message || ""));
+    } finally {
+      setIsScanning(false);
+    }
+  };
   const [manifestList, setManifestList] = useState([]);
   const [inspectedContainers, setInspectedContainers] = useState([]);
   const [cdrFile, setCdrFile] = useState(null);
@@ -788,8 +824,11 @@ export default function App() {
       storedAccounts = JSON.parse(localStorage.getItem("accounts")) || [];
     }
 
+    const trimmedUsername = username.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+
     // MANAGER
-    if (username === "manager" && password === "123") {
+    if (trimmedUsername === "manager" && trimmedPassword === "123") {
       const dataUser = {
         nama: "Rian Agung",
         role: "MANAGER",
@@ -805,7 +844,7 @@ export default function App() {
     }
 
     // SUPERVISOR
-    if (username === "supervisor" && password === "123") {
+    if (trimmedUsername === "supervisor" && trimmedPassword === "123") {
       const dataUser = {
         nama: "Budi Santoso",
         role: "SUPERVISOR",
@@ -821,7 +860,7 @@ export default function App() {
     }
 
     // ASSISTANT
-    if (username === "assistant" && password === "123") {
+    if (trimmedUsername === "assistant" && trimmedPassword === "123") {
       const dataUser = {
         nama: "Andi Wijaya",
         role: "ASSISTANT SUPERVISOR",
@@ -837,7 +876,7 @@ export default function App() {
     }
 
     // ADMIN
-    if (username === "adminRAL" && password === "Rifan0611") {
+    if (trimmedUsername === "adminral" && trimmedPassword === "Rifan0611") {
       const dataUser = {
         nama: "Admin NPH",
         role: "ADMIN",
@@ -853,7 +892,7 @@ export default function App() {
     }
 
     // PETUGAS
-    if (username === "petugas" && password === "123") {
+    if (trimmedUsername === "petugas" && trimmedPassword === "123") {
       const dataUser = {
         nama: "Petugas Lapangan",
         role: "PETUGAS",
@@ -871,8 +910,8 @@ export default function App() {
     // CHECK DYNAMIC ACCOUNTS FROM DATABASE / CACHE
     const matchedAccount = storedAccounts.find(
       (acc) =>
-        acc.username.toLowerCase().trim() === username.toLowerCase().trim() &&
-        acc.password === password,
+        acc.username.toLowerCase().trim() === trimmedUsername &&
+        acc.password.trim() === trimmedPassword,
     );
 
     if (matchedAccount) {
@@ -1513,6 +1552,9 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
           {(role === "MANAGER" ||
             role === "ADMIN" ||
             role === "SUPERVISOR" ||
+            role === "DIREKSI" ||
+            role === "FORMAN" ||
+            role === "ADM" ||
             role === "ASSISTANT SUPERVISOR") && (
             <>
 
@@ -1717,7 +1759,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                     style={{ flex: 1, margin: 0 }}
                   />
                   <button
-                    onClick={() => !isUploading && !isScanning && document.getElementById("ocrContainerInput").click()}
+                    onClick={() => !isUploading && !isScanning && setIsCameraOpen(true)}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -1738,50 +1780,6 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                   >
                     {isScanning ? <Loader2 className="animate-spin" size={16} /> : "📷 Scan"}
                   </button>
-                  <input
-                    id="ocrContainerInput"
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    style={{ display: "none" }}
-                    disabled={isUploading}
-                    onChange={async (e) => {
-                      const file = e.target.files[0];
-                      if (!file) return;
-                      
-                      try {
-                        setIsScanning(true);
-                        const apiKey = getGeminiApiKey();
-                        if (!apiKey) {
-                          e.target.value = "";
-                          setIsScanning(false);
-                          return;
-                        }
-                        
-                        const compressedBlob = await compressImage(file);
-                        const detectedNumber = await scanContainerWithGemini(compressedBlob, apiKey);
-                        
-                        if (detectedNumber && !detectedNumber.startsWith("DEBUG_RAW")) {
-                          setContainer(detectedNumber);
-                          
-                          if (typeof handleContainerChange === 'function') {
-                            handleContainerChange({ target: { value: detectedNumber } });
-                          } else if (typeof cariContainer === 'function') {
-                            cariContainer(detectedNumber);
-                          }
-                        } else {
-                          const debugText = detectedNumber ? detectedNumber.replace("DEBUG_RAW: ", "") : "";
-                          alert(`Nomor kontainer tidak ditemukan pada foto oleh Gemini Vision.\n(Teks terbaca: ${debugText}...)\nPastikan foto cukup jelas dan coba lagi.`);
-                        }
-                      } catch (err) {
-                        console.error("Gemini Error:", err);
-                        alert("Terjadi kesalahan saat memproses foto menggunakan Gemini API.\n" + (err.message || ""));
-                      } finally {
-                        setIsScanning(false);
-                        e.target.value = "";
-                      }
-                    }}
-                  />
                 </div>
               </div>
             </div>
@@ -1982,26 +1980,6 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                       },
                     ]);
                     e.target.value = "";
-
-                    // Quietly run OCR in the background without blocking or alerting
-                    try {
-                      const apiKey = getGeminiApiKey();
-                      if (apiKey) {
-                        const compressedBlob = await compressImage(file);
-                        const detectedNumber = await scanContainerWithGemini(compressedBlob, apiKey);
-                        
-                        if (detectedNumber && !detectedNumber.startsWith("DEBUG_RAW")) {
-                          setContainer(detectedNumber);
-                          if (typeof handleContainerChange === 'function') {
-                            handleContainerChange({ target: { value: detectedNumber } });
-                          } else if (typeof cariContainer === 'function') {
-                            cariContainer(detectedNumber);
-                          }
-                        }
-                      }
-                    } catch (err) {
-                      console.warn("Silent OCR failure:", err.message);
-                    }
                   }
                 }}
               />
@@ -2200,6 +2178,12 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             </div>
           </div>
         </div>
+        {isCameraOpen && (
+          <CameraScanner
+            onCapture={(file) => handleCameraCapture(file)}
+            onClose={() => setIsCameraOpen(false)}
+          />
+        )}
       </div>
     );
   }
