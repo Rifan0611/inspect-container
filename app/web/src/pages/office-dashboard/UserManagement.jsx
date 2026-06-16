@@ -146,7 +146,7 @@ export default function UserManagement() {
             groupVal = "Office";
           }
 
-          const validRoles = ["PETUGAS", "SUPERVISOR", "ASSISTANT SUPERVISOR", "MANAGER", "ADMIN", "DIREKSI", "FORMAN", "ADM"];
+          const validRoles = ["PETUGAS", "SUPERVISOR", "ASSISTANT SUPERVISOR", "MANAGER", "ADMIN", "DIREKSI", "FOREMAN", "ADM"];
           if (!jabatanVal) {
             jabatanVal = "PETUGAS";
           } else {
@@ -158,8 +158,8 @@ export default function UserManagement() {
               jabatanVal = "MANAGER";
             } else if (jabatanVal.includes("DIREKSI")) {
               jabatanVal = "DIREKSI";
-            } else if (jabatanVal.includes("FORMAN")) {
-              jabatanVal = "FORMAN";
+            } else if (jabatanVal.includes("FOREMAN")) {
+              jabatanVal = "FOREMAN";
             } else if (jabatanVal.includes("ADMIN")) {
               jabatanVal = "ADMIN";
             } else if (jabatanVal.includes("ADM")) {
@@ -432,7 +432,7 @@ export default function UserManagement() {
       case "ADM":
         return "role-manager";
       case "SUPERVISOR":
-      case "FORMAN":
+      case "FOREMAN":
         return "role-supervisor";
       case "ASSISTANT SUPERVISOR":
         return "role-assistant";
@@ -545,7 +545,7 @@ export default function UserManagement() {
                     <option value="MANAGER">MANAGER</option>
                     <option value="ADMIN">ADMIN</option>
                     <option value="DIREKSI">DIREKSI</option>
-                    <option value="FORMAN">FORMAN</option>
+                    <option value="FOREMAN">FOREMAN</option>
                     <option value="ADM">ADM</option>
                   </select>
                 </div>
@@ -637,7 +637,7 @@ export default function UserManagement() {
                   <li><strong>Nama</strong> atau <strong>Nama Lengkap</strong></li>
                   <li><strong>Username</strong></li>
                   <li><strong>Password</strong></li>
-                  <li><strong>Jabatan</strong> (PETUGAS, SUPERVISOR, MANAGER, ADMIN, DIREKSI, FORMAN, ADM)</li>
+                  <li><strong>Jabatan</strong> (PETUGAS, SUPERVISOR, MANAGER, ADMIN, DIREKSI, FOREMAN, ADM)</li>
                   <li><strong>Group</strong> (Shift A, Lapangan, Office)</li>
                 </ul>
               </div>

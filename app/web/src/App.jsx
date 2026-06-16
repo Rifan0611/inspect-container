@@ -1553,7 +1553,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             role === "ADMIN" ||
             role === "SUPERVISOR" ||
             role === "DIREKSI" ||
-            role === "FORMAN" ||
+            role === "FOREMAN" ||
             role === "ADM" ||
             role === "ASSISTANT SUPERVISOR") && (
             <>

@@ -120,7 +120,7 @@ role==="SUPERVISOR" ||
 
 role==="DIREKSI" ||
 
-role==="FORMAN" ||
+role==="FOREMAN" ||
 
 role==="ADM")
 
