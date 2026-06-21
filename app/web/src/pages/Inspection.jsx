@@ -903,7 +903,7 @@ export default function Inspection() {
                 { val: "Roof/Atas", label: "Roof (Atas)", x: 83, y: 25 },
                 { val: "Right Side/Sisi Kanan", label: "Right Side (Kanan)", x: 86, y: 42 },
                 { val: "Rear/Belakang", label: "Rear/Doors (Belakang)", x: 74, y: 58 },
-              ]].map((hotspot) => {
+              ].map((hotspot) => {
                 const isChecked = selectedSides.includes(hotspot.val);
                 const isDisabled =
                   selectedConditions.includes("Good") ||
@@ -992,11 +992,14 @@ export default function Inspection() {
                 {[
                   "Front/Depan",
                   "Rear/Belakang",
-                  "Left Side/Sisi Kiri",
                   "Right Side/Sisi Kanan",
+                  "Left Side/Sisi Kiri",
                   "Roof/Atas",
                   "Bottom/Bawah",
                   "Inside/Dalam",
+                  "Doors/Pintu",
+                  "Door Rods/Gagang Pintu",
+                  "Corner Castings"
                 ].map((s) => (
                   <option key={s} value={s}>
                     {s}

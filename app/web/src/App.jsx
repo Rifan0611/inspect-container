@@ -2007,7 +2007,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                 { val: "Roof/Atas", label: "Roof (Atas)", x: 83, y: 25 },
                 { val: "Right Side/Sisi Kanan", label: "Right Side (Kanan)", x: 86, y: 42 },
                 { val: "Rear/Belakang", label: "Rear/Doors (Belakang)", x: 74, y: 58 },
-              ]].map((hotspot) => {
+              ].map((hotspot) => {
                   const isChecked = selectedSides.includes(hotspot.val);
                   const isDisabled =
                     selectedConditions.includes("Good") ||
