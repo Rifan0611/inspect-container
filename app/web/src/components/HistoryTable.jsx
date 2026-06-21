@@ -266,7 +266,6 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             <th className="px-4 py-3 font-semibold text-slate-600 min-w-[150px]">Kapal</th>
             <th className="px-4 py-3 font-semibold text-slate-600 text-center">Kondisi</th>
             <th className="px-4 py-3 font-semibold text-slate-600 min-w-[150px]">Sisi</th>
-            <th className="px-4 py-3 font-semibold text-slate-600 min-w-[160px] text-center">Aksi</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -283,28 +282,12 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                   </span>
                 </td>
                 <td className="px-4 py-3 text-slate-600">{item.side || "General"}</td>
-                <td className="px-4 py-3 text-center">
-                  <div className="flex gap-2 justify-center">
-                    <button 
-                      onClick={() => cetakPdf(item)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded-lg flex items-center gap-1 text-xs transition-colors"
-                    >
-                      <FileText size={14} /> DOC
-                    </button>
-                    <button 
-                      onClick={() => cetakFoto(item)}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1 px-3 rounded-lg flex items-center gap-1 text-xs transition-colors"
-                    >
-                      <Image size={14} /> FOTO
-                    </button>
-                  </div>
-                </td>
               </tr>
             );
           })}
           {history.length === 0 && (
             <tr>
-              <td colSpan="6" className="px-6 py-8 text-center text-slate-400 italic">
+              <td colSpan="5" className="px-6 py-8 text-center text-slate-400 italic">
                 Belum ada riwayat transaksi inspeksi.
               </td>
             </tr>
