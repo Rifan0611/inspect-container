@@ -654,3 +654,29 @@
   border-style: solid;
   border-color: transparent transparent rgba(15, 23, 42, 0.8) transparent;
 }
+
+/* Mobile optimizations for diagram hotspots */
+@media (max-width: 768px) {
+  .hotspot-badge {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+  }
+  
+  .hotspot-badge.checked {
+    transform: scale(1.1);
+  }
+  
+  .diagram-hotspot:hover .hotspot-badge {
+    transform: scale(1.1);
+  }
+  
+  .diagram-hotspot:hover .hotspot-badge.checked {
+    transform: scale(1.15);
+  }
+
+  .hotspot-label {
+    display: none; /* Hide labels entirely on mobile to prevent extreme clutter */
+  }
+}
+
