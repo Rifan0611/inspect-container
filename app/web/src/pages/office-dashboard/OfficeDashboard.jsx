@@ -26,6 +26,7 @@ import {
   Trash2,
   Pencil,
   Image,
+  Download,
 } from "lucide-react";
 
 import "./OfficeDashboard.css";
@@ -303,6 +304,8 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [filterStartDate, setFilterStartDate] = useState("");
+  const [filterEndDate, setFilterEndDate] = useState("");
 
   useEffect(() => {
     setCurrentPage(1);
@@ -1113,13 +1116,106 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
         )}
 
         {/* RIWAYAT INSPEKSI */}
-        {activeMenu === "inspeksi" && (
+        {activeMenu === "inspeksi" && (() => {
+          // Pre-compute filtered data for KPIs and Export
+          const filtered = (
+            Array.isArray(historyData) ? historyData : []
+          ).filter((item) => {
+            let match = true;
+            if (search.trim()) {
+              const q = search.toLowerCase().trim();
+              match = (
+                (item.container || "").toLowerCase().includes(q) ||
+                (item.shipName || "").toLowerCase().includes(q) ||
+                (item.petugas || "").toLowerCase().includes(q) ||
+                (item.group || "").toLowerCase().includes(q) ||
+                (item.condition || "").toLowerCase().includes(q) ||
+                (item.side || "").toLowerCase().includes(q)
+              );
+            }
+            if (match && (filterStartDate || filterEndDate)) {
+              if (!item.date) return false;
+              const itemDate = new Date(item.date);
+              if (filterStartDate) {
+                const start = new Date(filterStartDate);
+                start.setHours(0, 0, 0, 0);
+                if (itemDate < start) match = false;
+              }
+              if (match && filterEndDate) {
+                const end = new Date(filterEndDate);
+                end.setHours(23, 59, 59, 999);
+                if (itemDate > end) match = false;
+              }
+            }
+            return match;
+          });
+
+          const totalFiltered = filtered.length;
+          const totalGood = filtered.filter(i => i.condition === "GOOD").length;
+          const totalDamage = totalFiltered - totalGood;
+          const totalPages = Math.ceil(totalFiltered / 10);
+          const paginated = filtered.slice((currentPage - 1) * 10, currentPage * 10);
+
+          const handleExportCSV = () => {
+            if (filtered.length === 0) {
+              alert("Tidak ada data untuk diekspor.");
+              return;
+            }
+            const headers = ["No", "Tanggal", "Container", "Kapal/Voy", "ISO", "Kategori", "Status", "Kondisi", "Sisi", "Catatan", "Petugas", "Grup"];
+            const rows = filtered.map((item, index) => [
+              index + 1,
+              item.date ? new Date(item.date).toLocaleString("id-ID").replace(/,/g, "") : "-",
+              item.container || "",
+              item.shipName || "",
+              item.iso || "",
+              item.category || "",
+              item.status || "",
+              item.condition || "",
+              item.side || "",
+              (item.note || "").replace(/\\n/g, " ").replace(/,/g, ";"),
+              item.petugas || "",
+              item.group || ""
+            ]);
+            const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\\n");
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Export_Inspeksi_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          };
+
+          return (
+            <div style={{ marginTop: "24px" }}>
+              {/* KPI Cards for Filtered Data */}
+              <div className="dashboard-summary" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px", marginBottom: "20px" }}>
+                <StatCard title="Total Hasil Filter" value={totalFiltered} color="blue" />
+                <StatCard title="Kondisi Good" value={totalGood} color="green" />
+                <StatCard title="Kondisi Damage" value={totalDamage} color="red" />
+              </div>
+
+              {/* Advanced Filter Bar */}
+              <div className="table-card" style={{ marginBottom: "20px", padding: "15px", display: "flex", flexWrap: "wrap", gap: "15px", alignItems: "flex-end", background: "#f8fafc" }}>
+                <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: "200px" }}>
+                  <label style={{ fontSize: "13px", fontWeight: "bold", color: "#475569", marginBottom: "5px" }}>Mulai Tanggal</label>
+                  <input type="date" className="search-input" value={filterStartDate} onChange={(e) => { setFilterStartDate(e.target.value); setCurrentPage(1); }} style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1" }} />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: "200px" }}>
+                  <label style={{ fontSize: "13px", fontWeight: "bold", color: "#475569", marginBottom: "5px" }}>Sampai Tanggal</label>
+                  <input type="date" className="search-input" value={filterEndDate} onChange={(e) => { setFilterEndDate(e.target.value); setCurrentPage(1); }} style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1" }} />
+                </div>
+                <div>
+                  <button onClick={handleExportCSV} style={{ background: "#10b981", color: "white", border: "none", padding: "12px 20px", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", height: "42px" }}>
+                    <Download size={18} /> Export Excel (CSV)
+                  </button>
+                </div>
+              </div>
+
         <div
           id="table-inspeksi"
           className="table-card"
-          style={{
-            marginTop: "24px",
-          }}
         >
           <div className="table-header">
             <h3>Tabel Transaksi Inspeksi</h3>
@@ -1148,28 +1244,8 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
               </thead>
 
               <tbody>
-                {(() => {
-                  const filtered = (
-                    Array.isArray(historyData) ? historyData : []
-                  ).filter((item) => {
-                    if (!search.trim()) return true;
-                    const q = search.toLowerCase().trim();
-                    return (
-                      (item.container || "").toLowerCase().includes(q) ||
-                      (item.shipName || "").toLowerCase().includes(q) ||
-                      (item.petugas || "").toLowerCase().includes(q) ||
-                      (item.group || "").toLowerCase().includes(q) ||
-                      (item.condition || "").toLowerCase().includes(q) ||
-                      (item.side || "").toLowerCase().includes(q)
-                    );
-                  });
-                  const paginated = filtered.slice(
-                    (currentPage - 1) * 10,
-                    currentPage * 10,
-                  );
-
-                  return paginated.map((item, index) => {
-                    const absoluteIndex = (currentPage - 1) * 10 + index + 1;
+                {paginated.map((item, index) => {
+                  const absoluteIndex = (currentPage - 1) * 10 + index + 1;
                     return (
                       <tr key={index}>
                         <td>{absoluteIndex}</td>
@@ -1243,29 +1319,13 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                         </td>
                       </tr>
                     );
-                  });
-                })()}
+                  })}
               </tbody>
             </table>
           </div>
 
           {/* Pagination Controls */}
           {(() => {
-            const filtered = (
-              Array.isArray(historyData) ? historyData : []
-            ).filter((item) => {
-              if (!search.trim()) return true;
-              const q = search.toLowerCase().trim();
-              return (
-                (item.container || "").toLowerCase().includes(q) ||
-                (item.shipName || "").toLowerCase().includes(q) ||
-                (item.petugas || "").toLowerCase().includes(q) ||
-                (item.group || "").toLowerCase().includes(q) ||
-                (item.condition || "").toLowerCase().includes(q) ||
-                (item.side || "").toLowerCase().includes(q)
-              );
-            });
-            const totalPages = Math.ceil(filtered.length / 10);
             if (totalPages > 1) {
               return (
                 <div
@@ -1316,7 +1376,9 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             return null;
           })()}
         </div>
-        )}
+        </div>
+          );
+        })()}
 
         {/* PENGATURAN / SETTINGS SECTION */}
         {activeMenu === "settings" && (
