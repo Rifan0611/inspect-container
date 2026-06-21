@@ -405,7 +405,7 @@ export default function InspectionForm({ user, manifestList, onSaveSuccess, onBa
         {/* DIAGRAM */}
         <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-50 p-2">
            <img
-             src="/container-diagram.png"
+             src="/container-diagram-modern.svg"
              alt="Diagram Sisi Container"
              className="w-full object-contain max-h-[250px]"
              onError={(e) => {

@@ -890,7 +890,7 @@ export default function Inspection() {
             </label>
             <div className="interactive-diagram-container">
               <img
-                src="/container-diagram.png"
+                src="/container-diagram-modern.svg"
                 alt="Container Damage Diagram"
                 className="interactive-diagram-image"
               />

@@ -1992,7 +1992,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
               </label>
               <div className="interactive-diagram-container">
                 <img
-                  src="/container-diagram.png"
+                  src="/container-diagram-modern.svg"
                   alt="Container Damage Diagram"
                   className="interactive-diagram-image"
                 />
