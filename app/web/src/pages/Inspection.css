@@ -350,7 +350,7 @@
     justify-content: center;
   }
   .form-footer-buttons {
-    flex-direction: column;
+    flex-direction: column-reverse;
     gap: 12px;
   }
   .btn-back,
