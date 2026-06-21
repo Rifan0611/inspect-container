@@ -1162,7 +1162,13 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
               return;
             }
             const headers = ["No", "Tanggal", "Container", "Kapal/Voy", "ISO", "Kategori", "Status", "Kondisi", "Sisi", "Catatan", "Petugas", "Grup"];
-            const rows = filtered.map((item, index) => [
+            // Sort filtered by date ascending for export
+            const exportData = [...filtered].sort((a, b) => {
+              if (!a.date || !b.date) return 0;
+              return new Date(a.date) - new Date(b.date);
+            });
+
+            const rows = exportData.map((item, index) => [
               index + 1,
               item.date ? new Date(item.date).toLocaleString("id-ID").replace(/,/g, "") : "-",
               item.container || "",
@@ -1172,11 +1178,14 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
               item.status || "",
               item.condition || "",
               item.side || "",
-              (item.note || "").replace(/\n/g, " ").replace(/,/g, ";"),
+              (item.note || "").replace(/\n/g, " "),
               item.petugas || "",
               item.group || ""
             ]);
-            const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+            const csvContent = [
+              headers.map(h => `"${h}"`).join(","),
+              ...rows.map(r => r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))
+            ].join("\n");
             const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
