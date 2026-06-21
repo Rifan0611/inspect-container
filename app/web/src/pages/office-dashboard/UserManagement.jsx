@@ -664,7 +664,7 @@ export default function UserManagement() {
             </div>
           </div>
 
-          <div className="um-table-wrapper">
+          <div className="um-table-wrapper" style={{ maxHeight: "400px", overflowY: "auto" }}>
             <table className="um-table">
               <thead>
                 <tr>

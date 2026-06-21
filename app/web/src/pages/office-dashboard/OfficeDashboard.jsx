@@ -391,9 +391,12 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
       // format date for datetime-local input (YYYY-MM-DDTHH:MM)
       if (editingInspection.date) {
         const d = new Date(editingInspection.date);
-        const offset = d.getTimezoneOffset();
-        const adjustedDate = new Date(d.getTime() - offset * 60 * 1000);
-        setEditDate(adjustedDate.toISOString().slice(0, 16));
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        setEditDate(`${year}-${month}-${day}T${hours}:${minutes}`);
       } else {
         setEditDate("");
       }
@@ -516,6 +519,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
     try {
       const d = new Date(dateStr);
       let str = d.toLocaleString("id-ID", {
+        timeZone: "Asia/Jakarta",
         weekday: "long",
         day: "2-digit",
         month: "long",
@@ -553,6 +557,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
     try {
       const d = new Date(dateStr);
       let datePart = d.toLocaleDateString("id-ID", {
+        timeZone: "Asia/Jakarta",
         weekday: "long",
         day: "2-digit",
         month: "long",
@@ -575,6 +580,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
       }
       const timePart = d
         .toLocaleTimeString("id-ID", {
+          timeZone: "Asia/Jakarta",
           hour: "2-digit",
           minute: "2-digit",
         })
@@ -590,6 +596,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
     try {
       const d = new Date(dateStr);
       let datePart = d.toLocaleDateString("id-ID", {
+        timeZone: "Asia/Jakarta",
         weekday: "long",
         day: "2-digit",
         month: "long",
@@ -1273,14 +1280,23 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                     <div className="real-chart" style={{ height: "250px", width: "100%" }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
+                          <text x="50%" y="43%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: "28px", fontWeight: "bold", fill: "#0f172a" }}>
+                            {totalInspeksi}
+                          </text>
+                          <text x="50%" y="54%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: "13px", fill: "#64748b", fontWeight: "500" }}>
+                            Total
+                          </text>
+                          <text x="50%" y="62%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: "12px", fill: "#94a3b8" }}>
+                            Terinspeksi
+                          </text>
                           <Pie 
                             data={pieData} 
                             dataKey="value" 
                             nameKey="name" 
                             cx="50%" 
                             cy="50%" 
-                            innerRadius={65}
-                            outerRadius={85} 
+                            innerRadius={70}
+                            outerRadius={90} 
                             paddingAngle={5}
                             labelLine={false}
                             stroke="none"

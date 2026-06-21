@@ -452,7 +452,11 @@ export default function Inspection() {
         photo1: uploadedPhotoUrl,
         photo2: uploadedContainerNoUrl,
         petugas: activeUser?.nama || "Petugas Lapangan",
-        date: new Date().toISOString(),
+        date: (() => {
+          const now = new Date();
+          const pad = (n) => String(n).padStart(2, '0');
+          return `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        })(),
       };
 
       const response = await fetch(`${API_URL}/api/inspection`, {
