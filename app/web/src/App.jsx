@@ -7,6 +7,9 @@ import { Save, Camera, ArrowLeft, Loader2, Image, FileText, Search } from "lucid
 import SearchSelect, { ISO_CODES, CATEGORIES } from "./components/SearchSelect";
 import MultiSelectDropdown from "./components/MultiSelectDropdown";
 
+import axios from "axios";
+import diagramModern from './assets/container-diagram-modern.svg';
+
 import * as XLSX from "xlsx";
 import { getGeminiApiKey, scanContainerWithGemini } from "./utils/geminiOcr";
 import CameraScanner from "./components/CameraScanner";
@@ -2008,7 +2011,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
               </label>
               <div className="interactive-diagram-container">
                 <img
-                  src="/container-diagram-modern.svg"
+                  src={diagramModern}
                   alt="Container Damage Diagram"
                   className="interactive-diagram-image"
                 />

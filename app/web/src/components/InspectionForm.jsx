@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Loader2, Camera, Save, ArrowLeft } from "lucide-react";
+import { Loader2, Camera, Save, ArrowLeft, Check } from "lucide-react";
 import SearchSelect, { ISO_CODES, CATEGORIES } from "./SearchSelect";
 import MultiSelectDropdown from "./MultiSelectDropdown";
 import { getGeminiApiKey, scanContainerWithGemini } from "../utils/geminiOcr";
 import { compressImage, compressImageToBase64 } from "../utils/imageUtils";
 import API_URL from "../config/api";
 import Toast from "./Toast";
+import diagramModern from '../assets/container-diagram-modern.svg';
 
 const COND_OPTIONS = ["Good", "Dented/Penyok", "Torn/Robek", "Hole/Lubang", "Rusty/Karat", "Bulging/Menonjol", "Peeling/Terkelupas"];
 const SIDE_OPTIONS = ["Front/Depan", "Left Side (Depan)", "Left Side (Tengah)", "Left Side (Belakang)", "Bottom (Depan)", "Bottom (Tengah)", "Bottom (Belakang)", "Inside/Dalam", "Roof (Depan)", "Roof (Tengah)", "Roof (Belakang)", "Right Side (Depan)", "Right Side (Tengah)", "Right Side (Belakang)", "Rear/Belakang", "Doors/Pintu", "Door Rods/Gagang Pintu", "Corner Castings"];
@@ -405,12 +406,9 @@ export default function InspectionForm({ user, manifestList, onSaveSuccess, onBa
         {/* DIAGRAM */}
         <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-50 p-2">
            <img
-             src="/container-diagram-modern.svg"
+             src={diagramModern}
              alt="Diagram Sisi Container"
              className="w-full object-contain max-h-[250px]"
-             onError={(e) => {
-               e.target.style.display = 'none'; // hide if not found locally
-             }}
            />
         </div>
 

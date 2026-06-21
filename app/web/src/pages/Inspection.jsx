@@ -9,6 +9,7 @@ import SearchSelect, {
   CATEGORIES,
 } from "../components/SearchSelect";
 import CameraScanner from "../components/CameraScanner";
+import diagramModern from '../assets/container-diagram-modern.svg';
 
 const compressImage = (file) => {
   return new Promise((resolve) => {
@@ -890,10 +891,10 @@ export default function Inspection() {
             </label>
             <div className="interactive-diagram-container">
               <img
-                src="/container-diagram-modern.svg"
-                alt="Container Damage Diagram"
-                className="interactive-diagram-image"
-              />
+                  src={diagramModern}
+                  alt="Container Damage Diagram"
+                  className="interactive-diagram-image"
+                />
               {[
                 { val: "Front/Depan", label: "Front (Depan)", x: 11, y: 45 },
                 
