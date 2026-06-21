@@ -9,7 +9,7 @@ import Toast from "./Toast";
 import diagramModern from '../assets/container-diagram-modern.svg';
 
 const COND_OPTIONS = ["Good", "Dented/Penyok", "Torn/Robek", "Hole/Lubang", "Rusty/Karat", "Bulging/Menonjol", "Peeling/Terkelupas"];
-const SIDE_OPTIONS = ["Front/Depan", "Left Side (Depan)", "Left Side (Tengah)", "Left Side (Belakang)", "Bottom (Depan)", "Bottom (Tengah)", "Bottom (Belakang)", "Inside/Dalam", "Roof (Depan)", "Roof (Tengah)", "Roof (Belakang)", "Right Side (Depan)", "Right Side (Tengah)", "Right Side (Belakang)", "Rear/Belakang", "Doors/Pintu", "Door Rods/Gagang Pintu", "Corner Castings"];
+const SIDE_OPTIONS = ["Front/Depan", "Rear/Belakang", "Right Side/Sisi Kanan", "Left Side/Sisi Kiri", "Roof/Atas", "Bottom/Bawah", "Inside/Dalam", "Doors/Pintu", "Door Rods/Gagang Pintu", "Corner Castings"];
 
 export default function InspectionForm({ user, manifestList, onSaveSuccess, onBack }) {
   const [container, setContainer] = useState("");
