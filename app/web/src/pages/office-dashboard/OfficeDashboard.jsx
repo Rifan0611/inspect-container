@@ -349,6 +349,8 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
   }, [showQuickActions]);
 
   const [selectedInspection, setSelectedInspection] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   // Edit states
   const [editingInspection, setEditingInspection] = useState(null);
@@ -1112,9 +1114,60 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             </div>
 
             {/* NOTIF */}
-            <button className="notif-btn">
-              <Bell size={20} />
-            </button>
+            <div style={{ position: "relative" }}>
+              <button 
+                className="notif-btn" 
+                onClick={() => setShowNotifications(!showNotifications)}
+                style={{ position: "relative" }}
+              >
+                <Bell size={20} />
+                {(() => {
+                   const damages = arrHistory.filter(i => i.condition && i.condition !== "GOOD");
+                   // Just check if there's any recent damage today for the badge
+                   const today = new Date().toDateString();
+                   const hasRecent = damages.some(i => i.date && new Date(i.date).toDateString() === today);
+                   if (hasRecent) {
+                     return <div style={{ position: "absolute", top: "6px", right: "6px", width: "8px", height: "8px", background: "#ef4444", borderRadius: "50%" }}></div>;
+                   }
+                   return null;
+                })()}
+              </button>
+
+              {showNotifications && (
+                <div className="notification-dropdown">
+                  <div className="notification-header">
+                    Notifikasi Kerusakan
+                  </div>
+                  <div className="notification-list">
+                    {(() => {
+                      const damages = arrHistory
+                        .filter(i => i.condition && i.condition !== "GOOD")
+                        .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
+                        .slice(0, 5); // top 5
+                      
+                      if (damages.length === 0) {
+                        return <div className="notif-empty">Tidak ada notifikasi kerusakan terbaru.</div>;
+                      }
+
+                      return damages.map((item, idx) => (
+                        <div 
+                          key={idx} 
+                          className="notification-item"
+                          onClick={() => {
+                            setSelectedInspection(item);
+                            setShowNotifications(false);
+                          }}
+                        >
+                          <span className="notif-title">{item.container || "Unknown Container"}</span>
+                          <span className="notif-desc">{item.condition} ({item.side})</span>
+                          <span className="notif-time">{item.date ? new Date(item.date).toLocaleTimeString("id-ID", {hour: '2-digit', minute:'2-digit'}) : ""}</span>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -1295,6 +1348,93 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
           const totalPages = Math.ceil(totalFiltered / 10);
           const paginated = filtered.slice((currentPage - 1) * 10, currentPage * 10);
 
+          const handleSelectAll = (e) => {
+            if (e.target.checked) {
+              const ids = paginated.map(i => i.id).filter(Boolean);
+              setSelectedIds(prev => [...new Set([...prev, ...ids])]);
+            } else {
+              const ids = paginated.map(i => i.id);
+              setSelectedIds(prev => prev.filter(id => !ids.includes(id)));
+            }
+          };
+
+          const handleSelect = (id) => {
+            if (!id) return;
+            if (selectedIds.includes(id)) {
+              setSelectedIds(prev => prev.filter(i => i !== id));
+            } else {
+              setSelectedIds(prev => [...prev, id]);
+            }
+          };
+
+          const isAllSelected = paginated.length > 0 && paginated.every(i => i.id && selectedIds.includes(i.id));
+
+          const handleBulkDelete = async () => {
+            if (!selectedIds.length) return;
+            if (!(user?.username === "adminRAL" || user?.role !== "PETUGAS")) {
+              alert("Hanya admin dan supervisi yang dapat menghapus data.");
+              return;
+            }
+            if (!window.confirm(`Apakah Anda yakin ingin menghapus ${selectedIds.length} data inspeksi ini secara permanen?`)) {
+              return;
+            }
+
+            try {
+              const promises = selectedIds.map(id => fetch(`${API_URL}/api/inspection/${id}`, { method: "DELETE" }));
+              await Promise.all(promises);
+              
+              const arr = Array.isArray(historyData) ? historyData : [];
+              const updatedData = arr.filter(item => !selectedIds.includes(item.id));
+              setHistoryData(updatedData);
+              localStorage.setItem("history", JSON.stringify(updatedData));
+              window.dispatchEvent(new Event("storage"));
+              
+              alert(`${selectedIds.length} data berhasil dihapus.`);
+              setSelectedIds([]);
+            } catch (err) {
+              console.error("Bulk delete error:", err);
+              alert("Sebagian atau seluruh data gagal dihapus. Periksa koneksi Anda.");
+            }
+          };
+
+          const handleBulkExport = () => {
+             const itemsToExport = filtered.filter(item => selectedIds.includes(item.id));
+             if (itemsToExport.length === 0) return;
+             
+             const headers = ["No", "Tanggal", "Container", "Kapal/Voy", "ISO", "Kategori", "Status", "Kondisi", "Sisi", "Catatan", "Petugas", "Grup"];
+             const exportData = [...itemsToExport].sort((a, b) => {
+               if (!a.date || !b.date) return 0;
+               return new Date(a.date) - new Date(b.date);
+             });
+
+             const rows = exportData.map((item, index) => [
+               index + 1,
+               item.date ? new Date(item.date).toLocaleString("id-ID").replace(/,/g, "") : "-",
+               item.container || "",
+               item.shipName || "",
+               item.iso || "",
+               item.category || "",
+               item.status || "",
+               item.condition || "",
+               item.side || "",
+               (item.note || "").replace(/\n/g, " "),
+               item.petugas || "",
+               item.group || ""
+             ]);
+             const csvContent = [
+               headers.map(h => `"${h}"`).join(","),
+               ...rows.map(r => r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))
+             ].join("\n");
+             const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+             const url = URL.createObjectURL(blob);
+             const link = document.createElement("a");
+             link.setAttribute("href", url);
+             link.setAttribute("download", `Bulk_Export_Inspeksi_${new Date().toISOString().slice(0,10)}.csv`);
+             document.body.appendChild(link);
+             link.click();
+             document.body.removeChild(link);
+          };
+
           const handleExportCSV = () => {
             if (filtered.length === 0) {
               alert("Tidak ada data untuk diekspor.");
@@ -1361,6 +1501,45 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                 </div>
               </div>
 
+              {/* Floating Action Bar for Bulk Actions */}
+              {selectedIds.length > 0 && (
+                <div style={{
+                  background: "#1e293b",
+                  color: "white",
+                  padding: "16px 24px",
+                  borderRadius: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: "20px",
+                  boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+                  animation: "slideDown 0.3s ease-out"
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <span style={{ background: "#3b82f6", padding: "4px 10px", borderRadius: "20px", fontWeight: "bold", fontSize: "14px" }}>
+                      {selectedIds.length} Terpilih
+                    </span>
+                    <span style={{ fontSize: "15px" }}>Pilih aksi massal untuk data ini:</span>
+                  </div>
+                  <div style={{ display: "flex", gap: "12px" }}>
+                    <button 
+                      onClick={handleBulkExport}
+                      style={{ background: "#10b981", color: "white", border: "none", padding: "10px 16px", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}
+                    >
+                      <Download size={18} /> Export CSV
+                    </button>
+                    {(user?.username === "adminRAL" || user?.role !== "PETUGAS") && (
+                      <button 
+                        onClick={handleBulkDelete}
+                        style={{ background: "#ef4444", color: "white", border: "none", padding: "10px 16px", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}
+                      >
+                        <Trash2 size={18} /> Hapus Massal
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
         <div
           id="table-inspeksi"
           className="table-card"
@@ -1373,6 +1552,14 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             <table>
               <thead>
                 <tr>
+                  <th style={{ width: "40px", textAlign: "center" }}>
+                    <input 
+                      type="checkbox" 
+                      checked={isAllSelected} 
+                      onChange={handleSelectAll} 
+                      style={{ cursor: "pointer", width: "16px", height: "16px" }}
+                    />
+                  </th>
                   <th>No</th>
 
                   <th>Tanggal</th>
@@ -1396,6 +1583,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                   [...Array(10)].map((_, i) => (
                     <tr key={`skeleton-${i}`} className="skeleton-row">
                       <td><div className="skeleton-line" style={{width: "20px"}}></div></td>
+                      <td><div className="skeleton-line" style={{width: "20px"}}></div></td>
                       <td><div className="skeleton-line" style={{width: "120px"}}></div></td>
                       <td><div className="skeleton-line" style={{width: "110px"}}></div></td>
                       <td><div className="skeleton-line" style={{width: "90px"}}></div></td>
@@ -1406,12 +1594,20 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                     </tr>
                   ))
                 ) : paginated.length === 0 ? (
-                  <tr><td colSpan="8" style={{textAlign:"center", padding:"30px", color:"#64748b"}}>Tidak ada data inspeksi</td></tr>
+                  <tr><td colSpan="9" style={{textAlign:"center", padding:"30px", color:"#64748b"}}>Tidak ada data inspeksi</td></tr>
                 ) : (
                   paginated.map((item, index) => {
                     const absoluteIndex = (currentPage - 1) * 10 + index + 1;
                     return (
-                      <tr key={index}>
+                      <tr key={index} className={selectedIds.includes(item.id) ? "selected-row" : ""}>
+                        <td style={{ textAlign: "center" }}>
+                          <input 
+                            type="checkbox" 
+                            checked={item.id ? selectedIds.includes(item.id) : false} 
+                            onChange={() => handleSelect(item.id)} 
+                            style={{ cursor: "pointer", width: "16px", height: "16px" }}
+                          />
+                        </td>
                         <td>{absoluteIndex}</td>
 
                         <td>{formatInspectionDate(item.date)}</td>
