@@ -1121,7 +1121,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
         {activeMenu === "dashboard" && (() => {
           // Chart Data Logic
           const barMap = {};
-          const pieMap = { GOOD: 0, DAMAGE: 0 };
+          const pieMap = {};
           
           (Array.isArray(historyData) ? historyData : []).forEach(item => {
             if (item.date) {
@@ -1129,16 +1129,37 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
               if (!barMap[d]) barMap[d] = 0;
               barMap[d]++;
             }
-            if (item.condition === "GOOD") pieMap.GOOD++;
-            else if (item.condition) pieMap.DAMAGE++;
+            
+            // Collect Damage Types (Jenis Kerusakan)
+            let conditions = [];
+            if (Array.isArray(item.condition)) {
+              conditions = item.condition;
+            } else if (typeof item.condition === "string") {
+              try {
+                 const parsed = JSON.parse(item.condition);
+                 if (Array.isArray(parsed)) conditions = parsed;
+                 else conditions = item.condition.split(",").map(c => c.trim());
+              } catch(e) {
+                 conditions = item.condition.split(",").map(c => c.trim());
+              }
+            }
+            
+            conditions.forEach(cond => {
+              if (cond && cond.toUpperCase() !== "GOOD" && cond.toUpperCase() !== "DAMAGE") {
+                if (!pieMap[cond]) pieMap[cond] = 0;
+                pieMap[cond]++;
+              }
+            });
           });
 
           const barData = Object.keys(barMap).map(k => ({ name: k, total: barMap[k] })).reverse().slice(-7);
           
-          const pieData = [
-            { name: "Kondisi Good", value: pieMap.GOOD, color: "#22c55e" },
-            { name: "Kondisi Damage", value: pieMap.DAMAGE, color: "#ef4444" }
-          ];
+          const modernColors = ["#ef4444", "#f97316", "#eab308", "#8b5cf6", "#ec4899", "#3b82f6", "#06b6d4", "#14b8a6"];
+          const pieData = Object.keys(pieMap).map((k, i) => ({
+            name: k,
+            value: pieMap[k],
+            color: modernColors[i % modernColors.length]
+          })).sort((a,b) => b.value - a.value);
 
           return (
             <div style={{ marginTop: "24px" }}>
@@ -1156,11 +1177,20 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                     <div className="real-chart" style={{ height: "250px", width: "100%" }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={barData}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                          <XAxis dataKey="name" tick={{fontSize: 12}} />
-                          <YAxis allowDecimals={false} tick={{fontSize: 12}} />
-                          <Tooltip cursor={{fill: 'transparent'}} />
-                          <Bar dataKey="total" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40} />
+                          <defs>
+                            <linearGradient id="colorBar" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.9}/>
+                              <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.9}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                          <XAxis dataKey="name" tick={{fontSize: 12, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                          <YAxis allowDecimals={false} tick={{fontSize: 12, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                          <Tooltip 
+                            cursor={{fill: '#f1f5f9'}} 
+                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.08)' }} 
+                          />
+                          <Bar dataKey="total" fill="url(#colorBar)" radius={[6, 6, 0, 0]} barSize={36} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -1168,7 +1198,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                 </div>
 
                 <div className="chart-card" style={{ background: "white", padding: "20px", borderRadius: "16px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
-                  <h3 style={{ marginBottom: "16px", fontSize: "18px", color: "#0f172a" }}>Rasio Kondisi Kontainer</h3>
+                  <h3 style={{ marginBottom: "16px", fontSize: "18px", color: "#0f172a" }}>Distribusi Jenis Kerusakan</h3>
                   {isDataLoading ? (
                     <div className="skeleton-chart"></div>
                   ) : (
@@ -1181,17 +1211,18 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                             nameKey="name" 
                             cx="50%" 
                             cy="50%" 
-                            innerRadius={60}
-                            outerRadius={80} 
+                            innerRadius={65}
+                            outerRadius={85} 
                             paddingAngle={5}
                             labelLine={false}
+                            stroke="none"
                           >
                             {pieData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                           </Pie>
-                          <Tooltip />
-                          <Legend verticalAlign="bottom" height={36}/>
+                          <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.08)' }} />
+                          <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}/>
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
