@@ -1172,11 +1172,11 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
               item.status || "",
               item.condition || "",
               item.side || "",
-              (item.note || "").replace(/\\n/g, " ").replace(/,/g, ";"),
+              (item.note || "").replace(/\n/g, " ").replace(/,/g, ";"),
               item.petugas || "",
               item.group || ""
             ]);
-            const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\\n");
+            const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
             const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
