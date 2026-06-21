@@ -405,7 +405,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             container: editContainer,
             shipName: editShipName,
             status: editStatus,
-            iso: editIso,
+            iso: editIso ? editIso.split(' - ')[0] : '',
             category: editCategory,
             condition: Array.isArray(editCondition) ? editCondition.join(", ") : editCondition,
             side: Array.isArray(editSide) ? editSide.join(", ") : editSide,
@@ -431,7 +431,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
               container: editContainer.trim().toUpperCase(),
               shipName: editShipName.trim(),
               status: editStatus,
-              iso: editIso,
+              iso: editIso ? editIso.split(' - ')[0] : '',
               category: editCategory,
               condition: Array.isArray(editCondition) ? editCondition.join(", ") : editCondition,
               side: Array.isArray(editSide) ? editSide.join(", ") : editSide,
@@ -1849,7 +1849,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                       "Scraped/Tergores",
                       "Torn/Robek",
                     ]}
-                    selectedValues={Array.isArray(editCondition) ? editCondition : [editCondition].filter(Boolean)}
+                    value={Array.isArray(editCondition) ? editCondition : [editCondition].filter(Boolean)}
                     onChange={(newVal) => {
                       if (newVal.length > 4) {
                         alert("Maksimal 4 opsi yang dapat dipilih.");
@@ -1885,7 +1885,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                       "Rear/Belakang",
                       "Inside/Dalam"
                     ]}
-                    selectedValues={Array.isArray(editSide) ? editSide : [editSide].filter(Boolean)}
+                    value={Array.isArray(editSide) ? editSide : [editSide].filter(Boolean)}
                     onChange={(newVal) => {
                       if (newVal.length > 4) {
                         alert("Maksimal 4 opsi yang dapat dipilih.");
