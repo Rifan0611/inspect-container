@@ -28,6 +28,19 @@ import {
   Image,
   Download,
 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
+} from "recharts";
 
 import "./OfficeDashboard.css";
 
@@ -627,6 +640,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
     } catch (e) {}
     return [];
   });
+  const [isDataLoading, setIsDataLoading] = useState(true);
 
   // Auto-refresh riwayat inspeksi saat database berubah atau berkala (real-time sync)
   useEffect(() => {
@@ -653,6 +667,8 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
           if (Array.isArray(parsed)) latest = parsed;
         } catch (e) {}
         setHistoryData(latest);
+      } finally {
+        setIsDataLoading(false);
       }
     };
 
@@ -1102,12 +1118,89 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
           </div>
         </div>
 
-        {activeMenu === "dashboard" && (
-          <div className="dashboard-summary" style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px" }}>
-            <StatCard title="Total Inspeksi" value={totalInspeksi} color="blue" />
-            <StatCard title="Total Damage" value={totalDamage} color="orange" />
-          </div>
-        )}
+        {activeMenu === "dashboard" && (() => {
+          // Chart Data Logic
+          const barMap = {};
+          const pieMap = { GOOD: 0, DAMAGE: 0 };
+          
+          (Array.isArray(historyData) ? historyData : []).forEach(item => {
+            if (item.date) {
+              const d = new Date(item.date).toLocaleDateString("id-ID", { month: "short", day: "numeric" });
+              if (!barMap[d]) barMap[d] = 0;
+              barMap[d]++;
+            }
+            if (item.condition === "GOOD") pieMap.GOOD++;
+            else if (item.condition) pieMap.DAMAGE++;
+          });
+
+          const barData = Object.keys(barMap).map(k => ({ name: k, total: barMap[k] })).reverse().slice(-7);
+          
+          const pieData = [
+            { name: "Kondisi Good", value: pieMap.GOOD, color: "#22c55e" },
+            { name: "Kondisi Damage", value: pieMap.DAMAGE, color: "#ef4444" }
+          ];
+
+          return (
+            <div style={{ marginTop: "24px" }}>
+              <div className="dashboard-summary" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px" }}>
+                <StatCard title="Total Inspeksi" value={totalInspeksi} color="blue" />
+                <StatCard title="Total Damage" value={totalDamage} color="orange" />
+              </div>
+
+              <div className="chart-grid" style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
+                <div className="chart-card" style={{ background: "white", padding: "20px", borderRadius: "16px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+                  <h3 style={{ marginBottom: "16px", fontSize: "18px", color: "#0f172a" }}>Tren Inspeksi Harian</h3>
+                  {isDataLoading ? (
+                    <div className="skeleton-chart"></div>
+                  ) : (
+                    <div className="real-chart" style={{ height: "250px", width: "100%" }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={barData}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="name" tick={{fontSize: 12}} />
+                          <YAxis allowDecimals={false} tick={{fontSize: 12}} />
+                          <Tooltip cursor={{fill: 'transparent'}} />
+                          <Bar dataKey="total" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </div>
+
+                <div className="chart-card" style={{ background: "white", padding: "20px", borderRadius: "16px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+                  <h3 style={{ marginBottom: "16px", fontSize: "18px", color: "#0f172a" }}>Rasio Kondisi Kontainer</h3>
+                  {isDataLoading ? (
+                    <div className="skeleton-chart"></div>
+                  ) : (
+                    <div className="real-chart" style={{ height: "250px", width: "100%" }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie 
+                            data={pieData} 
+                            dataKey="value" 
+                            nameKey="name" 
+                            cx="50%" 
+                            cy="50%" 
+                            innerRadius={60}
+                            outerRadius={80} 
+                            paddingAngle={5}
+                            labelLine={false}
+                          >
+                            {pieData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend verticalAlign="bottom" height={36}/>
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {activeMenu === "user" && showAdminPanel && user?.username === "adminRAL" && (
           <div id="user-section">
@@ -1253,8 +1346,24 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
               </thead>
 
               <tbody>
-                {paginated.map((item, index) => {
-                  const absoluteIndex = (currentPage - 1) * 10 + index + 1;
+                {isDataLoading ? (
+                  [...Array(10)].map((_, i) => (
+                    <tr key={`skeleton-${i}`} className="skeleton-row">
+                      <td><div className="skeleton-line" style={{width: "20px"}}></div></td>
+                      <td><div className="skeleton-line" style={{width: "120px"}}></div></td>
+                      <td><div className="skeleton-line" style={{width: "110px"}}></div></td>
+                      <td><div className="skeleton-line" style={{width: "90px"}}></div></td>
+                      <td><div className="skeleton-line" style={{width: "80px"}}></div></td>
+                      <td><div className="skeleton-line" style={{width: "70px"}}></div></td>
+                      <td><div className="skeleton-line" style={{width: "90px"}}></div></td>
+                      <td><div className="skeleton-line" style={{width: "140px"}}></div></td>
+                    </tr>
+                  ))
+                ) : paginated.length === 0 ? (
+                  <tr><td colSpan="8" style={{textAlign:"center", padding:"30px", color:"#64748b"}}>Tidak ada data inspeksi</td></tr>
+                ) : (
+                  paginated.map((item, index) => {
+                    const absoluteIndex = (currentPage - 1) * 10 + index + 1;
                     return (
                       <tr key={index}>
                         <td>{absoluteIndex}</td>
@@ -1328,7 +1437,8 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                         </td>
                       </tr>
                     );
-                  })}
+                  })
+                )}
               </tbody>
             </table>
           </div>

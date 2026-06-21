@@ -1604,4 +1604,31 @@ tr:hover{
   background: #1c1917;
   border: 1px solid #292524;
   color: #ea580c;
+}
+
+/* SKELETON LOADING */
+.skeleton-row td {
+  padding: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.skeleton-line {
+  height: 20px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+.skeleton-chart {
+  height: 250px;
+  width: 100%;
+  background: #e2e8f0;
+  border-radius: 12px;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 0.3; }
+  100% { opacity: 0.6; }
 }
