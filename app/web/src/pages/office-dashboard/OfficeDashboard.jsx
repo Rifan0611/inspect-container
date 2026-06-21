@@ -1146,8 +1146,23 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             
             conditions.forEach(cond => {
               if (cond && cond.toUpperCase() !== "GOOD" && cond.toUpperCase() !== "DAMAGE") {
-                if (!pieMap[cond]) pieMap[cond] = 0;
-                pieMap[cond]++;
+                let normal = cond;
+                const lower = cond.toLowerCase();
+                if (lower.includes("dent") || lower.includes("penyok")) normal = "Dented/Penyok";
+                else if (lower.includes("bent") || lower.includes("bengkok")) normal = "Bent/Bengkok";
+                else if (lower.includes("broken") || lower.includes("pecah")) normal = "Broken/Pecah";
+                else if (lower.includes("bulg") || lower.includes("menggelembung")) normal = "Bulging/Menggelembung";
+                else if (lower.includes("crush") || lower.includes("ringsek")) normal = "Crushed/Ringsek";
+                else if (lower.includes("cut") || lower.includes("terpotong")) normal = "Cut/Terpotong";
+                else if (lower.includes("hole") || lower.includes("berlubang")) normal = "Hole/Berlubang";
+                else if (lower.includes("leak") || lower.includes("bocor")) normal = "Leaking/Bocor";
+                else if (lower.includes("miss") || lower.includes("hilang")) normal = "Missing/Hilang";
+                else if (lower.includes("scrap") || lower.includes("tergores")) normal = "Scraped/Tergores";
+                else if (lower.includes("torn") || lower.includes("robek")) normal = "Torn/Robek";
+                else if (lower.includes("rust") || lower.includes("karat")) normal = "Rust/Karat";
+
+                if (!pieMap[normal]) pieMap[normal] = 0;
+                pieMap[normal]++;
               }
             });
           });
