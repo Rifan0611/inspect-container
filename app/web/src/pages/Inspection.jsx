@@ -916,7 +916,7 @@ export default function Inspection() {
                 { val: "Right Side (Depan)", label: "Right (Depan)", x: 92, y: 42 },
                 
                 { val: "Rear/Belakang", label: "Rear (Belakang)", x: 74, y: 58 },
-              ]].map((hotspot) => {
+              ].map((hotspot) => {
                 const isChecked = selectedSides.includes(hotspot.val);
                 const isDisabled =
                   selectedConditions.includes("Good") ||
