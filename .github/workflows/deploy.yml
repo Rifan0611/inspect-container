@@ -1,0 +1,49 @@
+name: Deploy to Hostinger VPS
+
+on:
+  push:
+    branches:
+      - main # Script ini akan otomatis berjalan saat ada push ke branch main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🚚 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18' # Gunakan versi Node.js 18 atau sesuaikan dengan punyamu
+
+      - name: 🏗️ Build Frontend (React)
+        run: |
+          cd app/web
+          npm install
+          npm run build
+
+      - name: 📂 Transfer Files ke VPS
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          source: "app/web/dist/,app/backend/"
+          target: "/var/www/inspect-container" # PENTING: Ganti dengan folder tujuan di VPS kamu
+
+      - name: 🚀 Install Dependency Backend & Restart Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            # PENTING: Sesuaikan path ini dengan folder di VPS kamu
+            cd /var/www/inspect-container/app/backend 
+            npm install
+            
+            # Restart server menggunakan PM2 (pastikan PM2 sudah terinstall di VPS)
+            pm2 restart all 
+            # (Jika PM2 mu punya nama khusus, ganti 'all' dengan nama pm2 mu, misal: pm2 restart backend-inspect)
