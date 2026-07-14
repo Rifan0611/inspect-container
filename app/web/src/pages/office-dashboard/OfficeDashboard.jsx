@@ -126,7 +126,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 .diagram-hotspot { position:absolute; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; }
 .hotspot-badge { display:flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:rgba(239,68,68,0.95); color:white; border:2px solid white; font-size:12px; font-weight:bold; }
 .hotspot-badge.checked { background:rgba(34,197,94,0.95); }
-.hotspot-label { background:rgba(15,23,42,0.85); color:white; font-size:8px; font-weight:bold; padding:2px 4px; border-radius:4px; margin-top:2px; white-space:nowrap; }
+.hotspot-label { background:rgba(15,23,42,1); color:white; font-size:10px; font-weight:bold; padding:3px 6px; border-radius:4px; margin-top:2px; white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -253,7 +253,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 .diagram-hotspot { position:absolute; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; }
 .hotspot-badge { display:flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:rgba(239,68,68,0.95); color:white; border:2px solid white; font-size:12px; font-weight:bold; }
 .hotspot-badge.checked { background:rgba(34,197,94,0.95); }
-.hotspot-label { background:rgba(15,23,42,0.85); color:white; font-size:8px; font-weight:bold; padding:2px 4px; border-radius:4px; margin-top:2px; white-space:nowrap; }
+.hotspot-label { background:rgba(15,23,42,1); color:white; font-size:10px; font-weight:bold; padding:3px 6px; border-radius:4px; margin-top:2px; white-space:nowrap; }
 </style>
 </head>
 <body>

@@ -621,23 +621,22 @@
 }
 
 .hotspot-label {
-  background: rgba(15, 23, 42, 0.8);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #f8fafc;
-  font-size: 10px;
-  font-weight: 600;
+  background: rgba(15, 23, 42, 1);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
   letter-spacing: 0.3px;
   padding: 5px 10px;
   border-radius: 8px;
   margin-top: 8px;
   white-space: nowrap;
   pointer-events: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   position: relative;
   transition: all 0.3s ease;
-  opacity: 0.9;
+  opacity: 1;
+  text-shadow: none;
 }
 
 .diagram-hotspot:hover .hotspot-label {
