@@ -71,8 +71,8 @@ td { border:1px solid #000; padding:6px; font-size:10px; }
 .ttd-line { margin-top:55px; }
 @media print { html,body { width:100%; height:auto; overflow:visible; } }
 
-.diagram-container { position:relative; width:400px; margin:20px auto; border:2px solid #cbd5e1; overflow:hidden; background:white; }
-.diagram-image { width:100%; height:auto; display:block; }
+.diagram-container { position:relative; width:100%; max-width:500px; height:350px; margin:20px auto; border:2px solid #cbd5e1; border-radius:16px; overflow:hidden; background:white; }
+.diagram-image { width:100%; height:100%; display:block; object-fit: fill; }
 .diagram-hotspot { position:absolute; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; }
 .hotspot-badge { display:flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:rgba(239,68,68,0.95); color:white; border:2px solid white; font-size:12px; font-weight:bold; }
 .hotspot-badge.checked { background:rgba(34,197,94,0.95); }
@@ -193,8 +193,8 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 .photo-box img { width:100%; height:300px; object-fit:contain; border-radius:8px; border:2px solid #004aad; }
 @media print { html,body { width:100%; height:auto; overflow:visible; } }
 
-.diagram-container { position:relative; width:400px; margin:20px auto; border:2px solid #cbd5e1; overflow:hidden; background:white; }
-.diagram-image { width:100%; height:auto; display:block; }
+.diagram-container { position:relative; width:100%; max-width:500px; height:350px; margin:20px auto; border:2px solid #cbd5e1; border-radius:16px; overflow:hidden; background:white; }
+.diagram-image { width:100%; height:100%; display:block; object-fit: fill; }
 .diagram-hotspot { position:absolute; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; }
 .hotspot-badge { display:flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:rgba(239,68,68,0.95); color:white; border:2px solid white; font-size:12px; font-weight:bold; }
 .hotspot-badge.checked { background:rgba(34,197,94,0.95); }
