@@ -2310,7 +2310,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 
 const bg = {
   minHeight: "100vh",
-  background: "linear-gradient(135deg, #3da5c4 0%, #F05A28 100%)",
+  background: "linear-gradient(to bottom,#0057b8,#ff9900)",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
@@ -2367,22 +2367,16 @@ const textarea = {
 const button = {
   width: "100%",
   padding: "18px",
-  background: "linear-gradient(135deg, #F05A28 0%, #d8481b 100%)",
+  background: "#ff7a00",
   color: "#fff",
   border: "none",
   borderRadius: "18px",
   marginBottom: "20px",
-  fontWeight: "bold",
-  fontSize: "15px",
-  boxShadow: "0 6px 12px rgba(240, 90, 40, 0.2)",
-  cursor: "pointer",
-  transition: "transform 0.2s, box-shadow 0.2s",
 };
 
 const logoutButton = {
   ...button,
-  background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
-  boxShadow: "0 6px 12px rgba(239, 68, 68, 0.2)",
+  background: "red",
 };
 
 const historyBox = {
