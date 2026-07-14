@@ -122,7 +122,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 @media print { html,body { width:100%; height:auto; overflow:visible; } }
 
 .diagram-container { position:relative; width:100%; max-width:500px; height:350px; margin:20px auto; border:2px solid #cbd5e1; border-radius:16px; overflow:hidden; background:white; }
-.diagram-image { width:100%; height:100%; display:block; object-fit: fill; }
+.diagram-image { width:100%; height:100%; display:block; object-fit: fill; filter: brightness(1.2) contrast(1.2); }
 .diagram-hotspot { position:absolute; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; }
 .hotspot-badge { display:flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:rgba(239,68,68,0.95); color:white; border:2px solid white; font-size:12px; font-weight:bold; }
 .hotspot-badge.checked { background:rgba(34,197,94,0.95); }
@@ -249,7 +249,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 @media print { html,body { width:100%; height:auto; overflow:visible; } }
 
 .diagram-container { position:relative; width:100%; max-width:500px; height:350px; margin:20px auto; border:2px solid #cbd5e1; border-radius:16px; overflow:hidden; background:white; }
-.diagram-image { width:100%; height:100%; display:block; object-fit: fill; }
+.diagram-image { width:100%; height:100%; display:block; object-fit: fill; filter: brightness(1.2) contrast(1.2); }
 .diagram-hotspot { position:absolute; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; }
 .hotspot-badge { display:flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:rgba(239,68,68,0.95); color:white; border:2px solid white; font-size:12px; font-weight:bold; }
 .hotspot-badge.checked { background:rgba(34,197,94,0.95); }
