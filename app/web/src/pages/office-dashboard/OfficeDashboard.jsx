@@ -1038,7 +1038,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             >
               <div
                 style={{
-                  background: "#3da5c4",
+                  background: "#2563eb",
                   color: "white",
                   padding: "8px 16px",
                   borderRadius: 999,
@@ -1051,8 +1051,8 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 
               <div
                 style={{
-                  background: "#fdb95e",
-                  color: "#0f172a",
+                  background: "#22c55e",
+                  color: "white",
                   padding: "8px 16px",
                   borderRadius: 999,
                   fontSize: 14,
@@ -1065,7 +1065,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
               {user?.group && (
                 <div
                   style={{
-                    background: "#F05A28",
+                    background: "#8b5cf6",
                     color: "white",
                     padding: "8px 16px",
                     borderRadius: 999,
@@ -1078,16 +1078,20 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
               )}
             </div>
 
-            {/* USER WELCOME BANNER */}
-            <div className="welcome-banner">
-              <div className="welcome-content">
-                <h3>Selamat Datang, {user?.nama}</h3>
-                <p>Sistem Monitoring Inspeksi Kontainer — Nusantara Pelabuhan Handal</p>
-              </div>
-              <div className="welcome-date">
-                <span>{new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</span>
-              </div>
-            </div>
+            {/* USER */}
+            <h3
+              style={{
+                marginTop: 16,
+                color: "#0f172a",
+                fontSize: 22,
+              }}
+            >
+              Selamat Datang, {user?.nama}
+            </h3>
+
+            <p className="page-subtitle">
+              Sistem Monitoring Inspeksi Kontainer
+            </p>
           </div>
 
           {/* ACTION */}
@@ -1260,8 +1264,8 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                         <BarChart data={barData}>
                           <defs>
                             <linearGradient id="colorBar" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#3da5c4" stopOpacity={0.95}/>
-                              <stop offset="95%" stopColor="#F05A28" stopOpacity={0.95}/>
+                              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.9}/>
+                              <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.9}/>
                             </linearGradient>
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
