@@ -1185,9 +1185,12 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
           
           (Array.isArray(historyData) ? historyData : []).forEach(item => {
             if (item.date) {
-              const d = new Date(item.date).toLocaleDateString("id-ID", { month: "short", day: "numeric" });
-              if (!barMap[d]) barMap[d] = 0;
-              barMap[d]++;
+              const dateObj = new Date(item.date);
+              const year = dateObj.getFullYear();
+              const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+              const key = `${year}-${month}`;
+              if (!barMap[key]) barMap[key] = 0;
+              barMap[key]++;
             }
             
             // Collect Damage Types (Jenis Kerusakan)
@@ -1227,7 +1230,14 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             });
           });
 
-          const barData = Object.keys(barMap).map(k => ({ name: k, total: barMap[k] })).reverse().slice(-7);
+          const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+          const sortedKeys = Object.keys(barMap).sort();
+          const barData = sortedKeys.map(k => {
+            const [year, month] = k.split("-");
+            const monthIdx = parseInt(month, 10) - 1;
+            const name = `${months[monthIdx]} ${year.substring(2)}`;
+            return { name, total: barMap[k] };
+          }).slice(-7);
           
           const modernColors = ["#ef4444", "#f97316", "#eab308", "#8b5cf6", "#ec4899", "#3b82f6", "#06b6d4", "#14b8a6"];
           const pieData = Object.keys(pieMap).map((k, i) => ({
@@ -1245,7 +1255,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 
               <div className="chart-grid" style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
                 <div className="chart-card" style={{ background: "white", padding: "20px", borderRadius: "16px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
-                  <h3 style={{ marginBottom: "16px", fontSize: "18px", color: "#0f172a" }}>Tren Inspeksi Harian</h3>
+                  <h3 style={{ marginBottom: "16px", fontSize: "18px", color: "#0f172a" }}>Tren Inspeksi Bulanan</h3>
                   {isDataLoading ? (
                     <div className="skeleton-chart"></div>
                   ) : (
