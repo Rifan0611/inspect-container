@@ -1230,12 +1230,12 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             });
           });
 
-          const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+          const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
           const sortedKeys = Object.keys(barMap).sort();
           const barData = sortedKeys.map(k => {
             const [year, month] = k.split("-");
             const monthIdx = parseInt(month, 10) - 1;
-            const name = `${months[monthIdx]} ${year.substring(2)}`;
+            const name = months[monthIdx];
             return { name, total: barMap[k] };
           }).slice(-7);
           
