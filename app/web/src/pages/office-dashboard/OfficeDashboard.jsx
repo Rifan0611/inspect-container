@@ -2068,36 +2068,23 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 
               <div className="photos-section">
                 <h5>Foto Dokumentasi</h5>
-                <div className="photos-grid-modal">
-                  <div className="photo-card">
-                    <span>FOTO NOMOR CONTAINER</span>
-                    {selectedInspection.photo2 ? (
-                      <img
-                        src={selectedInspection.photo2}
-                        alt="Foto Nomor Container"
-                      />
-                    ) : (
-                      <div className="no-photo-text">Tidak ada foto</div>
-                    )}
-                  </div>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fit, minmax(180px, 1fr))",
-                      gap: "15px",
-                    }}
-                  >
-                    {parsePhotos(selectedInspection.photo1)
-                      .map((url) => url.trim())
-                      .filter(Boolean)
-                      .map((url, idx) => (
-                        <div className="photo-card" key={idx}>
-                          <span>FOTO DETAIL KERUSAKAN {idx + 1}</span>
-                          <img src={url} alt={`Foto Kerusakan ${idx + 1}`} />
-                        </div>
-                      ))}
-                  </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fit, minmax(200px, 1fr))",
+                    gap: "15px",
+                  }}
+                >
+                  {parsePhotos(selectedInspection.photo1)
+                    .map((url) => url.trim())
+                    .filter(Boolean)
+                    .map((url, idx) => (
+                      <div className="photo-card" key={idx}>
+                        <span>FOTO DETAIL KERUSAKAN {idx + 1}</span>
+                        <img src={url} alt={`Foto Kerusakan ${idx + 1}`} />
+                      </div>
+                    ))}
                 </div>
               </div>
             </div>
