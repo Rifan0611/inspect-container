@@ -4,6 +4,7 @@ const db = require("../config/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const authMiddleware = require("../middleware/authMiddleware");
+const { logSecurityEvent } = require("../utils/securityLogger");
 
 // Login Endpoint
 router.post("/accounts/login", (req, res) => {
@@ -20,6 +21,7 @@ router.post("/accounts/login", (req, res) => {
     }
 
     if (result.length === 0) {
+      logSecurityEvent("FAILED_LOGIN", `Percobaan login gagal: username "${username}" tidak ditemukan`, req.ip);
       return res.status(401).json({ error: "Username tidak ditemukan" });
     }
 
@@ -40,6 +42,7 @@ router.post("/accounts/login", (req, res) => {
     }
 
     if (!validPassword) {
+      logSecurityEvent("FAILED_LOGIN", `Percobaan login gagal: password salah untuk username "${username}"`, req.ip);
       return res.status(401).json({ error: "Password salah" });
     }
 
@@ -54,6 +57,8 @@ router.post("/accounts/login", (req, res) => {
       process.env.JWT_SECRET || "fallback_secret",
       { expiresIn: "7d" }
     );
+
+    logSecurityEvent("SUCCESSFUL_LOGIN", `Login berhasil: user "${account.username}" (${account.jabatan})`, req.ip);
 
     res.json({
       message: "Login Success",
@@ -178,10 +183,69 @@ router.put("/accounts/:username/password", authMiddleware, async (req, res) => {
       }
       res.json({ message: "Password updated successfully" });
     });
+    });
   } catch (e) {
     console.error("Hashing password error:", e);
     res.status(500).json({ error: "Internal server error" });
   }
+});
+
+// Get security stats (Protected)
+router.get("/security/stats", authMiddleware, (req, res) => {
+  const queries = {
+    failedLogins: "SELECT COUNT(*) as count FROM security_logs WHERE event_type = 'FAILED_LOGIN'",
+    blockedUploads: "SELECT COUNT(*) as count FROM security_logs WHERE event_type = 'BLOCKED_UPLOAD'",
+    blockedApis: "SELECT COUNT(*) as count FROM security_logs WHERE event_type = 'BLOCKED_API'"
+  };
+
+  let stats = { failedLogins: 0, blockedUploads: 0, blockedApis: 0 };
+  let pending = 3;
+
+  const checkDone = () => {
+    if (pending === 0) {
+      res.json({ success: true, data: stats });
+    }
+  };
+
+  db.query(queries.failedLogins, (err, results) => {
+    if (!err && results.length > 0) stats.failedLogins = results[0].count;
+    pending--; checkDone();
+  });
+
+  db.query(queries.blockedUploads, (err, results) => {
+    if (!err && results.length > 0) stats.blockedUploads = results[0].count;
+    pending--; checkDone();
+  });
+
+  db.query(queries.blockedApis, (err, results) => {
+    if (!err && results.length > 0) stats.blockedApis = results[0].count;
+    pending--; checkDone();
+  });
+});
+
+// Get recent security logs (Protected)
+router.get("/security/logs", authMiddleware, (req, res) => {
+  db.query(
+    "SELECT id, event_type, description, ip_address, created_at FROM security_logs ORDER BY created_at DESC LIMIT 50",
+    (err, results) => {
+      if (err) {
+        console.error("Error fetching security logs:", err);
+        return res.status(500).json({ error: "Failed to fetch security logs" });
+      }
+      res.json({ success: true, data: results });
+    }
+  );
+});
+
+// Clear security logs (Protected)
+router.post("/security/clear", authMiddleware, (req, res) => {
+  db.query("DELETE FROM security_logs", (err, result) => {
+    if (err) {
+      console.error("Error clearing logs:", err);
+      return res.status(500).json({ error: "Failed to clear logs" });
+    }
+    res.json({ success: true, message: "Logs cleared successfully" });
+  });
 });
 
 module.exports = router;

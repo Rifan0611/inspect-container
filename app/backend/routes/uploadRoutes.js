@@ -58,6 +58,9 @@ const fileFilter = (req, file, cb) => {
   if (isExtensionAllowed && isMimeAllowed) {
     return cb(null, true);
   }
+  
+  const { logSecurityEvent } = require("../utils/securityLogger");
+  logSecurityEvent("BLOCKED_UPLOAD", `Upload diblokir: Percobaan mengunggah file berbahaya "${file.originalname}"`, req.ip);
   cb(new Error("Hanya file gambar (.jpg, .jpeg, .png, .webp, .gif) yang diperbolehkan!"));
 };
 

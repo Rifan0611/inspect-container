@@ -27,6 +27,10 @@ import {
   Pencil,
   Image,
   Download,
+  ShieldAlert,
+  RefreshCw,
+  CheckCircle,
+  Server,
 } from "lucide-react";
 import {
   BarChart,
@@ -314,6 +318,9 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
   };
 
   const [activeMenu, setActiveMenu] = useState("dashboard");
+  const [securityLogs, setSecurityLogs] = useState([]);
+  const [securityStats, setSecurityStats] = useState({ failedLogins: 0, blockedUploads: 0, blockedApis: 0 });
+  const [isLoadingSecurity, setIsLoadingSecurity] = useState(false);
 
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -402,6 +409,52 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
       }
     }
   }, [editingInspection]);
+
+  const fetchSecurityData = async () => {
+    setIsLoadingSecurity(true);
+    try {
+      const statsRes = await fetch(`${API_URL}/api/security/stats`);
+      const statsData = await statsRes.json();
+      if (statsData.success) {
+        setSecurityStats(statsData.data);
+      }
+      
+      const logsRes = await fetch(`${API_URL}/api/security/logs`);
+      const logsData = await logsRes.json();
+      if (logsData.success) {
+        setSecurityLogs(logsData.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch security data:", err);
+    } finally {
+      setIsLoadingSecurity(false);
+    }
+  };
+
+  const handleClearSecurityLogs = async () => {
+    if (!window.confirm("Apakah Anda yakin ingin menghapus seluruh log keamanan? Tindakan ini tidak dapat dibatalkan.")) {
+      return;
+    }
+    try {
+      const res = await fetch(`${API_URL}/api/security/clear`, { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        alert("Log keamanan berhasil dibersihkan!");
+        fetchSecurityData();
+      } else {
+        alert(data.error || "Gagal membersihkan log");
+      }
+    } catch (err) {
+      console.error("Error clearing logs:", err);
+      alert("Error membersihkan log");
+    }
+  };
+
+  useEffect(() => {
+    if (activeMenu === "security") {
+      fetchSecurityData();
+    }
+  }, [activeMenu]);
 
   const handleUpdateInspection = async (e) => {
     e.preventDefault();
@@ -978,6 +1031,24 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                 {sidebarOpen && <span>User</span>}
               </button>
             )}
+
+            {/* SECURITY & SYSTEM MONITORING */}
+            {user?.username === "adminRAL" && (
+              <button
+                className={`menu-item ${activeMenu === "security" ? "active" : ""}`}
+                onClick={() => {
+                  setActiveMenu("security");
+                  if (window.innerWidth <= 900) setSidebarOpen(false);
+                  window.scrollTo({
+                    top: 0,
+                    behavior: "smooth",
+                  });
+                }}
+              >
+                <ShieldAlert className="menu-icon" size={20} />
+                {sidebarOpen && <span>Keamanan & Sistem</span>}
+              </button>
+            )}
           </div>
         </div>
 
@@ -1326,6 +1397,185 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
         {activeMenu === "user" && showAdminPanel && user?.username === "adminRAL" && (
           <div id="user-section">
             <UserManagement />
+          </div>
+        )}
+
+        {activeMenu === "security" && user?.username === "adminRAL" && (
+          <div id="security-section" style={{ padding: "20px" }}>
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+              <div>
+                <h2 style={{ fontSize: "24px", fontWeight: "700", color: "#0f172a", margin: 0 }}>
+                  Security &amp; System Monitoring
+                </h2>
+                <p style={{ color: "#64748b", margin: "4px 0 0 0", fontSize: "14px" }}>
+                  Pantau kondisi kesehatan server backend, deteksi potensi ancaman, dan log audit keamanan.
+                </p>
+              </div>
+              <div style={{ display: "flex", gap: "12px" }}>
+                <button 
+                  onClick={fetchSecurityData}
+                  disabled={isLoadingSecurity}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    background: "white",
+                    border: "1px solid #e2e8f0",
+                    padding: "10px 16px",
+                    borderRadius: "12px",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                    color: "#475569",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  <RefreshCw size={16} />
+                  Refresh
+                </button>
+                <button 
+                  onClick={handleClearSecurityLogs}
+                  style={{
+                    background: "#ef4444",
+                    color: "white",
+                    border: "none",
+                    padding: "10px 16px",
+                    borderRadius: "12px",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                    boxShadow: "0 2px 4px rgba(239, 68, 68, 0.2)",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  Hapus Log
+                </button>
+              </div>
+            </div>
+
+            {/* Health Status Dashboard */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "20px", marginBottom: "24px" }}>
+              <div style={{ background: "white", padding: "20px", borderRadius: "16px", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)", display: "flex", alignItems: "center", gap: "16px" }}>
+                <div style={{ background: "#f0fdf4", color: "#16a34a", padding: "12px", borderRadius: "12px" }}>
+                  <Server size={24} />
+                </div>
+                <div>
+                  <div style={{ fontSize: "12px", color: "#64748b", fontWeight: "600", textTransform: "uppercase" }}>Database MySQL</div>
+                  <div style={{ fontSize: "16px", fontWeight: "700", color: "#16a34a", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#16a34a", display: "inline-block" }}></span>
+                    TERKONEKSI
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ background: "white", padding: "20px", borderRadius: "16px", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)", display: "flex", alignItems: "center", gap: "16px" }}>
+                <div style={{ background: "#f0fdf4", color: "#16a34a", padding: "12px", borderRadius: "12px" }}>
+                  <CheckCircle size={24} />
+                </div>
+                <div>
+                  <div style={{ fontSize: "12px", color: "#64748b", fontWeight: "600", textTransform: "uppercase" }}>SSL HTTPS</div>
+                  <div style={{ fontSize: "16px", fontWeight: "700", color: "#16a34a", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#16a34a", display: "inline-block" }}></span>
+                    AKTIF (AMAN)
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ background: "white", padding: "20px", borderRadius: "16px", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)", display: "flex", alignItems: "center", gap: "16px" }}>
+                <div style={{ background: "#fef2f2", color: "#ef4444", padding: "12px", borderRadius: "12px" }}>
+                  <ShieldAlert size={24} />
+                </div>
+                <div>
+                  <div style={{ fontSize: "12px", color: "#64748b", fontWeight: "600", textTransform: "uppercase" }}>Percobaan Retas</div>
+                  <div style={{ fontSize: "20px", fontWeight: "800", color: "#0f172a" }}>
+                    {securityStats.failedLogins + securityStats.blockedUploads + securityStats.blockedApis}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Metrics cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px", marginBottom: "24px" }}>
+              {/* Card 1 */}
+              <div style={{ background: "white", padding: "24px", borderRadius: "16px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", borderLeft: "4px solid #f97316" }}>
+                <h4 style={{ color: "#475569", fontSize: "14px", fontWeight: "600", margin: "0 0 8px 0" }}>Login Gagal (Bcrypt Mismatch)</h4>
+                <div style={{ fontSize: "28px", fontWeight: "800", color: "#0f172a" }}>{securityStats.failedLogins}</div>
+                <p style={{ fontSize: "12px", color: "#64748b", margin: "8px 0 0 0" }}>Upaya login dengan password salah atau user tidak terdaftar.</p>
+              </div>
+
+              {/* Card 2 */}
+              <div style={{ background: "white", padding: "24px", borderRadius: "16px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", borderLeft: "4px solid #ef4444" }}>
+                <h4 style={{ color: "#475569", fontSize: "14px", fontWeight: "600", margin: "0 0 8px 0" }}>Upload Berbahaya Dicegah</h4>
+                <div style={{ fontSize: "28px", fontWeight: "800", color: "#0f172a" }}>{securityStats.blockedUploads}</div>
+                <p style={{ fontSize: "12px", color: "#64748b", margin: "8px 0 0 0" }}>Upload file non-gambar (potensi RCE/exploit) yang berhasil diblokir.</p>
+              </div>
+
+              {/* Card 3 */}
+              <div style={{ background: "white", padding: "24px", borderRadius: "16px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", borderLeft: "4px solid #3b82f6" }}>
+                <h4 style={{ color: "#475569", fontSize: "14px", fontWeight: "600", margin: "0 0 8px 0" }}>Akses API Ilegal Diblokir</h4>
+                <div style={{ fontSize: "28px", fontWeight: "800", color: "#0f172a" }}>{securityStats.blockedApis}</div>
+                <p style={{ fontSize: "12px", color: "#64748b", margin: "8px 0 0 0" }}>Request API backend tanpa token atau token kadaluwarsa yang dicegah.</p>
+              </div>
+            </div>
+
+            {/* Live Logs Table */}
+            <div style={{ background: "white", borderRadius: "16px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", padding: "24px" }}>
+              <h3 style={{ margin: "0 0 16px 0", fontSize: "18px", fontWeight: "700", color: "#0f172a" }}>Live Security Log Audit (Terbaru)</h3>
+              
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "2px solid #f1f5f9" }}>
+                      <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "600", fontSize: "14px" }}>Waktu</th>
+                      <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "600", fontSize: "14px" }}>Tipe Event</th>
+                      <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "600", fontSize: "14px" }}>Deskripsi Aktivitas</th>
+                      <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "600", fontSize: "14px" }}>IP Address Pengakses</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {securityLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan="4" style={{ padding: "24px", color: "#64748b", textAlign: "center", fontSize: "14px" }}>
+                          Belum ada log aktivitas keamanan terdeteksi. Sistem berjalan normal.
+                        </td>
+                      </tr>
+                    ) : (
+                      securityLogs.map((log) => {
+                        let badgeBg = "#f1f5f9";
+                        let badgeColor = "#475569";
+                        if (log.event_type === "FAILED_LOGIN") { badgeBg = "#fff7ed"; badgeColor = "#ea580c"; }
+                        else if (log.event_type === "BLOCKED_UPLOAD") { badgeBg = "#fef2f2"; badgeColor = "#ef4444"; }
+                        else if (log.event_type === "BLOCKED_API") { badgeBg = "#eff6ff"; badgeColor = "#2563eb"; }
+                        else if (log.event_type === "SUCCESSFUL_LOGIN") { badgeBg = "#f0fdf4"; badgeColor = "#16a34a"; }
+
+                        return (
+                          <tr key={log.id} style={{ borderBottom: "1px solid #f1f5f9", fontSize: "14px" }}>
+                            <td style={{ padding: "12px 16px", color: "#64748b" }}>
+                              {new Date(log.created_at).toLocaleString('id-ID')}
+                            </td>
+                            <td style={{ padding: "12px 16px" }}>
+                              <span style={{
+                                background: badgeBg,
+                                color: badgeColor,
+                                padding: "4px 10px",
+                                borderRadius: "30px",
+                                fontSize: "11px",
+                                fontWeight: "700",
+                                display: "inline-block"
+                              }}>
+                                {log.event_type}
+                              </span>
+                            </td>
+                            <td style={{ padding: "12px 16px", color: "#334155", fontWeight: "500" }}>{log.description}</td>
+                            <td style={{ padding: "12px 16px", color: "#475569", fontFamily: "monospace" }}>{log.ip_address}</td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
 

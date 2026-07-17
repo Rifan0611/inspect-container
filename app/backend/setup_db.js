@@ -89,6 +89,17 @@ const setupDB = async () => {
             )
         `);
 
+        // Security logs table
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS security_logs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                event_type VARCHAR(100) NOT NULL,
+                description TEXT NOT NULL,
+                ip_address VARCHAR(50) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
         // Seed default accounts if empty
         const [rows] = await connection.query("SELECT COUNT(*) as count FROM accounts");
         if (rows[0].count === 0) {
