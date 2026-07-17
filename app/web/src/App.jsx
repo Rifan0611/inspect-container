@@ -8,6 +8,20 @@ import SearchSelect, { ISO_CODES, CATEGORIES } from "./components/SearchSelect";
 import MultiSelectDropdown from "./components/MultiSelectDropdown";
 
 import axios from "axios";
+
+// Global fetch interceptor to automatically attach Authorization header
+const originalFetch = window.fetch;
+window.fetch = async function (resource, options = {}) {
+  const token = localStorage.getItem("token");
+  if (token) {
+    options.headers = {
+      ...options.headers,
+      Authorization: `Bearer ${token}`
+    };
+  }
+  return originalFetch(resource, options);
+};
+
 import diagramModern from './assets/container-diagram-modern.svg';
 
 import * as XLSX from "xlsx";
@@ -407,13 +421,27 @@ export default function App() {
   // STATE
   // ======================================================
 
-  const [page, setPage] = useState("login");
+  const [page, setPage] = useState(() => {
+    try {
+      const stored = localStorage.getItem("user");
+      return stored ? "dashboard" : "login";
+    } catch (e) {
+      return "login";
+    }
+  });
 
   const [username, setUsername] = useState("");
 
   const [password, setPassword] = useState("");
 
-  const [role, setRole] = useState("");
+  const [role, setRole] = useState(() => {
+    try {
+      const stored = localStorage.getItem("user");
+      return stored ? JSON.parse(stored).role : "";
+    } catch (e) {
+      return "";
+    }
+  });
 
   const [manifestShipName] = useState("-");
 
@@ -576,13 +604,21 @@ export default function App() {
   // LOGIN
   // ======================================================
 
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem("user");
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      return null;
+    }
+  });
 
   React.useEffect(() => {
     if (user) {
       localStorage.setItem("user", JSON.stringify(user));
     } else {
       localStorage.removeItem("user");
+      localStorage.removeItem("token");
     }
   }, [user]);
 
@@ -761,179 +797,47 @@ export default function App() {
   };
 
   const login = async () => {
-    const currentHour = new Date().getHours();
-    const activeShift = currentHour >= 8 && currentHour < 20 ? "PAGI" : "MALAM";
+    if (!username.trim() || !password.trim()) {
+      alert("Username dan Password wajib diisi!");
+      return;
+    }
 
-    // Fetch latest accounts from backend database so mobile/remote logins work immediately
-    let storedAccounts = [];
     try {
-      const response = await fetch(`${API_URL}/api/accounts`);
-      const dbData = await response.json();
-      if (Array.isArray(dbData)) {
-        // Migrate local storage accounts that aren't in the database yet
-        const rawAccounts = localStorage.getItem("accounts");
-        let localAccounts = [];
-        try {
-          const parsed = JSON.parse(rawAccounts);
-          if (Array.isArray(parsed)) localAccounts = parsed;
-        } catch (e) {}
-        const missing = localAccounts.filter(
-          (local) =>
-            !dbData.some(
-              (db) =>
-                db.username.toLowerCase().trim() ===
-                local.username.toLowerCase().trim(),
-            ),
-        );
+      const response = await fetch(`${API_URL}/api/accounts/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: username.trim(),
+          password: password.trim(),
+        }),
+      });
 
-        if (missing.length > 0) {
-          console.log("Migrating local accounts to MySQL:", missing);
-          for (const acc of missing) {
-            try {
-              await fetch(`${API_URL}/api/accounts`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  username: acc.username,
-                  password: acc.password,
-                  jabatan: acc.jabatan,
-                  nama: acc.nama || acc.username,
-                  group: acc.group || "Office",
-                }),
-              });
-            } catch (e) {
-              console.error("Migration error for", acc.username, e);
-            }
-          }
-          // Refetch after migrating
-          const refetchRes = await fetch(`${API_URL}/api/accounts`);
-          const refetchData = await refetchRes.json();
-          if (Array.isArray(refetchData)) {
-            storedAccounts = refetchData;
-            localStorage.setItem("accounts", JSON.stringify(refetchData));
-          } else {
-            storedAccounts = dbData;
-            localStorage.setItem("accounts", JSON.stringify(dbData));
-          }
-        } else {
-          storedAccounts = dbData;
-          localStorage.setItem("accounts", JSON.stringify(dbData));
-        }
-      } else {
-        storedAccounts = JSON.parse(localStorage.getItem("accounts")) || [];
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || "Gagal Login");
+        return;
       }
+
+      // Save token & user session details
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      setUser(data.user);
+      setRole(data.user.role);
+      setPage("dashboard");
     } catch (err) {
-      console.error("Failed to fetch latest accounts, using cache:", err);
-      storedAccounts = JSON.parse(localStorage.getItem("accounts")) || [];
+      console.error("Login error:", err);
+      alert("Terjadi kesalahan koneksi ke server.");
     }
+  };
 
-    const trimmedUsername = username.trim().toLowerCase();
-    const trimmedPassword = password.trim();
-
-    // MANAGER
-    if (trimmedUsername === "manager" && trimmedPassword === "123") {
-      const dataUser = {
-        nama: "Rian Agung",
-        role: "MANAGER",
-        username: "manager",
-        shift: activeShift,
-        group: "Management",
-      };
-
-      setUser(dataUser);
-      setRole("MANAGER");
-      setPage("dashboard");
-      return;
-    }
-
-    // SUPERVISOR
-    if (trimmedUsername === "supervisor" && trimmedPassword === "123") {
-      const dataUser = {
-        nama: "Budi Santoso",
-        role: "SUPERVISOR",
-        username: "supervisor",
-        shift: activeShift,
-        group: "Shift A",
-      };
-
-      setUser(dataUser);
-      setRole("SUPERVISOR");
-      setPage("dashboard");
-      return;
-    }
-
-    // ASSISTANT
-    if (trimmedUsername === "assistant" && trimmedPassword === "123") {
-      const dataUser = {
-        nama: "Andi Wijaya",
-        role: "ASSISTANT SUPERVISOR",
-        username: "assistant",
-        shift: activeShift,
-        group: "Shift B",
-      };
-
-      setUser(dataUser);
-      setRole("ASSISTANT SUPERVISOR");
-      setPage("dashboard");
-      return;
-    }
-
-    // ADMIN
-    if (trimmedUsername === "adminral" && trimmedPassword === "Rifan0611") {
-      const dataUser = {
-        nama: "Admin NPH",
-        role: "ADMIN",
-        username: "adminRAL",
-        shift: activeShift,
-        group: "Office",
-      };
-
-      setUser(dataUser);
-      setRole("ADMIN");
-      setPage("dashboard");
-      return;
-    }
-
-    // PETUGAS
-    if (trimmedUsername === "petugas" && trimmedPassword === "123") {
-      const dataUser = {
-        nama: "Petugas Lapangan",
-        role: "PETUGAS",
-        username: "petugas",
-        shift: activeShift,
-        group: "Lapangan",
-      };
-
-      setUser(dataUser);
-      setRole("PETUGAS");
-      setPage("dashboard");
-      return;
-    }
-
-    // CHECK DYNAMIC ACCOUNTS FROM DATABASE / CACHE
-    const matchedAccount = storedAccounts.find(
-      (acc) =>
-        acc.username.toLowerCase().trim() === trimmedUsername &&
-        acc.password.trim() === trimmedPassword,
-    );
-
-    if (matchedAccount) {
-      const dataUser = {
-        nama: matchedAccount.nama || matchedAccount.username,
-        role: matchedAccount.jabatan,
-        username: matchedAccount.username,
-        shift: activeShift,
-        group: matchedAccount.group || "Office",
-      };
-
-      setUser(dataUser);
-      setRole(matchedAccount.jabatan);
-
-      setPage("dashboard");
-      return;
-    }
-
-    alert("USERNAME / PASSWORD SALAH");
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUser(null);
+    setRole("");
+    setPage("login");
   };
 
   useEffect(() => {
@@ -1584,7 +1488,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 
           </div>
 
-          <button style={logoutButton} onClick={() => setPage("login")}>
+          <button style={logoutButton} onClick={handleLogout}>
             LOGOUT
           </button>
         </div>
@@ -2124,7 +2028,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
             Riwayat
           </button>
 
-          <button style={sidebarLogout} onClick={() => setPage("login")}>
+          <button style={sidebarLogout} onClick={handleLogout}>
             Logout
           </button>
         </div>
@@ -2240,7 +2144,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
           manifestData={manifestData}
           setManifestData={setManifestData}
           importExcel={importExcel}
-          onLogout={() => setPage("login")}
+          onLogout={handleLogout}
           onNavigate={(p) => setPage(p)}
         />
       </ErrorBoundary>

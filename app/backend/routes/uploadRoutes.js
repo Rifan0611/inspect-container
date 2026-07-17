@@ -48,10 +48,23 @@ multer.diskStorage({
   }
 })
 
-const upload =
-multer({
+const fileFilter = (req, file, cb) => {
+  const allowedExtensions = /jpeg|jpg|png|webp|gif/;
+  const isExtensionAllowed = allowedExtensions.test(
+    path.extname(file.originalname).toLowerCase()
+  );
+  const isMimeAllowed = allowedExtensions.test(file.mimetype);
 
-  storage:storage
+  if (isExtensionAllowed && isMimeAllowed) {
+    return cb(null, true);
+  }
+  cb(new Error("Hanya file gambar (.jpg, .jpeg, .png, .webp, .gif) yang diperbolehkan!"));
+};
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB
 })
 
 /*
@@ -61,48 +74,37 @@ multer({
 */
 
 router.post(
-
   '/image',
-
-  upload.single('photo'),
-
+  (req, res, next) => {
+    upload.single('photo')(req, res, (err) => {
+      if (err) {
+        return res.status(400).json({
+          message: 'Upload Failed',
+          error: err.message
+        });
+      }
+      next();
+    });
+  },
   async(req,res)=>{
-
     try{
-
       if(!req.file){
-
-        return res.status(400)
-        .json({
-
-          message:
-          'No File Uploaded'
+        return res.status(400).json({
+          message: 'No File Uploaded'
         })
       }
 
       res.json({
-
-        message:
-        'Upload Success',
-
-        filename:
-        req.file.filename,
-
-        file:
-        req.file.filename
+        message: 'Upload Success',
+        filename: req.file.filename,
+        file: req.file.filename
       })
 
     }catch(error){
-
       console.log(error)
-
       res.status(500).json({
-
-        message:
-        'Upload Failed',
-
-        error:
-        error.message
+        message: 'Upload Failed',
+        error: error.message
       })
     }
   }

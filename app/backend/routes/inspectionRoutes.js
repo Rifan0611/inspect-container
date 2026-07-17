@@ -1,6 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
+const authMiddleware = require("../middleware/authMiddleware");
+
+// Protect all inspection routes
+router.use(authMiddleware);
 
 // Get all inspections
 router.get("/", (req, res) => {
