@@ -17,10 +17,10 @@ app.use(cors());
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 
-app.use("/api/dashboard", dashboardRoutes);
-app.use("/api", manifestRoutes);
-app.use("/api/inspection", inspectionRoutes);
 app.use("/api", accountsRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/inspection", inspectionRoutes);
+app.use("/api", manifestRoutes);
 app.use("/api/upload", uploadRoutes);
 const uploadsDir = process.env.VERCEL
   ? "/tmp/uploads"
