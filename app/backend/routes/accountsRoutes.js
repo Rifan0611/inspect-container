@@ -183,7 +183,6 @@ router.put("/accounts/:username/password", authMiddleware, async (req, res) => {
       }
       res.json({ message: "Password updated successfully" });
     });
-    });
   } catch (e) {
     console.error("Hashing password error:", e);
     res.status(500).json({ error: "Internal server error" });
