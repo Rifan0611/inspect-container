@@ -115,11 +115,25 @@ Jika tidak menemukan nomor container yang valid, balas "KOSONG".
         if (apiKey === defaultKey) {
           localStorage.setItem('gemini_default_key_failed', 'true');
           alert("Key bawaan aplikasi tidak valid/kadaluarsa. Anda akan diminta untuk memasukkan API Key Anda sendiri.");
+          
+          const newKey = window.prompt("Silakan masukkan Google Gemini API Key Anda sendiri.\n\nBuat API Key gratis di: https://aistudio.google.com/app/apikey\nLalu masukkan kode API Key tersebut di bawah ini:");
+          if (newKey && newKey.trim().length > 0) {
+            localStorage.setItem('gemini_api_key', newKey.trim());
+            // Jalankan ulang pemindaian dengan key yang baru diinput
+            return await scanContainerWithGemini(file, newKey.trim());
+          }
         } else {
           localStorage.removeItem('gemini_api_key');
-          alert("API Key Anda tidak valid atau salah. Sistem telah menghapusnya dari memori. Silakan coba klik Scan lagi untuk memasukkan API Key yang benar.");
+          alert("API Key Anda tidak valid atau salah. Sistem telah menghapusnya dari memori.");
+          
+          const newKey = window.prompt("Silakan masukkan kembali Google Gemini API Key Anda yang benar:\n(Buat baru gratis di: https://aistudio.google.com/app/apikey)");
+          if (newKey && newKey.trim().length > 0) {
+            localStorage.setItem('gemini_api_key', newKey.trim());
+            // Jalankan ulang pemindaian dengan key yang baru diinput
+            return await scanContainerWithGemini(file, newKey.trim());
+          }
         }
-        throw err; // Stop trying if API key is invalid
+        throw err; // Hentikan proses jika user membatalkan/tidak mengisi key
       }
       // Continue to next model if it's 503 or other temporary error
     }
