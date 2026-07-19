@@ -21,10 +21,34 @@ const fileToGenerativePart = async (file) => {
 };
 
 export const getGeminiApiKey = () => {
-  const p1 = "AQ.Ab8RN6LYg0KOxeh";
-  const p2 = "z8kdcLKp9Hg0xGXSmP";
-  const p3 = "7XgyhTawKw48YOl-g";
-  return p1 + p2 + p3;
+  // 1. Coba ambil dari Environment Variable (VITE_GEMINI_API_KEY)
+  const envKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (envKey && envKey.trim().length > 0) {
+    return envKey.trim();
+  }
+
+  // 2. Coba ambil dari LocalStorage yang diinput user
+  const userKey = localStorage.getItem('gemini_api_key');
+  if (userKey && userKey.trim().length > 0) {
+    return userKey.trim();
+  }
+
+  // 3. Jika key bawaan belum ditandai rusak, coba gunakan key bawaan
+  const isDefaultKeyFailed = localStorage.getItem('gemini_default_key_failed') === 'true';
+  if (!isDefaultKeyFailed) {
+    const p1 = "AQ.Ab8RN6LYg0KOxeh";
+    const p2 = "z8kdcLKp9Hg0xGXSmP";
+    const p3 = "7XgyhTawKw48YOl-g";
+    return p1 + p2 + p3;
+  }
+
+  // 4. Jika key bawaan rusak dan tidak ada key user, minta user input key baru
+  const key = window.prompt("Aplikasi membutuhkan Google Gemini API Key untuk fitur Scan OCR tingkat lanjut.\n\nSilakan buat API Key gratis di: https://aistudio.google.com/app/apikey\nLalu masukkan kode API Key tersebut di bawah ini:");
+  if (key && key.trim().length > 0) {
+    localStorage.setItem('gemini_api_key', key.trim());
+    return key.trim();
+  }
+  return null;
 };
 
 /**
@@ -48,7 +72,7 @@ PENTING: JANGAN membalas dengan JSON atau teks penjelasan apapun. HANYA tuliskan
 Jika tidak menemukan nomor container yang valid, balas "KOSONG".
 `;
 
-  const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-3.5-flash"];
+  const modelsToTry = ["gemini-2.0-flash", "gemini-1.5-flash"];
   let lastError = null;
 
   for (const modelName of modelsToTry) {
@@ -74,9 +98,27 @@ Jika tidak menemukan nomor container yang valid, balas "KOSONG".
       console.warn(`Gemini API Error dengan model ${modelName}:`, err.message);
       lastError = err;
       
-      if (err.message && (err.message.includes("API key not valid") || err.message.includes("API key"))) {
-        localStorage.removeItem('gemini_api_key');
-        alert("API Key tidak valid atau salah. Sistem telah menghapusnya dari memori. Silakan coba klik Scan lagi untuk memasukkan API Key yang benar.");
+      const isAuthError = err.message && (
+        err.message.includes("API key not valid") || 
+        err.message.includes("API key") || 
+        err.message.includes("invalid authentication credentials") ||
+        err.message.includes("401")
+      );
+      
+      if (isAuthError) {
+        // Tentukan apakah yang gagal ini key bawaan atau key inputan user
+        const p1 = "AQ.Ab8RN6LYg0KOxeh";
+        const p2 = "z8kdcLKp9Hg0xGXSmP";
+        const p3 = "7XgyhTawKw48YOl-g";
+        const defaultKey = p1 + p2 + p3;
+        
+        if (apiKey === defaultKey) {
+          localStorage.setItem('gemini_default_key_failed', 'true');
+          alert("Key bawaan aplikasi tidak valid/kadaluarsa. Anda akan diminta untuk memasukkan API Key Anda sendiri.");
+        } else {
+          localStorage.removeItem('gemini_api_key');
+          alert("API Key Anda tidak valid atau salah. Sistem telah menghapusnya dari memori. Silakan coba klik Scan lagi untuk memasukkan API Key yang benar.");
+        }
         throw err; // Stop trying if API key is invalid
       }
       // Continue to next model if it's 503 or other temporary error
