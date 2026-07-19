@@ -9,11 +9,28 @@ import MultiSelectDropdown from "./components/MultiSelectDropdown";
 
 import axios from "axios";
 
-// Global fetch interceptor to automatically attach Authorization header
+// Global fetch interceptor to automatically attach Authorization header (excluding external APIs like Gemini)
 const originalFetch = window.fetch;
 window.fetch = async function (resource, options = {}) {
   const token = localStorage.getItem("token");
-  if (token) {
+  
+  // Deteksi apakah URL mengarah ke Google API
+  let isGoogleApi = false;
+  try {
+    let urlString = "";
+    if (typeof resource === "string") {
+      urlString = resource;
+    } else if (resource && typeof resource === "object" && resource.url) {
+      urlString = resource.url;
+    } else if (resource && typeof resource.toString === "function") {
+      urlString = resource.toString();
+    }
+    isGoogleApi = urlString.includes("googleapis.com");
+  } catch (e) {
+    console.error("Error parsing URL in fetch interceptor:", e);
+  }
+
+  if (token && !isGoogleApi) {
     options.headers = {
       ...options.headers,
       Authorization: `Bearer ${token}`
@@ -21,6 +38,13 @@ window.fetch = async function (resource, options = {}) {
   }
   return originalFetch(resource, options);
 };
+
+// Reset flag default key failed agar mencoba menggunakan key bawaan kembali setelah interceptor diperbaiki
+try {
+  localStorage.removeItem("gemini_default_key_failed");
+} catch (e) {
+  console.error("Error resetting default key status:", e);
+}
 
 import diagramModern from './assets/container-diagram-modern.svg';
 
