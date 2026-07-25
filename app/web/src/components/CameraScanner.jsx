@@ -127,7 +127,21 @@ export default function CameraScanner({ onCapture, onClose }) {
         {error ? (
           <div className="camera-error">
             <p>{error}</p>
-            <button className="btn-close-error" onClick={onClose}>
+            <label className="btn-close-error" style={{ background: '#3b82f6', marginBottom: '10px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              📷 Pilih / Ambil Foto dari HP
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    onCapture(e.target.files[0]);
+                  }
+                }}
+              />
+            </label>
+            <button className="btn-close-error" onClick={onClose} style={{ background: '#4b5563' }}>
               Kembali
             </button>
           </div>

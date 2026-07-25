@@ -143,49 +143,55 @@ cd /var/www/inspect-container/backend
 npm install --production
 
 echo "Mengonfigurasi Nginx..."
-run_sudo bash -c 'cat > /etc/nginx/sites-available/inspect-container <<EOF
+cat << 'EOF' > /tmp/inspect-nginx.conf
 server {
     listen 80;
-    server_name _;
+    server_name inspect-container.my.id www.inspect-container.my.id _;
 
     root /var/www/inspect-container/frontend;
     index index.html;
 
     location / {
-        try_files \\$uri \\$uri/ /index.html;
+        try_files $uri $uri/ /index.html;
         add_header Cache-Control "no-store, no-cache, must-revalidate";
     }
 
     location /api {
         proxy_pass http://localhost:5000;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade \\$http_upgrade;
+        proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
-        proxy_set_header Host \\$host;
-        proxy_cache_bypass \\$http_upgrade;
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
     }
 
     location /uploads {
         proxy_pass http://localhost:5000;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade \\$http_upgrade;
+        proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
-        proxy_set_header Host \\$host;
-        proxy_cache_bypass \\$http_upgrade;
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
     }
 }
-EOF'
+EOF
 
+run_sudo mv /tmp/inspect-nginx.conf /etc/nginx/sites-available/inspect-container
 run_sudo ln -sf /etc/nginx/sites-available/inspect-container /etc/nginx/sites-enabled/
 run_sudo rm -f /etc/nginx/sites-enabled/default
 run_sudo systemctl restart nginx
+
+echo "Menginstal SSL Certbot (HTTPS) agar kamera HP dapat diakses secara aman..."
+run_sudo apt-get install -y certbot python3-certbot-nginx
+run_sudo certbot --nginx -d inspect-container.my.id -d www.inspect-container.my.id --non-interactive --agree-tos -m rianagung2509@gmail.com || true
+run_sudo systemctl reload nginx
 
 echo "Menjalankan aplikasi Node backend dengan PM2..."
 pm2 delete inspect-backend || true
 pm2 start server.js --name "inspect-backend" --watch --ignore-watch="uploads logs"
 pm2 save
 
-run_sudo env PATH=\\$PATH:/usr/bin pm2 startup systemd -u adminral --hp /home/adminral || true
+run_sudo env PATH=\$PATH:/usr/bin pm2 startup systemd -u adminral --hp /home/adminral || true
 
 rm -f ~/deploy.zip
 
