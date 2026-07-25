@@ -1789,13 +1789,13 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                   className="interactive-diagram-image"
                 />
                 {[
-                { val: "Front/Depan", label: "Front (Depan)", x: 11, y: 45 },
-                { val: "Left Side/Sisi Kiri", label: "Left Side (Kiri)", x: 24, y: 45 },
-                { val: "Bottom/Bawah", label: "Bottom (Bawah)", x: 20, y: 70 },
-                { val: "Inside/Dalam", label: "Inside (Dalam)", x: 50, y: 45 },
-                { val: "Roof/Atas", label: "Roof (Atas)", x: 83, y: 25 },
-                { val: "Right Side/Sisi Kanan", label: "Right Side (Kanan)", x: 86, y: 42 },
-                { val: "Rear/Belakang", label: "Rear/Doors (Belakang)", x: 74, y: 58 },
+                { val: "Front/Depan", label: "Depan", x: 11, y: 45 },
+                { val: "Left Side/Sisi Kiri", label: "Kiri", x: 24, y: 45 },
+                { val: "Bottom/Bawah", label: "Bawah", x: 20, y: 70 },
+                { val: "Inside/Dalam", label: "Dalam", x: 50, y: 45 },
+                { val: "Roof/Atas", label: "Atap", x: 83, y: 25 },
+                { val: "Right Side/Sisi Kanan", label: "Kanan", x: 86, y: 42 },
+                { val: "Rear/Belakang", label: "Belakang", x: 74, y: 58 },
               ].map((hotspot) => {
                   const isChecked = selectedSides.includes(hotspot.val);
                   const isDisabled =

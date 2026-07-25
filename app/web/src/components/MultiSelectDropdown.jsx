@@ -141,6 +141,39 @@ export default function MultiSelectDropdown({
               </label>
             );
           })}
+          <div
+            style={{
+              padding: "8px 12px",
+              borderTop: "1px solid #e2e8f0",
+              backgroundColor: "#f8fafc",
+              textAlign: "right",
+              position: "sticky",
+              bottom: 0,
+              zIndex: 10,
+            }}
+          >
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsOpen(false);
+              }}
+              style={{
+                backgroundColor: "#2563eb",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "6px",
+                padding: "8px 20px",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                width: "100%",
+              }}
+            >
+              ✓ OK / Selesai
+            </button>
+          </div>
         </div>
       )}
     </div>
