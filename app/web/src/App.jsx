@@ -1462,9 +1462,9 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 
           <h1 style={title}>DASHBOARD</h1>
 
-          <h2 style={roleText}>
-            {role === "PETUGAS" ? "PETUGAS LAPANGAN" : role}
-          </h2>
+          {role !== "PETUGAS" && (
+            <h2 style={roleText}>{role}</h2>
+          )}
 
           <button style={button} onClick={() => setPage("inspection")}>
             CONTAINER INSPECTION

@@ -86,6 +86,7 @@ marginTop:20
 DASHBOARD
 </h1>
 
+{role !== "PETUGAS" && (
 <h2
 style={{
 textAlign:"center"
@@ -93,6 +94,7 @@ textAlign:"center"
 >
 {displayRole}
 </h2>
+)}
 
 <button
 onClick={()=>
