@@ -959,7 +959,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
 
         {/* LOGO */}
         <div className="logo-section">
-          <img src="/logo.jpg" alt="Logo" className="logo-box" style={{ width: "40px", height: "40px", background: "transparent", border: "none", objectFit: "contain" }} />
+          <img src="/logo.jpg" alt="Logo" className="logo-box" style={{ width: "44px", height: "44px", background: "#ffffff", borderRadius: "10px", padding: "3px", border: "none", objectFit: "contain" }} />
 
           {sidebarOpen && (
             <div>
