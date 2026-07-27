@@ -146,7 +146,7 @@ echo "Mengonfigurasi Nginx..."
 cat << 'EOF' > /tmp/inspect-nginx.conf
 server {
     listen 80;
-    server_name inspect-container.my.id www.inspect-container.my.id _;
+    server_name containerinspection.my.id www.containerinspection.my.id inspect-container.my.id www.inspect-container.my.id _;
 
     root /var/www/inspect-container/frontend;
     index index.html;
@@ -183,7 +183,7 @@ run_sudo systemctl restart nginx
 
 echo "Menginstal SSL Certbot (HTTPS) agar kamera HP dapat diakses secara aman..."
 run_sudo apt-get install -y certbot python3-certbot-nginx
-run_sudo certbot --nginx -d inspect-container.my.id -d www.inspect-container.my.id --non-interactive --agree-tos -m rianagung2509@gmail.com || true
+run_sudo certbot --nginx -d containerinspection.my.id -d www.containerinspection.my.id -d inspect-container.my.id -d www.inspect-container.my.id --expand --non-interactive --agree-tos -m rianagung2509@gmail.com || true
 run_sudo systemctl reload nginx
 
 echo "Menjalankan aplikasi Node backend dengan PM2..."
