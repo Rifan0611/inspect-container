@@ -1411,7 +1411,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
     return (
       <div style={bg}>
         <div style={card}>
-          <img src="/logo.jpg" alt="Logo" style={{ margin: "0 auto 20px auto", display: "block", width: "140px", height: "auto", objectFit: "contain" }} />
+          <img src="/logo.jpg?v=2" alt="Logo" style={{ margin: "0 auto 20px auto", display: "block", width: "140px", height: "auto", objectFit: "contain" }} />
 
           <h1 style={title}>CONTAINER INSPECTION</h1>
 
@@ -1458,7 +1458,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
     return (
       <div style={bg}>
         <div style={card}>
-          <img src="/logo.jpg" alt="Logo" style={{ margin: "0 auto 20px auto", display: "block", width: "140px", height: "auto", objectFit: "contain" }} />
+          <img src="/logo.jpg?v=2" alt="Logo" style={{ margin: "0 auto 20px auto", display: "block", width: "140px", height: "auto", objectFit: "contain" }} />
 
           <h1 style={title}>DASHBOARD</h1>
 
