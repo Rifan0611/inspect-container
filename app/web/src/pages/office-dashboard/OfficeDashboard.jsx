@@ -1401,7 +1401,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
           </div>
         )}
 
-        {activeMenu === "security" && user?.username === "adminRAL" && (
+        {activeMenu === "security" && (user?.username === "adminRAL" || user?.role === "ADMIN" || user?.role === "admin") && (
           <div id="security-section" style={{ padding: "20px" }}>
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>

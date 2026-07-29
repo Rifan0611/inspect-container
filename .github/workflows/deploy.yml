@@ -41,7 +41,7 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
             mkdir -p /var/www/inspect-container/frontend
-            cp -r /var/www/inspect-container/app/web/dist/* /var/www/inspect-container/frontend/
+            cp -rf /var/www/inspect-container/app/web/dist/* /var/www/inspect-container/frontend/
             if [ -d "/var/www/inspect-container/app/backend" ]; then
               cd /var/www/inspect-container/app/backend
               npm install --production
