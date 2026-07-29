@@ -16,6 +16,9 @@ const uploadRoutes = require("./routes/uploadRoutes");
 
 const app = express();
 
+// Disable X-Powered-By header to prevent framework fingerprinting
+app.disable("x-powered-by");
+
 // Security Headers & Rate Limiting
 app.use(
   helmet({
@@ -23,6 +26,16 @@ app.use(
   })
 );
 
+// Global Rate Limiter for API endpoints (DDoS / Flooding protection)
+const globalApiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 menit
+  max: 300, // Maksimal 300 request per 15 menit per IP
+  message: { error: "Terlalu banyak permintaan API. Silakan coba lagi beberapa saat lagi." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Login Rate Limiter (Brute force protection)
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 menit
   max: 10, // Maksimal 10 percobaan per 15 menit per IP
@@ -31,10 +44,31 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-app.use(cors());
+// Strict CORS Policy
+const allowedOrigins = [
+  "https://containerinspection.my.id",
+  "http://containerinspection.my.id",
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "http://localhost:5000"
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith(".my.id")) {
+      return callback(null, true);
+    }
+    return callback(new Error("CORS Policy: Origin tidak diizinkan oleh sistem keamanan"));
+  },
+  credentials: true
+}));
+
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 
+app.use("/api/", globalApiLimiter);
 app.use("/api/accounts/login", loginLimiter);
 app.use("/api", accountsRoutes);
 app.use("/api/dashboard", dashboardRoutes);
