@@ -5,6 +5,9 @@ const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
 
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const manifestRoutes = require("./routes/manifestRoutes");
 const inspectionRoutes = require("./routes/inspectionRoutes");
@@ -13,10 +16,26 @@ const uploadRoutes = require("./routes/uploadRoutes");
 
 const app = express();
 
+// Security Headers & Rate Limiting
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 menit
+  max: 10, // Maksimal 10 percobaan per 15 menit per IP
+  message: { error: "Terlalu banyak percobaan login. Silakan coba lagi dalam 15 menit." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 app.use(cors());
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 
+app.use("/api/accounts/login", loginLimiter);
 app.use("/api", accountsRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/inspection", inspectionRoutes);
