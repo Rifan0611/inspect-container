@@ -321,6 +321,7 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
   const [securityLogs, setSecurityLogs] = useState([]);
   const [securityStats, setSecurityStats] = useState({ failedLogins: 0, blockedUploads: 0, blockedApis: 0 });
   const [isLoadingSecurity, setIsLoadingSecurity] = useState(false);
+  const [showSecuritySopModal, setShowSecuritySopModal] = useState(false);
 
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -1518,6 +1519,68 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
               </div>
             </div>
 
+            {/* Security Defense & Emergency Response Guide */}
+            <div style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)", color: "white", borderRadius: "20px", padding: "28px", marginBottom: "24px", boxShadow: "0 10px 25px rgba(15, 23, 42, 0.15)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px", marginBottom: "20px" }}>
+                <div>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(59, 130, 246, 0.2)", border: "1px solid rgba(59, 130, 246, 0.4)", padding: "4px 12px", borderRadius: "20px", color: "#60a5fa", fontSize: "12px", fontWeight: "700", marginBottom: "10px" }}>
+                    <ShieldAlert size={14} /> PANDUAN PENCEGAHAN &amp; PENANGANAN HACKER
+                  </div>
+                  <h3 style={{ fontSize: "20px", fontWeight: "700", margin: 0, color: "white" }}>Prosedur Penanganan &amp; Proteksi Sistem</h3>
+                  <p style={{ color: "#94a3b8", fontSize: "14px", margin: "6px 0 0 0", maxWidth: "700px" }}>
+                    Sistem backend Anda telah dilengkapi pertahanan otomatis. Jika terjadi lonjakan indikator serangan di atas, lakukan langkah penanganan berikut:
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowSecuritySopModal(true)}
+                  style={{
+                    background: "#2563eb",
+                    color: "white",
+                    border: "none",
+                    padding: "12px 20px",
+                    borderRadius: "12px",
+                    fontWeight: "700",
+                    fontSize: "14px",
+                    cursor: "pointer",
+                    boxShadow: "0 4px 12px rgba(37, 99, 235, 0.3)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  <ShieldAlert size={18} /> Buka SOP Penanganan Lengkap
+                </button>
+              </div>
+
+              {/* Grid 4 Fitur Proteksi Aktif */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginTop: "20px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "20px" }}>
+                <div style={{ background: "rgba(255, 255, 255, 0.05)", padding: "16px", borderRadius: "14px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                  <div style={{ fontSize: "12px", color: "#94a3b8", fontWeight: "600" }}>PROTEKSI BRUTE FORCE</div>
+                  <div style={{ fontSize: "15px", fontWeight: "700", color: "#4ade80", marginTop: "4px" }}>Rate Limiter Aktif</div>
+                  <div style={{ fontSize: "12px", color: "#cbd5e1", marginTop: "4px" }}>Maks 10x percobaan/15 menit. Auto-block IP penyerang.</div>
+                </div>
+
+                <div style={{ background: "rgba(255, 255, 255, 0.05)", padding: "16px", borderRadius: "14px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                  <div style={{ fontSize: "12px", color: "#94a3b8", fontWeight: "600" }}>HEADER SECURITY</div>
+                  <div style={{ fontSize: "15px", fontWeight: "700", color: "#4ade80", marginTop: "4px" }}>Helmet.js Integrated</div>
+                  <div style={{ fontSize: "12px", color: "#cbd5e1", marginTop: "4px" }}>Proteksi Anti-XSS, Clickjacking, dan MIME sniffing.</div>
+                </div>
+
+                <div style={{ background: "rgba(255, 255, 255, 0.05)", padding: "16px", borderRadius: "14px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                  <div style={{ fontSize: "12px", color: "#94a3b8", fontWeight: "600" }}>VALIDASI FILE UPLOAD</div>
+                  <div style={{ fontSize: "15px", fontWeight: "700", color: "#4ade80", marginTop: "4px" }}>Strict Extension Check</div>
+                  <div style={{ fontSize: "12px", color: "#cbd5e1", marginTop: "4px" }}>Hanya file .jpg, .jpeg, .png, .webp yang dapat diunggah.</div>
+                </div>
+
+                <div style={{ background: "rgba(255, 255, 255, 0.05)", padding: "16px", borderRadius: "14px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                  <div style={{ fontSize: "12px", color: "#94a3b8", fontWeight: "600" }}>ENKRIPSI DATA USER</div>
+                  <div style={{ fontSize: "15px", fontWeight: "700", color: "#4ade80", marginTop: "4px" }}>Bcrypt Hashing (Cost 10)</div>
+                  <div style={{ fontSize: "12px", color: "#cbd5e1", marginTop: "4px" }}>Password tidak tersimpan polos, tidak bisa di-decode.</div>
+                </div>
+              </div>
+            </div>
+
             {/* Live Logs Table */}
             <div style={{ background: "white", borderRadius: "16px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", padding: "24px" }}>
               <h3 style={{ margin: "0 0 16px 0", fontSize: "18px", fontWeight: "700", color: "#0f172a" }}>Live Security Log Audit (Terbaru)</h3>
@@ -1567,7 +1630,40 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                               </span>
                             </td>
                             <td style={{ padding: "12px 16px", color: "#334155", fontWeight: "500" }}>{log.description}</td>
-                            <td style={{ padding: "12px 16px", color: "#475569", fontFamily: "monospace" }}>{log.ip_address}</td>
+                            <td style={{ padding: "12px 16px", color: "#475569" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                                <span style={{ fontFamily: "monospace", fontWeight: "700", color: "#0f172a", fontSize: "13px" }}>
+                                  {log.ip_address}
+                                </span>
+                                {log.ip_address && (
+                                  <a
+                                    href={
+                                      log.ip_address === "127.0.0.1" || log.ip_address === "::1" || log.ip_address.startsWith("192.168.")
+                                        ? "https://ipinfo.io/"
+                                        : `https://ipinfo.io/${log.ip_address}`
+                                    }
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                      fontSize: "11px",
+                                      background: "#eff6ff",
+                                      color: "#2563eb",
+                                      padding: "3px 10px",
+                                      borderRadius: "8px",
+                                      textDecoration: "none",
+                                      fontWeight: "700",
+                                      border: "1px solid #bfdbfe",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: "4px"
+                                    }}
+                                    title="Klik untuk melacak lokasi geofrafis (Negara, Kota) dan ISP pemilik IP ini"
+                                  >
+                                    🔍 Lacak Lokasi &amp; ISP
+                                  </a>
+                                )}
+                              </div>
+                            </td>
                           </tr>
                         );
                       })
@@ -2739,6 +2835,119 @@ body { font-family:Arial,sans-serif; padding:12px; font-size:10px; color:#000; m
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* SECURITY SOP MODAL */}
+      {showSecuritySopModal && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowSecuritySopModal(false)}
+        >
+          <div
+            className="modal-container"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: "750px", maxHeight: "90vh", overflowY: "auto" }}
+          >
+            <div className="modal-header" style={{ background: "#0f172a", color: "white", borderRadius: "16px 16px 0 0", padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <ShieldAlert size={24} color="#60a5fa" />
+                <h4 className="modal-title" style={{ margin: 0, color: "white", fontSize: "18px" }}>
+                  SOP Tanggap Darurat &amp; Penanganan Peretasan (Anti-Hack)
+                </h4>
+              </div>
+              <button
+                className="btn-close-modal"
+                onClick={() => setShowSecuritySopModal(false)}
+                style={{ color: "white", opacity: 0.8 }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="modal-body" style={{ padding: "24px", color: "#334155", lineHeight: "1.6" }}>
+              <div style={{ background: "#f8fafc", padding: "16px", borderRadius: "12px", borderLeft: "4px solid #3b82f6", marginBottom: "20px" }}>
+                <strong style={{ color: "#1e293b", display: "block", marginBottom: "4px" }}>🛡️ Status Sistem Saat Ini:</strong>
+                Sistem backend Anda sudah terpasang rate limiter (10x percobaan/15 mnt), HTTP Security Headers (Helmet.js), dan enkripsi password Bcrypt.
+              </div>
+
+              <h4 style={{ fontSize: "16px", fontWeight: "700", color: "#0f172a", marginBottom: "10px" }}>
+                Langkah Tanggap Darurat Saat Terjadi Serangan:
+              </h4>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <div style={{ background: "#fff7ed", padding: "16px", borderRadius: "12px", border: "1px solid #ffedd5" }}>
+                  <h5 style={{ margin: "0 0 6px 0", color: "#c2410c", fontWeight: "700" }}>1. Serangan Brute Force (Login Gagal Tinggi)</h5>
+                  <p style={{ margin: 0, fontSize: "13px" }}>
+                    - Rate limiter otomatis mengunci IP penyerang selama 15 menit.<br />
+                    - <strong>Tindakan Admin:</strong> Masuk ke tab menu <strong>User</strong>, lalu ubah password akun admin ke kombinasi kuat (huruf besar, kecil, angka, simbol).
+                  </p>
+                </div>
+
+                <div style={{ background: "#fef2f2", padding: "16px", borderRadius: "12px", border: "1px solid #fee2e2" }}>
+                  <h5 style={{ margin: "0 0 6px 0", color: "#b91c1c", fontWeight: "700" }}>2. Serangan Eksploitasi File (Upload Berbahaya)</h5>
+                  <p style={{ margin: 0, fontSize: "13px" }}>
+                    - Backend secara ketat menolak file selain ekstensi `.jpg`, `.jpeg`, `.png`, `.webp`.<br />
+                    - <strong>Tindakan Admin:</strong> Cek IP Address pelaku pada tabel <em>Live Security Log Audit</em> dan catat IP tersebut.
+                  </p>
+                </div>
+
+                <div style={{ background: "#eff6ff", padding: "16px", borderRadius: "12px", border: "1px solid #dbeafe" }}>
+                  <h5 style={{ margin: "0 0 6px 0", color: "#1d4ed8", fontWeight: "700" }}>3. Serangan Akses API Tanpa Izin</h5>
+                  <p style={{ margin: 0, fontSize: "13px" }}>
+                    - Token JWT berbatas waktu (7 hari). Request tanpa token valid akan ditolak HTTP status 401/403.<br />
+                    - <strong>Tindakan Admin:</strong> Selalu klik <strong>Logout</strong> jika mengakses dashboard dari perangkat umum.
+                  </p>
+                </div>
+
+                <div style={{ background: "#f0fdf4", padding: "16px", borderRadius: "12px", border: "1px solid #dcfce7" }}>
+                  <h5 style={{ margin: "0 0 6px 0", color: "#15803d", fontWeight: "700" }}>4. Penguatan Server VPS Hostinger</h5>
+                  <p style={{ margin: 0, fontSize: "13px" }}>
+                    Jalankan perintah berikut via SSH VPS jika ingin memblokir port yang tidak dikenal:<br />
+                    <code style={{ background: "#e2e8f0", padding: "2px 6px", borderRadius: "4px", fontSize: "12px", color: "#0f172a" }}>sudo ufw default deny incoming &amp;&amp; sudo ufw allow 80,443,22/tcp &amp;&amp; sudo ufw enable</code>
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ marginTop: "24px", display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSecuritySopModal(false);
+                    setActiveMenu("user");
+                  }}
+                  style={{
+                    padding: "10px 18px",
+                    borderRadius: "8px",
+                    background: "#2563eb",
+                    color: "white",
+                    border: "none",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    fontSize: "13px"
+                  }}
+                >
+                  Ke Menu Kelola User / Ganti Password
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSecuritySopModal(false)}
+                  style={{
+                    padding: "10px 18px",
+                    borderRadius: "8px",
+                    background: "#e2e8f0",
+                    color: "#475569",
+                    border: "none",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    fontSize: "13px"
+                  }}
+                >
+                  Tutup Panduan
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
